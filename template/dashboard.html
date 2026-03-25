@@ -669,7 +669,7 @@ function computeMetrics(tickets){
   const csat_rr=surveyed?+(csat_n/surveyed*100).toFixed(1):0;
 
   // Resolution
-  const res_arr=tickets.filter(t=>t.res!=null&&t.res>0).map(t=>t.res);
+  const res_arr=tickets.filter(t=>(t.status==='Solved'||t.status==='Closed')&&t.res!=null&&t.res>0).map(t=>t.res);
   const med_res=median(res_arr);
   const mean_res=mean(res_arr);
   const p90_res=p90(res_arr);
@@ -713,8 +713,8 @@ function computeMetrics(tickets){
     if(!chPerf[t.channel])chPerf[t.channel]={tickets:0,esc:0,res:[],rw:[],aw:[]};
     chPerf[t.channel].tickets++;
     if(t.within_cx==='No')chPerf[t.channel].esc++;
-    if(t.res!=null&&t.res>0)chPerf[t.channel].res.push(t.res);
     const isSolved=(t.status==='Solved'||t.status==='Closed');
+    if(isSolved&&t.res!=null&&t.res>0)chPerf[t.channel].res.push(t.res);
     if(isSolved&&t.rw!=null&&t.rw>0)chPerf[t.channel].rw.push(t.rw);
     if(isSolved&&t.aw!=null&&t.aw>0)chPerf[t.channel].aw.push(t.aw);
   });
@@ -745,8 +745,8 @@ function computeMetrics(tickets){
     if(!catMap[k])catMap[k]={tickets:0,esc:0,res:[],rw:[],aw:[]};
     catMap[k].tickets++;
     if(t.within_cx==='No')catMap[k].esc++;
-    if(t.res!=null&&t.res>0)catMap[k].res.push(t.res);
     const isSolved=(t.status==='Solved'||t.status==='Closed');
+    if(isSolved&&t.res!=null&&t.res>0)catMap[k].res.push(t.res);
     if(isSolved&&t.rw!=null&&t.rw>0)catMap[k].rw.push(t.rw);
     if(isSolved&&t.aw!=null&&t.aw>0)catMap[k].aw.push(t.aw);
   });
@@ -763,8 +763,8 @@ function computeMetrics(tickets){
     if(!agMap[k])agMap[k]={tickets:0,esc:0,res:[],rw:[],aw:[],good:0,bad:0,rated:0};
     agMap[k].tickets++;
     if(t.within_cx==='No')agMap[k].esc++;
-    if(t.res!=null&&t.res>0)agMap[k].res.push(t.res);
     const isSolved=(t.status==='Solved'||t.status==='Closed');
+    if(isSolved&&t.res!=null&&t.res>0)agMap[k].res.push(t.res);
     if(isSolved&&t.rw!=null&&t.rw>0)agMap[k].rw.push(t.rw);
     if(isSolved&&t.aw!=null&&t.aw>0)agMap[k].aw.push(t.aw);
     if(t.good)agMap[k].good++;
@@ -1251,7 +1251,7 @@ function buildCatSubBreakdown(catName){
     if(!groups[g]) groups[g]={count:0,esc:0,res:[]};
     groups[g].count++;
     if(t.within_cx==='No') groups[g].esc++;
-    if(t.res!=null&&t.res>0) groups[g].res.push(t.res);
+    if((t.status==='Solved'||t.status==='Closed')&&t.res!=null&&t.res>0) groups[g].res.push(t.res);
   });
   const sorted=Object.entries(groups).sort((a,b)=>b[1].count-a[1].count);
   const total=sorted.reduce((s,e)=>s+e[1].count,0);
@@ -1697,7 +1697,7 @@ function updateCharts(M){
   filteredTickets.forEach(t=>{
     const g=getGroup(t.assignee);
     if(!g||!grpBuckets[g])return;
-    if(t.res!=null&&t.res>0){grpBuckets[g][bucket(t.res)]=(grpBuckets[g][bucket(t.res)]||0)+1;grpResolved[g]++;}
+    if((t.status==='Solved'||t.status==='Closed')&&t.res!=null&&t.res>0){grpBuckets[g][bucket(t.res)]=(grpBuckets[g][bucket(t.res)]||0)+1;grpResolved[g]++;}
   });
   updateGroupKPIs();
   const csPctD=bLabels.map(l=>grpResolved.CS?grpBuckets.CS[l]/grpResolved.CS*100:0);
