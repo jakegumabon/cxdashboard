@@ -1,10 +1,12 @@
 name: Build & Deploy CX Dashboard
 
 on:
-  # Trigger when data/latest.zip is updated (by Google Apps Script)
+  # Trigger when data, template, or pipeline script changes
   push:
     paths:
       - 'data/latest.zip'
+      - 'template/dashboard.html'
+      - 'scripts/csv_to_dashboard.py'
     branches:
       - main
 
