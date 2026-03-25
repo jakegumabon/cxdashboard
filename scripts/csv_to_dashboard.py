@@ -198,17 +198,22 @@ def extract_zip(zip_path, extract_dir):
                 ops_reo = fn
 
     paths = {}
-    for key, val, label in [
-        ("sr", sr, "Support Requests + Q&G"),
-        ("pi", pi, "Product Issue"),
-        ("ops_new", ops_new, "Ops New Tickets"),
-        ("ops_reo", ops_reo, "Ops Reopened Tickets"),
+    for key, val, label, required in [
+        ("sr",      sr,      "Support Requests + Q&G",  True),
+        ("pi",      pi,      "Product Issue",            True),
+        ("ops_new", ops_new, "Ops New Tickets",          False),
+        ("ops_reo", ops_reo, "Ops Reopened Tickets",     False),
     ]:
         if val is None:
-            print(f"ERROR: Could not find {label} CSV in zip", file=sys.stderr)
-            sys.exit(1)
-        paths[key] = os.path.join(extract_dir, val)
-        print(f"  {label}: {val}")
+            if required:
+                print(f"ERROR: Could not find {label} CSV in zip", file=sys.stderr)
+                sys.exit(1)
+            else:
+                print(f"  ⚠ {label}: not found (ops data will be skipped)")
+                paths[key] = None
+        else:
+            paths[key] = os.path.join(extract_dir, val)
+            print(f"  {label}: {val}")
 
     return paths
 
@@ -462,16 +467,21 @@ def main():
         paths = extract_zip(args.zip_file, extract_dir)
     else:
         csv_dir = args.csv_dir
-        paths = {
-            "sr": os.path.join(csv_dir, SR_CSV),
-            "pi": os.path.join(csv_dir, PI_CSV),
-            "ops_new": os.path.join(csv_dir, OPS_NEW),
-            "ops_reo": os.path.join(csv_dir, OPS_REO),
-        }
-        for key, path in paths.items():
-            if not os.path.exists(path):
-                print(f"ERROR: {key} file not found: {path}", file=sys.stderr)
+        paths = {}
+        for key, fname, required in [
+            ("sr",      SR_CSV,  True),
+            ("pi",      PI_CSV,  True),
+            ("ops_new", OPS_NEW, False),
+            ("ops_reo", OPS_REO, False),
+        ]:
+            p = os.path.join(csv_dir, fname)
+            if os.path.exists(p):
+                paths[key] = p
+            elif required:
+                print(f"ERROR: {key} file not found: {p}", file=sys.stderr)
                 sys.exit(1)
+            else:
+                paths[key] = None
 
     # Parse
     print("Parsing Support Requests + Question/Guidance...")
@@ -486,9 +496,20 @@ def main():
     all_tickets.sort(key=lambda t: (t["date"], t["hour"], t["id"]))
     print(f"  → {len(all_tickets)} total tickets")
 
-    print("Parsing Operational Volume...")
-    ops = parse_ops(paths["ops_new"], paths["ops_reo"])
-    print(f"  → {ops['summary']['total_new']} new, {ops['summary']['total_reopen']} reopen")
+    if paths.get("ops_new") and paths.get("ops_reo"):
+        print("Parsing Operational Volume...")
+        ops = parse_ops(paths["ops_new"], paths["ops_reo"])
+        print(f"  → {ops['summary']['total_new']} new, {ops['summary']['total_reopen']} reopen")
+    else:
+        print("⚠ Operational Volume CSVs missing — OPS tab will show no data")
+        print("  → Add 'BI Operational Volume - New tickets' and 'BI Operational Volume - Reopened tickets'")
+        print("     to your Zendesk Explore 'For Claude' scheduled delivery to enable this tab.")
+        ops = {
+            "summary": {"total_new": 0, "total_reopen": 0, "total": 0, "n_days": 0,
+                        "reopen_rate": 0, "period_from": "", "period_to": ""},
+            "daily": {"labels": [], "new": [], "reopen": []},
+            "heatmap_new": {}, "heatmap_reopen": {}, "heatmap_all": {},
+        }
 
     # Inject into template
     print(f"\nInjecting into template: {args.template}")
