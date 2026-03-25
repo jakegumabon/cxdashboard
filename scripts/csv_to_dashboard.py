@@ -415,6 +415,25 @@ def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_
         html
     )
 
+    # Fix hardcoded date input values to match actual data range
+    if raw_tickets:
+        dates = sorted(set(t["date"] for t in raw_tickets if t.get("date")))
+        min_date = dates[0]
+        max_date = dates[-1]
+        # Replace date-from value and min
+        html = re.sub(
+            r'(<input[^>]*id="date-from"[^>]*value=")[^"]*("[^>]*min=")[^"]*(")',
+            rf'\g<1>{min_date}\2{min_date}\3',
+            html
+        )
+        # Replace date-to value and min
+        html = re.sub(
+            r'(<input[^>]*id="date-to"[^>]*value=")[^"]*("[^>]*min=")[^"]*(")',
+            rf'\g<1>{max_date}\2{min_date}\3',
+            html
+        )
+        print(f"  Date inputs set to: {min_date} → {max_date}")
+
     os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html)
