@@ -426,15 +426,16 @@ def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_
         min_date = dates[0]
         max_date = dates[-1]
         # Replace date-from value and min
+        # NOTE: Use \g<N> notation — never bare \N followed by digits (e.g. \2 + "2026" = \22026 = group 22, empty)
         html = re.sub(
             r'(<input[^>]*id="date-from"[^>]*value=")[^"]*("[^>]*min=")[^"]*(")',
-            rf'\g<1>{min_date}\2{min_date}\3',
+            rf'\g<1>{min_date}\g<2>{min_date}\g<3>',
             html
         )
         # Replace date-to value and min
         html = re.sub(
             r'(<input[^>]*id="date-to"[^>]*value=")[^"]*("[^>]*min=")[^"]*(")',
-            rf'\g<1>{max_date}\2{min_date}\3',
+            rf'\g<1>{max_date}\g<2>{min_date}\g<3>',
             html
         )
         print(f"  Date inputs set to: {min_date} → {max_date}")

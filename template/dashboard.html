@@ -612,10 +612,64 @@ function getGroup(assignee){ return ASSIGNEE_GROUP[assignee] || null; }
 
 // ═══════════════════════════════════ RAW TICKETS ═══════════════════════════════════
 const RAW_TICKETS = /*{{RAW_TICKETS}}*/[];
+let filteredTickets = RAW_TICKETS.slice();
 
-// ═══════════════════════════════════ PRECOMPUTED FULL DATA (for heatmap/DOW — always full range) ═══════════════════════════════════
-const D = {"period":{"from":"2026-03-01","to":"2026-03-21"},"summary":{"total":906,"status":{"Solved":650,"New":109,"Hold":59,"Pending":42,"Open":33,"Closed":13},"escalated":288,"within_cx":618,"esc_rate":31.8,"csat_score":91.7,"csat_n":12,"csat_rr":2.6,"surveyed":470,"median_res":73.0,"mean_res":68.5,"p90_res":124.5,"resolved_n":663,"avg_req_wait":27.0,"avg_agent_wait":42.0,"wall73_count":211,"wall73_pct":31.8,"wall73_avg_req_wait":1.8,"wall73_avg_agent_wait":71.6},"daily":{"labels":["2026-03-01","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-07","2026-03-08","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-14","2026-03-15","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-21"],"counts":[10,38,46,47,47,52,20,19,71,67,58,63,51,25,12,54,39,64,55,53,15]},"dow":{"labels":["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],"counts":[163,152,169,165,156,60,41]},"channels":{"Live Chat":377,"Email":288,"Slack":213,"Telegram":18,"WhatsApp":10},"buckets":{"labels":["<1h","1\u20134h","4\u20138h","8\u201324h","1\u20132d","2\u20133d","~73h","3\u20134d","4\u20137d","7d+"],"counts":[62,50,16,37,56,36,211,80,73,42]},"heatmap":{"Mon":{"0":0.0,"1":0.7,"2":0.7,"3":0.7,"4":0.7,"5":0.3,"6":0.0,"7":1.3,"8":1.3,"9":3.7,"10":4.0,"11":2.7,"12":2.0,"13":2.7,"14":3.3,"15":5.7,"16":4.3,"17":5.7,"18":3.3,"19":3.7,"20":2.3,"21":2.0,"22":2.0,"23":1.3},"Tue":{"0":2.3,"1":1.3,"2":1.3,"3":1.3,"4":1.0,"5":0.0,"6":0.7,"7":0.0,"8":0.7,"9":3.3,"10":2.3,"11":1.7,"12":1.3,"13":3.3,"14":2.3,"15":3.7,"16":4.7,"17":6.0,"18":3.3,"19":3.3,"20":2.3,"21":2.3,"22":1.3,"23":0.7},"Wed":{"0":0.7,"1":2.3,"2":2.0,"3":1.3,"4":1.0,"5":2.0,"6":1.0,"7":1.0,"8":1.3,"9":5.0,"10":1.3,"11":2.3,"12":1.7,"13":3.3,"14":3.3,"15":3.0,"16":5.3,"17":5.0,"18":2.7,"19":1.7,"20":2.7,"21":2.3,"22":3.0,"23":1.0},"Thu":{"0":2.0,"1":0.7,"2":1.0,"3":0.7,"4":1.0,"5":0.7,"6":0.7,"7":0.0,"8":1.0,"9":4.3,"10":1.3,"11":3.3,"12":2.3,"13":2.7,"14":3.3,"15":1.7,"16":5.7,"17":4.3,"18":6.0,"19":2.7,"20":3.7,"21":2.0,"22":2.7,"23":1.3},"Fri":{"0":2.7,"1":1.7,"2":1.7,"3":0.3,"4":0.7,"5":0.0,"6":0.7,"7":1.7,"8":0.3,"9":1.3,"10":2.3,"11":2.0,"12":1.0,"13":3.3,"14":2.3,"15":3.7,"16":5.0,"17":5.0,"18":3.7,"19":3.7,"20":2.0,"21":2.3,"22":2.7,"23":2.0},"Sat":{"0":2.3,"1":1.7,"2":1.0,"3":1.3,"4":0.3,"5":0.3,"6":1.3,"7":0.3,"8":1.0,"9":1.7,"10":0.3,"11":0.0,"12":0.3,"13":1.0,"14":0.3,"15":1.0,"16":0.7,"17":0.7,"18":0.7,"19":0.7,"20":0.0,"21":0.7,"22":0.7,"23":1.7},"Sun":{"0":0.3,"1":1.3,"2":0.3,"3":0.0,"4":0.0,"5":0.3,"6":0.3,"7":0.0,"8":0.3,"9":0.7,"10":0.3,"11":1.7,"12":0.3,"13":0.3,"14":1.0,"15":0.7,"16":0.7,"17":0.7,"18":2.0,"19":1.3,"20":0.7,"21":0.0,"22":0.3,"23":0.0}},"categories":[{"name":"Cards & Transactions","tickets":155,"escalated":56,"avg_res":71.0,"req_wait":25.0,"agent_wait":43.4,"esc_rate":36.1},{"name":"Other","tickets":155,"escalated":32,"avg_res":67.4,"req_wait":18.8,"agent_wait":49.3,"esc_rate":20.6},{"name":"Account Management","tickets":51,"escalated":19,"avg_res":74.8,"req_wait":28.9,"agent_wait":50.2,"esc_rate":37.3},{"name":"Payments & Transfers","tickets":50,"escalated":34,"avg_res":107.1,"req_wait":67.2,"agent_wait":41.0,"esc_rate":68.0},{"name":"Statements, Repayments & Fees","tickets":47,"escalated":26,"avg_res":83.7,"req_wait":38.6,"agent_wait":51.8,"esc_rate":55.3},{"name":"Disputes, Fraud & Refunds","tickets":44,"escalated":18,"avg_res":82.1,"req_wait":42.8,"agent_wait":53.3,"esc_rate":40.9},{"name":"Product Usage & Limits","tickets":19,"escalated":2,"avg_res":47.5,"req_wait":10.3,"agent_wait":36.0,"esc_rate":10.5},{"name":"Account Access & Restrictions","tickets":18,"escalated":2,"avg_res":80.1,"req_wait":22.6,"agent_wait":63.4,"esc_rate":11.1},{"name":"Card Functionality","tickets":5,"escalated":3,"avg_res":90.9,"req_wait":28.8,"agent_wait":34.2,"esc_rate":60.0},{"name":"Transactions","tickets":4,"escalated":2,"avg_res":90.8,"req_wait":30.0,"agent_wait":48.8,"esc_rate":50.0},{"name":"API","tickets":2,"escalated":0,"avg_res":61.2,"req_wait":59.5,"agent_wait":0.6,"esc_rate":0.0},{"name":"UI & UX","tickets":2,"escalated":2,"avg_res":268.4,"req_wait":256.9,"agent_wait":38.0,"esc_rate":100.0},{"name":"Digital Wallets","tickets":1,"escalated":0,"avg_res":29.6,"req_wait":1.9,"agent_wait":27.7,"esc_rate":0.0},{"name":"Logistics & Fulfillment","tickets":1,"escalated":0,"avg_res":78.4,"req_wait":4.7,"agent_wait":73.7,"esc_rate":0.0}],"agents":[{"name":"LA Carlos","tickets":156,"escalated":51,"median_res":72.8,"req_wait":24.4,"agent_wait":39.9,"esc_rate":32.7},{"name":"Racky Manlapaz","tickets":131,"escalated":32,"median_res":73.2,"req_wait":17.1,"agent_wait":53.1,"esc_rate":24.4},{"name":"Patric Pangan","tickets":109,"escalated":38,"median_res":72.5,"req_wait":20.7,"agent_wait":38.5,"esc_rate":34.9},{"name":"Eunice Su\u00f1ga","tickets":85,"escalated":45,"median_res":73.2,"req_wait":29.6,"agent_wait":38.2,"esc_rate":52.9},{"name":"Herbert Acpal","tickets":59,"escalated":16,"median_res":73.9,"req_wait":30.6,"agent_wait":55.2,"esc_rate":27.1},{"name":"Lorenz Agustin","tickets":59,"escalated":20,"median_res":72.9,"req_wait":23.4,"agent_wait":43.6,"esc_rate":33.9},{"name":"Mike Cunanan","tickets":23,"escalated":7,"median_res":35.5,"req_wait":24.8,"agent_wait":26.4,"esc_rate":30.4},{"name":"Yen Lin","tickets":21,"escalated":11,"median_res":60.7,"req_wait":43.9,"agent_wait":11.6,"esc_rate":52.4},{"name":"John Jacinto","tickets":19,"escalated":9,"median_res":24.8,"req_wait":23.9,"agent_wait":24.4,"esc_rate":47.4},{"name":"Allen Reyes","tickets":14,"escalated":4,"median_res":73.8,"req_wait":15.5,"agent_wait":51.7,"esc_rate":28.6},{"name":"Adrian Maranan","tickets":14,"escalated":6,"median_res":76.2,"req_wait":17.2,"agent_wait":50.0,"esc_rate":42.9},{"name":"Jan Rivera","tickets":13,"escalated":11,"median_res":106.1,"req_wait":68.5,"agent_wait":51.3,"esc_rate":84.6},{"name":"Raymark Cayanan","tickets":9,"escalated":4,"median_res":84.5,"req_wait":48.2,"agent_wait":41.4,"esc_rate":44.4},{"name":"Samson Fok","tickets":9,"escalated":1,"median_res":0.5,"req_wait":27.0,"agent_wait":6.5,"esc_rate":11.1},{"name":"Hans Wang","tickets":9,"escalated":8,"median_res":97.0,"req_wait":30.3,"agent_wait":36.2,"esc_rate":88.9},{"name":"Ethan Liou","tickets":7,"escalated":1,"median_res":96.1,"req_wait":80.4,"agent_wait":57.4,"esc_rate":14.3},{"name":"Gilbert Arces","tickets":7,"escalated":2,"median_res":53.2,"req_wait":23.6,"agent_wait":49.5,"esc_rate":28.6},{"name":"Ediline Postrano","tickets":4,"escalated":3,"median_res":77.9,"req_wait":68.9,"agent_wait":5.7,"esc_rate":75.0},{"name":"Bogdan Hristovski","tickets":4,"escalated":1,"median_res":89.8,"req_wait":32.3,"agent_wait":55.2,"esc_rate":25.0},{"name":"Chloe Wong","tickets":3,"escalated":0,"median_res":4.2,"req_wait":1.5,"agent_wait":11.5,"esc_rate":0.0},{"name":"Joe Flores","tickets":2,"escalated":1,"median_res":125.6,"req_wait":55.9,"agent_wait":36.5,"esc_rate":50.0},{"name":"Ian Soliman","tickets":2,"escalated":0,"median_res":110.2,"req_wait":0.0,"agent_wait":99.5,"esc_rate":0.0},{"name":"Ray","tickets":2,"escalated":1,"median_res":308.8,"req_wait":99.3,"agent_wait":110.3,"esc_rate":50.0},{"name":"Jose Shardin","tickets":1,"escalated":1,"median_res":null,"req_wait":40.1,"agent_wait":0.0,"esc_rate":100.0},{"name":"Catherine Sun","tickets":1,"escalated":1,"median_res":9.4,"req_wait":9.4,"agent_wait":0.0,"esc_rate":100.0},{"name":"Jaiber Kler","tickets":1,"escalated":1,"median_res":33.1,"req_wait":33.1,"agent_wait":0.0,"esc_rate":100.0},{"name":"Weilam Thum","tickets":1,"escalated":0,"median_res":21.6,"req_wait":21.6,"agent_wait":0.0,"esc_rate":0.0},{"name":"Clyde","tickets":1,"escalated":0,"median_res":0.0,"req_wait":0.0,"agent_wait":0.0,"esc_rate":0.0}],"channel_performance":[{"channel":"Email","tickets":151,"esc_rate":58.9,"avg_res":81.4,"median_res":73.2,"req_wait":39.3,"agent_wait":38.1},{"channel":"Live Chat","tickets":341,"esc_rate":14.1,"avg_res":59.3,"median_res":73.1,"req_wait":7.0,"agent_wait":51.3},{"channel":"Slack","tickets":150,"esc_rate":42.7,"avg_res":72.8,"median_res":69.3,"req_wait":34.1,"agent_wait":33.3},{"channel":"Telegram","tickets":12,"esc_rate":50.0,"avg_res":105.4,"median_res":74.6,"req_wait":51.5,"agent_wait":53.9},{"channel":"WhatsApp","tickets":9,"esc_rate":22.2,"avg_res":82.9,"median_res":73.8,"req_wait":12.5,"agent_wait":57.4}],"request_types":[{"request_type":"Support Request","tickets":797,"esc_rate":33.5,"avg_res":71.3},{"request_type":"Question / Guidance","tickets":93,"esc_rate":14.0,"avg_res":44.2},{"request_type":"Product Issue","tickets":16,"esc_rate":50.0,"avg_res":97.1}],"groups":{"CS":{"tickets":890,"resolved":648,"median_res":73.0,"mean_res":67.9,"p90_res":122.9,"esc_rate":31.5,"escalated":280,"req_wait":26.3,"agent_wait":42.0,"buckets":{"<1h":62,"1\u20134h":49,"4\u20138h":16,"8\u201324h":36,"1\u20132d":55,"2\u20133d":35,"~73h":209,"3\u20134d":77,"4\u20137d":69,"7d+":40}},"TS":{"tickets":16,"resolved":15,"median_res":78.4,"mean_res":97.1,"p90_res":180.1,"esc_rate":50.0,"escalated":8,"req_wait":58.5,"agent_wait":40.8,"buckets":{"<1h":0,"1\u20134h":1,"4\u20138h":0,"8\u201324h":1,"1\u20132d":1,"2\u20133d":1,"~73h":2,"3\u20134d":3,"4\u20137d":4,"7d+":2}}}};
+// ═══════════════════════════════════ PRECOMPUTED FULL DATA (heatmap/buckets — always full range) ═══════════════════════════════════
+const D = (function(tickets){
+  const DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const jsDay={0:"Sun",1:"Mon",2:"Tue",3:"Wed",4:"Thu",5:"Fri",6:"Sat"};
+  // Count tickets per DOW+hour, track unique weeks per DOW for averaging
+  const counts={},weekSets={};
+  DAYS.forEach(d=>{counts[d]={};weekSets[d]=new Set();});
+  tickets.forEach(t=>{
+    if(!t.date)return;
+    const dt=new Date(t.date+'T00:00:00');
+    const day=jsDay[dt.getDay()];
+    const h=String(t.hour||0);
+    counts[day][h]=(counts[day][h]||0)+1;
+    // Track the Monday of this week for averaging
+    const diff=dt.getDay()===0?-6:1-dt.getDay();
+    const mon=new Date(dt);mon.setDate(dt.getDate()+diff);
+    weekSets[day].add(mon.toISOString().slice(0,10));
+  });
+  const heatmap={};
+  DAYS.forEach(d=>{
+    const nWeeks=Math.max(1,weekSets[d].size);
+    heatmap[d]={};
+    for(let h=0;h<24;h++) heatmap[d][String(h)]=+((counts[d][String(h)]||0)/nWeeks).toFixed(1);
+  });
+  return {
+    heatmap,
+    buckets:{labels:["<1h","1\u20134h","4\u20138h","8\u201324h","1\u20132d","2\u20133d","~73h","3\u20134d","4\u20137d","7d+"]}
+  };
+})(RAW_TICKETS);
+
 const OPS = /*{{OPS}}*/{};
+
+// ═══════════════════════════════════ DATE FILTER ═══════════════════════════════════
+function applyDateFilter(){
+  const from=document.getElementById('date-from').value;
+  const to=document.getElementById('date-to').value;
+  if(from>to){alert('Start date must be before end date.');return;}
+  filteredTickets=RAW_TICKETS.filter(t=>t.date&&t.date>=from&&t.date<=to);
+  const days=Math.round((new Date(to)-new Date(from))/(86400000))+1;
+  const statusEl=document.getElementById('filter-status');
+  statusEl.textContent=`${days} day${days!==1?'s':''} · ${filteredTickets.length} tickets`;
+  document.getElementById('header-period').textContent=`${from} → ${to}`;
+  refreshAll();
+}
+
+function resetDateFilter(){
+  const dates=RAW_TICKETS.map(t=>t.date).filter(Boolean).sort();
+  const minD=dates[0]||'';
+  const maxD=dates[dates.length-1]||'';
+  document.getElementById('date-from').value=minD;
+  document.getElementById('date-to').value=maxD;
+  filteredTickets=RAW_TICKETS.slice();
+  document.getElementById('filter-status').textContent=`All data · ${RAW_TICKETS.length} tickets`;
+  document.getElementById('header-period').textContent=`${minD} → ${maxD} · ${RAW_TICKETS.length} tickets`;
+  refreshAll();
+}
 
 function getMondayWeekKey(dateStr){
   const d=new Date(dateStr+'T00:00:00');
@@ -2380,6 +2434,16 @@ function updateCapExplainer(cap){
   const yesterday = y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
   document.getElementById('date-from').max = yesterday;
   document.getElementById('date-to').max   = yesterday;
+})();
+// Initialize filter-status and header-period from actual data
+(function(){
+  const dates=RAW_TICKETS.map(t=>t.date).filter(Boolean).sort();
+  const minD=dates[0]||'';
+  const maxD=dates[dates.length-1]||'';
+  const el=document.getElementById('filter-status');
+  if(el) el.textContent=`All data · ${RAW_TICKETS.length} tickets`;
+  const hp=document.getElementById('header-period');
+  if(hp) hp.textContent=`${minD} → ${maxD} · ${RAW_TICKETS.length} tickets`;
 })();
 const M0=computeMetrics(filteredTickets);
 updateKPIs(M0);
