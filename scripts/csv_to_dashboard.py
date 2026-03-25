@@ -446,6 +446,25 @@ def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_
             html
         )
 
+    # Detect agents in ticket data not mapped to any team — inject a notice
+    all_assignees = set(t["assignee"] for t in raw_tickets if t.get("assignee"))
+    mapped_names  = set(assignee_group.keys())
+    unmapped = sorted(all_assignees - mapped_names)
+    if unmapped:
+        names_str = ", ".join(unmapped)
+        notice_html = (
+            f'<div style="margin:12px 0;padding:10px 14px;background:#2a1f0a;border:1px solid #f5a623;'
+            f'border-radius:6px;color:#f5a623;font-size:12px;">'
+            f'&#9888;&nbsp; <strong>{len(unmapped)} agent{"s" if len(unmapped)>1 else ""} with no team assigned:</strong>'
+            f'&nbsp;{names_str}&nbsp;—&nbsp;their tickets are excluded from team comparisons.'
+            f'</div>'
+        )
+        print(f"  ⚠ {len(unmapped)} unmapped agent(s): {names_str}")
+    else:
+        notice_html = ""
+        print("  ✓ All agents mapped to a team")
+    html = html.replace("/*{{UNMAPPED_NOTICE}}*/", notice_html)
+
     os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html)
