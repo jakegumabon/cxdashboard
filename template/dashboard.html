@@ -244,10 +244,10 @@ tr:hover td{background:var(--surface2)}
 <!-- ═══════════════════════════════════ RESOLUTION TAB ═══════════════════════════════════ -->
 <div id="tab-resolution" class="tab-panel">
   <div class="kpi-grid-4">
-    <div class="kpi kpi-blue"><div class="kpi-label">Avg Res</div><div class="kpi-value mono" id="rt-avg">—</div><div class="kpi-sub">Mean of resolved</div></div>
-    <div class="kpi"><div class="kpi-label">Median Res</div><div class="kpi-value mono" id="rt-median">—</div><div class="kpi-sub">50th percentile</div></div>
-    <div class="kpi kpi-coral"><div class="kpi-label">P90 Res</div><div class="kpi-value mono" id="rt-p90">—</div><div class="kpi-sub">90th percentile</div></div>
-    <div class="kpi kpi-amber"><div class="kpi-label">~73h Wall</div><div class="kpi-value mono" id="rt-wall-n">—</div><div class="kpi-sub" id="rt-wall-sub">—</div></div>
+    <div class="kpi kpi-blue"><div class="kpi-label">Avg Res</div><div class="kpi-value mono">68.5h</div><div class="kpi-sub">Mean of resolved</div></div>
+    <div class="kpi"><div class="kpi-label">Median Res</div><div class="kpi-value mono">73.0h</div><div class="kpi-sub">~3 days</div></div>
+    <div class="kpi kpi-coral"><div class="kpi-label">P90 Res</div><div class="kpi-value mono">124.5h</div><div class="kpi-sub">90th percentile</div></div>
+    <div class="kpi kpi-amber"><div class="kpi-label">~73h Wall</div><div class="kpi-value mono">211</div><div class="kpi-sub">31.8% of resolved — auto-close</div></div>
   </div>
 
   <div class="chart-card" style="margin-bottom:24px">
@@ -612,13 +612,11 @@ function getGroup(assignee){ return ASSIGNEE_GROUP[assignee] || null; }
 
 // ═══════════════════════════════════ RAW TICKETS ═══════════════════════════════════
 const RAW_TICKETS = /*{{RAW_TICKETS}}*/[];
-let filteredTickets = RAW_TICKETS.slice();
 
-// ═══════════════════════════════════ PRECOMPUTED FULL DATA (heatmap/buckets — always full range) ═══════════════════════════════════
+// ═══════════════════════════════════ PRECOMPUTED FULL DATA (for heatmap/DOW — always full range) ═══════════════════════════════════
 const D = (function(tickets){
   const DAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
   const jsDay={0:"Sun",1:"Mon",2:"Tue",3:"Wed",4:"Thu",5:"Fri",6:"Sat"};
-  // Count tickets per DOW+hour, track unique weeks per DOW for averaging
   const counts={},weekSets={};
   DAYS.forEach(d=>{counts[d]={};weekSets[d]=new Set();});
   tickets.forEach(t=>{
@@ -627,7 +625,6 @@ const D = (function(tickets){
     const day=jsDay[dt.getDay()];
     const h=String(t.hour||0);
     counts[day][h]=(counts[day][h]||0)+1;
-    // Track the Monday of this week for averaging
     const diff=dt.getDay()===0?-6:1-dt.getDay();
     const mon=new Date(dt);mon.setDate(dt.getDate()+diff);
     weekSets[day].add(mon.toISOString().slice(0,10));
@@ -640,11 +637,155 @@ const D = (function(tickets){
   });
   return {
     heatmap,
-    buckets:{labels:["<1h","1\u20134h","4\u20138h","8\u201324h","1\u20132d","2\u20133d","~73h","3\u20134d","4\u20137d","7d+"]}
+    buckets:{labels:["<1h","1–4h","4–8h","8–24h","1–2d","2–3d","~73h","3–4d","4–7d","7d+"]}
   };
 })(RAW_TICKETS);
-
 const OPS = /*{{OPS}}*/{};
+const CAP = {"period_days": 21, "ops_ratio": 2.49, "total_new": 906, "total_reopen": 1350, "total_ops": 2256, "work_hours": [9, 10, 11, 12, 13, 14, 15, 16, 17], "team_summary": {"CS": {"agents": 13, "new_tickets": 635, "adj_volume": 1581, "tpd_agent": 8.94, "tph_agent": 0.91}, "TS": {"agents": 12, "new_tickets": 94, "adj_volume": 234, "tpd_agent": 1.3, "tph_agent": 0.144}, "IM": {"agents": 3, "new_tickets": 37, "adj_volume": 92, "tpd_agent": 2.04, "tph_agent": 0.227}}, "agents": [{"name": "LA Carlos", "group": "CS", "schedule": "A", "schedule_label": "4d/wk · 11h shift", "new_tickets": 156, "adj_volume": 388.5, "work_days": 12, "work_hours": 132, "tpd": 32.38, "tph": 2.943}, {"name": "Racky Manlapaz", "group": "CS", "schedule": "A", "schedule_label": "4d/wk · 11h shift", "new_tickets": 131, "adj_volume": 326.2, "work_days": 12, "work_hours": 132, "tpd": 27.18, "tph": 2.471}, {"name": "Patric Pangan", "group": "CS", "schedule": "A", "schedule_label": "4d/wk · 11h shift", "new_tickets": 109, "adj_volume": 271.4, "work_days": 12, "work_hours": 132, "tpd": 22.62, "tph": 2.056}, {"name": "Eunice Suñga", "group": "CS", "schedule": "A", "schedule_label": "4d/wk · 11h shift", "new_tickets": 85, "adj_volume": 211.7, "work_days": 12, "work_hours": 132, "tpd": 17.64, "tph": 1.604}, {"name": "Herbert Acpal", "group": "CS", "schedule": "A", "schedule_label": "4d/wk · 11h shift", "new_tickets": 59, "adj_volume": 146.9, "work_days": 12, "work_hours": 132, "tpd": 12.24, "tph": 1.113}, {"name": "Lorenz Agustin", "group": "CS", "schedule": "A", "schedule_label": "4d/wk · 11h shift", "new_tickets": 59, "adj_volume": 146.9, "work_days": 12, "work_hours": 132, "tpd": 12.24, "tph": 1.113}, {"name": "Mike Cunanan", "group": "CS", "schedule": "C", "schedule_label": "Mon–Fri · 9h", "new_tickets": 23, "adj_volume": 57.3, "work_days": 15, "work_hours": 135, "tpd": 3.82, "tph": 0.424}, {"name": "Yen Lin", "group": "IM", "schedule": "C", "schedule_label": "Mon–Fri · 9h", "new_tickets": 21, "adj_volume": 52.3, "work_days": 15, "work_hours": 135, "tpd": 3.49, "tph": 0.387}, {"name": "John Jacinto", "group": "TS", "schedule": "B", "schedule_label": "5d/wk · 9h shift", "new_tickets": 19, "adj_volume": 47.3, "work_days": 15, "work_hours": 135, "tpd": 3.15, "tph": 0.35}, {"name": "Adrian Maranan", "group": "TS", "schedule": "B", "schedule_label": "5d/wk · 9h shift", "new_tickets": 14, "adj_volume": 34.9, "work_days": 15, "work_hours": 135, "tpd": 2.33, "tph": 0.259}, {"name": "Allen Reyes", "group": "TS", "schedule": "B", "schedule_label": "5d/wk · 9h shift", "new_tickets": 14, "adj_volume": 34.9, "work_days": 15, "work_hours": 135, "tpd": 2.33, "tph": 0.259}, {"name": "Jan Rivera", "group": "TS", "schedule": "B", "schedule_label": "5d/wk · 9h shift", "new_tickets": 13, "adj_volume": 32.4, "work_days": 15, "work_hours": 135, "tpd": 2.16, "tph": 0.24}, {"name": "Hans Wang", "group": "TS", "schedule": "C", "schedule_label": "Mon–Fri · 9h", "new_tickets": 9, "adj_volume": 22.4, "work_days": 15, "work_hours": 135, "tpd": 1.49, "tph": 0.166}, {"name": "Raymark Cayanan", "group": "TS", "schedule": "C", "schedule_label": "Mon–Fri · 9h", "new_tickets": 9, "adj_volume": 22.4, "work_days": 15, "work_hours": 135, "tpd": 1.49, "tph": 0.166}, {"name": "Samson Fok", "group": "IM", "schedule": "C", "schedule_label": "Mon–Fri · 9h", "new_tickets": 9, "adj_volume": 22.4, "work_days": 15, "work_hours": 135, "tpd": 1.49, "tph": 0.166}, {"name": "Ethan Liou", "group": "IM", "schedule": "C", "schedule_label": "Mon–Fri · 9h", "new_tickets": 7, "adj_volume": 17.4, "work_days": 15, "work_hours": 135, "tpd": 1.16, "tph": 0.129}, {"name": "Gilbert Arces", "group": "TS", "schedule": "B", "schedule_label": "5d/wk · 9h shift", "new_tickets": 7, "adj_volume": 17.4, "work_days": 15, "work_hours": 135, "tpd": 1.16, "tph": 0.129}, {"name": "Bogdan Hristovski", "group": "TS", "schedule": "C", "schedule_label": "Mon–Fri · 9h", "new_tickets": 4, "adj_volume": 10.0, "work_days": 15, "work_hours": 135, "tpd": 0.67, "tph": 0.074}, {"name": "Ediline Postrano", "group": "CS", "schedule": "C", "schedule_label": "Mon–Fri · 9h", "new_tickets": 4, "adj_volume": 10.0, "work_days": 15, "work_hours": 135, "tpd": 0.67, "tph": 0.074}, {"name": "Chloe Wong", "group": "CS", "schedule": "C", "schedule_label": "Mon–Fri · 9h", "new_tickets": 3, "adj_volume": 7.5, "work_days": 15, "work_hours": 135, "tpd": 0.5, "tph": 0.056}, {"name": "Ian Soliman", "group": "CS", "schedule": "C", "schedule_label": "Mon–Fri · 9h", "new_tickets": 2, "adj_volume": 5.0, "work_days": 15, "work_hours": 135, "tpd": 0.33, "tph": 0.037}, {"name": "Joe Flores", "group": "CS", "schedule": "C", "schedule_label": "Mon–Fri · 9h", "new_tickets": 2, "adj_volume": 5.0, "work_days": 15, "work_hours": 135, "tpd": 0.33, "tph": 0.037}, {"name": "Ray", "group": "TS", "schedule": "C", "schedule_label": "Mon–Fri · 9h", "new_tickets": 2, "adj_volume": 5.0, "work_days": 15, "work_hours": 135, "tpd": 0.33, "tph": 0.037}, {"name": "Catherine Sun", "group": "CS", "schedule": "C", "schedule_label": "Mon–Fri · 9h", "new_tickets": 1, "adj_volume": 2.5, "work_days": 15, "work_hours": 135, "tpd": 0.17, "tph": 0.019}, {"name": "Clyde", "group": "CS", "schedule": "C", "schedule_label": "Mon–Fri · 9h", "new_tickets": 1, "adj_volume": 2.5, "work_days": 15, "work_hours": 135, "tpd": 0.17, "tph": 0.019}, {"name": "Jaiber Kler", "group": "TS", "schedule": "C", "schedule_label": "Mon–Fri · 9h", "new_tickets": 1, "adj_volume": 2.5, "work_days": 15, "work_hours": 135, "tpd": 0.17, "tph": 0.019}, {"name": "Jose Shardin", "group": "TS", "schedule": "C", "schedule_label": "Mon–Fri · 9h", "new_tickets": 1, "adj_volume": 2.5, "work_days": 15, "work_hours": 135, "tpd": 0.17, "tph": 0.019}, {"name": "Weilam Thum", "group": "TS", "schedule": "C", "schedule_label": "Mon–Fri · 9h", "new_tickets": 1, "adj_volume": 2.5, "work_days": 15, "work_hours": 135, "tpd": 0.17, "tph": 0.019}], "intraday": {"CS": {"9": 3.2, "10": 2.37, "11": 3.32, "12": 2.02, "13": 4.39, "14": 4.03, "15": 4.74, "16": 5.57, "17": 6.76}, "TS": {"9": 0.59, "10": 0.47, "11": 0.59, "12": 0.59, "13": 0.24, "14": 0.95, "15": 0.36, "16": 0.83, "17": 1.19}, "IM": {"9": 0.12, "10": 0.0, "11": 0.36, "12": 0.0, "13": 0.36, "14": 0.12, "15": 0.36, "16": 0.95, "17": 0.59}}, "day_hour_matrix": {"CS": {"1": {"0": 0.0, "1": 0.83, "2": 1.66, "3": 1.66, "4": 1.66, "5": 0.83, "6": 0.0, "7": 1.66, "8": 1.66, "9": 0.646, "10": 0.83, "11": 0.726, "12": 0.519, "13": 0.623, "14": 1.038, "15": 0.922, "16": 0.553, "17": 1.383, "18": 7.47, "19": 4.98, "20": 4.15, "21": 2.49, "22": 4.15, "23": 1.66}, "2": {"0": 2.905, "1": 1.66, "2": 2.49, "3": 1.66, "4": 1.66, "5": 0.0, "6": 1.66, "7": 0.0, "8": 0.415, "9": 0.369, "10": 0.519, "11": 0.207, "12": 0.415, "13": 0.726, "14": 0.415, "15": 0.369, "16": 0.646, "17": 1.383, "18": 4.15, "19": 6.64, "20": 5.81, "21": 1.66, "22": 2.49, "23": 0.83}, "3": {"0": 0.83, "1": 2.49, "2": 4.98, "3": 2.49, "4": 0.0, "5": 4.15, "6": 1.66, "7": 0.553, "8": 0.83, "9": 0.581, "10": 0.277, "11": 0.461, "12": 0.184, "13": 0.738, "14": 0.646, "15": 0.528, "16": 0.905, "17": 0.755, "18": 2.075, "19": 1.245, "20": 2.905, "21": 2.49, "22": 3.32, "23": 0.415}, "4": {"0": 0.83, "1": 0.207, "2": 0.83, "3": 0.415, "4": 0.83, "5": 0.0, "6": 0.415, "7": 0.0, "8": 0.83, "9": 0.581, "10": 0.207, "11": 0.726, "12": 0.311, "13": 0.623, "14": 0.415, "15": 0.369, "16": 0.922, "17": 0.553, "18": 6.64, "19": 4.98, "20": 7.47, "21": 4.15, "22": 5.81, "23": 1.245}, "5": {"0": 2.49, "1": 1.66, "2": 3.32, "3": 0.83, "4": 0.83, "5": 0.0, "6": 1.66, "7": 1.245, "8": 0.415, "9": 0.0, "10": 0.104, "11": 0.311, "12": 0.207, "13": 0.623, "14": 0.519, "15": 0.922, "16": 1.014, "17": 0.646, "18": 9.13, "19": 6.64, "20": 4.15, "21": 4.98, "22": 5.81, "23": 2.075}, "6": {"0": 2.905, "1": 2.075, "2": 1.66, "3": 3.32, "4": 0.0, "5": 0.83, "6": 2.49, "7": 0.415, "8": 1.245, "9": 0.83, "10": 0.0, "11": 0.0, "12": 0.0, "13": 2.49, "14": 0.83, "15": 1.245, "16": 0.0, "17": 0.83, "18": 1.66, "19": 0.83, "20": 0.0, "21": 1.66, "22": 1.66, "23": 0.415}, "7": {"0": 0.415, "1": 1.66, "2": 0.83, "3": 0.0, "4": 0.0, "5": 0.83, "6": 0.83, "7": 0.0, "8": 0.0, "9": 0.0, "10": 0.83, "11": 3.32, "12": 0.83, "13": 0.83, "14": 2.49, "15": 0.83, "16": 0.415, "17": 0.83, "18": 4.98, "19": 3.32, "20": 1.66, "21": 0.0, "22": 0.83, "23": 0.0}}, "TS": {"1": {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.0, "4": 0.0, "5": 0.0, "6": 0.0, "7": 0.0, "8": 0.0, "9": 0.0, "10": 0.0, "11": 0.104, "12": 0.0, "13": 0.0, "14": 0.0, "15": 0.104, "16": 0.0, "17": 0.184, "18": 0.83, "19": 1.66, "20": 0.0, "21": 1.66, "22": 0.0, "23": 0.0}, "2": {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.415, "4": 0.0, "5": 0.0, "6": 0.0, "7": 0.0, "8": 0.0, "9": 0.0, "10": 0.0, "11": 0.104, "12": 0.0, "13": 0.0, "14": 0.104, "15": 0.104, "16": 0.104, "17": 0.0, "18": 0.0, "19": 0.415, "20": 0.0, "21": 0.415, "22": 0.0, "23": 0.0}, "3": {"0": 0.0, "1": 0.207, "2": 0.0, "3": 0.415, "4": 0.415, "5": 0.415, "6": 0.415, "7": 0.415, "8": 0.415, "9": 0.249, "10": 0.0, "11": 0.207, "12": 0.207, "13": 0.104, "14": 0.207, "15": 0.0, "16": 0.207, "17": 0.249, "18": 0.83, "19": 0.415, "20": 0.415, "21": 0.415, "22": 0.415, "23": 0.0}, "4": {"0": 0.415, "1": 0.207, "2": 0.415, "3": 0.415, "4": 0.0, "5": 0.415, "6": 0.0, "7": 0.0, "8": 0.0, "9": 0.083, "10": 0.104, "11": 0.104, "12": 0.207, "13": 0.104, "14": 0.311, "15": 0.104, "16": 0.207, "17": 0.332, "18": 1.245, "19": 0.83, "20": 0.415, "21": 0.415, "22": 0.0, "23": 0.0}, "5": {"0": 0.415, "1": 0.277, "2": 0.83, "3": 0.0, "4": 0.83, "5": 0.0, "6": 0.0, "7": 0.0, "8": 0.0, "9": 0.0, "10": 0.237, "11": 0.0, "12": 0.0, "13": 0.0, "14": 0.237, "15": 0.0, "16": 0.237, "17": 0.104, "18": 0.0, "19": 1.66, "20": 0.83, "21": 0.83, "22": 0.0, "23": 0.0}, "6": {"0": 0.0, "1": 0.0, "2": 0.83, "3": 0.0, "4": 0.0, "5": 0.0, "6": 0.83, "7": 0.0, "8": 0.0, "9": 0.0, "10": null, "11": null, "12": null, "13": null, "14": null, "15": null, "16": null, "17": 0.0, "18": 0.0, "19": 0.0, "20": 0.0, "21": 0.0, "22": 0.0, "23": 0.83}, "7": {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.0, "4": 0.0, "5": 0.0, "6": 0.0, "7": 0.0, "8": 0.83, "9": 0.415, "10": 0.0, "11": 0.0, "12": 0.0, "13": 0.0, "14": 0.0, "15": 0.0, "16": 0.0, "17": 0.0, "18": 0.0, "19": 0.0, "20": 0.0, "21": 0.0, "22": 0.0, "23": 0.0}}, "IM": {"1": {"0": null, "1": null, "2": null, "3": null, "4": null, "5": null, "6": null, "7": null, "8": null, "9": 0.0, "10": 0.0, "11": 0.0, "12": 0.0, "13": 0.0, "14": 0.0, "15": 0.553, "16": 1.107, "17": 0.0, "18": null, "19": null, "20": null, "21": null, "22": null, "23": null}, "2": {"0": null, "1": null, "2": null, "3": null, "4": null, "5": null, "6": null, "7": null, "8": null, "9": 0.0, "10": 0.0, "11": 0.0, "12": 0.0, "13": 0.553, "14": 0.0, "15": 0.277, "16": 0.553, "17": 0.0, "18": null, "19": null, "20": null, "21": null, "22": null, "23": null}, "3": {"0": null, "1": null, "2": null, "3": null, "4": null, "5": null, "6": null, "7": null, "8": null, "9": 0.277, "10": 0.0, "11": 0.0, "12": 0.0, "13": 0.0, "14": 0.0, "15": 0.0, "16": 0.0, "17": 0.277, "18": null, "19": null, "20": null, "21": null, "22": null, "23": null}, "4": {"0": null, "1": null, "2": null, "3": null, "4": null, "5": null, "6": null, "7": null, "8": null, "9": 0.0, "10": 0.0, "11": 0.277, "12": 0.0, "13": 0.0, "14": 0.277, "15": 0.0, "16": 0.0, "17": 0.0, "18": null, "19": null, "20": null, "21": null, "22": null, "23": null}, "5": {"0": null, "1": null, "2": null, "3": null, "4": null, "5": null, "6": null, "7": null, "8": null, "9": 0.0, "10": 0.0, "11": 0.553, "12": 0.0, "13": 0.277, "14": 0.0, "15": 0.0, "16": 0.277, "17": 1.107, "18": null, "19": null, "20": null, "21": null, "22": null, "23": null}, "6": {"0": null, "1": null, "2": null, "3": null, "4": null, "5": null, "6": null, "7": null, "8": null, "9": null, "10": null, "11": null, "12": null, "13": null, "14": null, "15": null, "16": null, "17": null, "18": null, "19": null, "20": null, "21": null, "22": null, "23": null}, "7": {"0": null, "1": null, "2": null, "3": null, "4": null, "5": null, "6": null, "7": null, "8": null, "9": null, "10": null, "11": null, "12": null, "13": null, "14": null, "15": null, "16": null, "17": null, "18": null, "19": null, "20": null, "21": null, "22": null, "23": null}}}, "day_hour_raw": {"CS": {"1": {"0": 0.0, "1": 1.66, "2": 1.66, "3": 1.66, "4": 1.66, "5": 0.83, "6": 0.0, "7": 3.32, "8": 3.32, "9": 5.81, "10": 6.64, "11": 5.81, "12": 4.15, "13": 4.98, "14": 8.3, "15": 8.3, "16": 4.98, "17": 12.45, "18": 7.47, "19": 4.98, "20": 4.15, "21": 2.49, "22": 4.15, "23": 3.32}, "2": {"0": 5.81, "1": 3.32, "2": 2.49, "3": 1.66, "4": 1.66, "5": 0.0, "6": 1.66, "7": 0.0, "8": 0.83, "9": 3.32, "10": 4.15, "11": 1.66, "12": 3.32, "13": 5.81, "14": 3.32, "15": 3.32, "16": 5.81, "17": 12.45, "18": 4.15, "19": 6.64, "20": 5.81, "21": 1.66, "22": 2.49, "23": 1.66}, "3": {"0": 1.66, "1": 4.98, "2": 4.98, "3": 2.49, "4": 0.0, "5": 4.15, "6": 1.66, "7": 1.66, "8": 2.49, "9": 5.81, "10": 2.49, "11": 4.15, "12": 1.66, "13": 6.64, "14": 5.81, "15": 5.81, "16": 9.96, "17": 8.3, "18": 4.15, "19": 2.49, "20": 5.81, "21": 4.98, "22": 6.64, "23": 1.66}, "4": {"0": 3.32, "1": 0.83, "2": 1.66, "3": 0.83, "4": 1.66, "5": 0.0, "6": 0.83, "7": 0.0, "8": 2.49, "9": 5.81, "10": 1.66, "11": 5.81, "12": 2.49, "13": 4.98, "14": 3.32, "15": 3.32, "16": 8.3, "17": 4.98, "18": 6.64, "19": 4.98, "20": 7.47, "21": 4.15, "22": 5.81, "23": 2.49}, "5": {"0": 4.98, "1": 3.32, "2": 3.32, "3": 0.83, "4": 0.83, "5": 0.0, "6": 1.66, "7": 2.49, "8": 0.83, "9": 0.0, "10": 0.83, "11": 2.49, "12": 1.66, "13": 4.98, "14": 4.15, "15": 8.3, "16": 9.13, "17": 5.81, "18": 9.13, "19": 6.64, "20": 4.15, "21": 4.98, "22": 5.81, "23": 4.15}, "6": {"0": 5.81, "1": 4.15, "2": 1.66, "3": 3.32, "4": 0.0, "5": 0.83, "6": 2.49, "7": 0.83, "8": 2.49, "9": 1.66, "10": 0.0, "11": 0.0, "12": 0.0, "13": 2.49, "14": 0.83, "15": 2.49, "16": 0.0, "17": 1.66, "18": 1.66, "19": 0.83, "20": 0.0, "21": 1.66, "22": 1.66, "23": 0.83}, "7": {"0": 0.83, "1": 3.32, "2": 0.83, "3": 0.0, "4": 0.0, "5": 0.83, "6": 0.83, "7": 0.0, "8": 0.0, "9": 0.0, "10": 0.83, "11": 3.32, "12": 0.83, "13": 0.83, "14": 2.49, "15": 1.66, "16": 0.83, "17": 1.66, "18": 4.98, "19": 3.32, "20": 1.66, "21": 0.0, "22": 0.83, "23": 0.0}}, "TS": {"1": {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.0, "4": 0.0, "5": 0.0, "6": 0.0, "7": 0.0, "8": 0.0, "9": 0.0, "10": 0.0, "11": 0.83, "12": 0.0, "13": 0.0, "14": 0.0, "15": 0.83, "16": 0.0, "17": 1.66, "18": 0.83, "19": 1.66, "20": 0.0, "21": 1.66, "22": 0.0, "23": 0.0}, "2": {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.83, "4": 0.0, "5": 0.0, "6": 0.0, "7": 0.0, "8": 0.0, "9": 0.0, "10": 0.0, "11": 0.83, "12": 0.0, "13": 0.0, "14": 0.83, "15": 0.83, "16": 0.83, "17": 0.0, "18": 0.0, "19": 0.83, "20": 0.0, "21": 0.83, "22": 0.0, "23": 0.0}, "3": {"0": 0.0, "1": 0.83, "2": 0.0, "3": 0.83, "4": 0.83, "5": 0.83, "6": 0.83, "7": 0.83, "8": 0.83, "9": 2.49, "10": 0.0, "11": 1.66, "12": 1.66, "13": 0.83, "14": 1.66, "15": 0.0, "16": 1.66, "17": 2.49, "18": 1.66, "19": 0.83, "20": 0.83, "21": 0.83, "22": 0.83, "23": 0.0}, "4": {"0": 0.83, "1": 0.83, "2": 0.83, "3": 0.83, "4": 0.0, "5": 0.83, "6": 0.0, "7": 0.0, "8": 0.0, "9": 0.83, "10": 0.83, "11": 0.83, "12": 1.66, "13": 0.83, "14": 2.49, "15": 0.83, "16": 1.66, "17": 3.32, "18": 2.49, "19": 1.66, "20": 0.83, "21": 0.83, "22": 0.0, "23": 0.0}, "5": {"0": 0.83, "1": 0.83, "2": 0.83, "3": 0.0, "4": 0.83, "5": 0.0, "6": 0.0, "7": 0.0, "8": 0.0, "9": 0.0, "10": 1.66, "11": 0.0, "12": 0.0, "13": 0.0, "14": 1.66, "15": 0.0, "16": 1.66, "17": 0.83, "18": 0.0, "19": 1.66, "20": 0.83, "21": 0.83, "22": 0.0, "23": 0.0}, "6": {"0": 0.0, "1": 0.0, "2": 0.83, "3": 0.0, "4": 0.0, "5": 0.0, "6": 0.83, "7": 0.0, "8": 0.0, "9": 0.0, "10": 0.83, "11": 0.0, "12": 0.83, "13": 0.0, "14": 0.0, "15": 0.0, "16": 0.0, "17": 0.0, "18": 0.0, "19": 0.0, "20": 0.0, "21": 0.0, "22": 0.0, "23": 0.83}, "7": {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.0, "4": 0.0, "5": 0.0, "6": 0.0, "7": 0.0, "8": 0.83, "9": 0.83, "10": 0.0, "11": 0.0, "12": 0.0, "13": 0.0, "14": 0.0, "15": 0.0, "16": 0.0, "17": 0.0, "18": 0.0, "19": 0.0, "20": 0.0, "21": 0.0, "22": 0.0, "23": 0.0}}, "IM": {"1": {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.0, "4": 0.0, "5": 0.0, "6": 0.0, "7": 0.0, "8": 0.0, "9": 0.0, "10": 0.0, "11": 0.0, "12": 0.0, "13": 0.0, "14": 0.0, "15": 1.66, "16": 3.32, "17": 0.0, "18": 0.0, "19": 0.0, "20": 0.83, "21": 0.0, "22": 0.83, "23": 0.0}, "2": {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.0, "4": 0.0, "5": 0.0, "6": 0.0, "7": 0.0, "8": 0.0, "9": 0.0, "10": 0.0, "11": 0.0, "12": 0.0, "13": 1.66, "14": 0.0, "15": 0.83, "16": 1.66, "17": 0.0, "18": 3.32, "19": 0.0, "20": 0.0, "21": 0.83, "22": 0.83, "23": 0.0}, "3": {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.0, "4": 0.0, "5": 0.0, "6": 0.0, "7": 0.0, "8": 0.0, "9": 0.83, "10": 0.0, "11": 0.0, "12": 0.0, "13": 0.0, "14": 0.0, "15": 0.0, "16": 0.0, "17": 0.83, "18": 0.0, "19": 0.0, "20": 0.0, "21": 0.0, "22": 0.0, "23": 0.0}, "4": {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.0, "4": 0.0, "5": 0.0, "6": 0.0, "7": 0.0, "8": 0.0, "9": 0.0, "10": 0.0, "11": 0.83, "12": 0.0, "13": 0.0, "14": 0.83, "15": 0.0, "16": 0.0, "17": 0.0, "18": 1.66, "19": 0.0, "20": 0.0, "21": 0.0, "22": 0.0, "23": 0.83}, "5": {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.0, "4": 0.0, "5": 0.0, "6": 0.0, "7": 0.0, "8": 0.0, "9": 0.0, "10": 0.0, "11": 1.66, "12": 0.0, "13": 0.83, "14": 0.0, "15": 0.0, "16": 0.83, "17": 3.32, "18": 0.0, "19": 0.83, "20": 0.0, "21": 0.0, "22": 0.0, "23": 0.0}, "6": {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.0, "4": 0.0, "5": 0.0, "6": 0.0, "7": 0.0, "8": 0.0, "9": 0.0, "10": 0.0, "11": 0.0, "12": 0.0, "13": 0.0, "14": 0.0, "15": 0.0, "16": 0.83, "17": 0.0, "18": 0.0, "19": 0.83, "20": 0.0, "21": 0.0, "22": 0.0, "23": 0.0}, "7": {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.0, "4": 0.0, "5": 0.0, "6": 0.0, "7": 0.0, "8": 0.0, "9": 0.0, "10": 0.0, "11": 0.0, "12": 0.0, "13": 0.0, "14": 0.0, "15": 0.0, "16": 0.0, "17": 0.0, "18": 0.0, "19": 0.0, "20": 0.0, "21": 0.0, "22": 0.0, "23": 0.0}}}, "day_hour_agents": {"CS": {"1": {"0": 2, "1": 2, "2": 1, "3": 1, "4": 1, "5": 1, "6": 1, "7": 2, "8": 2, "9": 9, "10": 8, "11": 8, "12": 8, "13": 8, "14": 8, "15": 9, "16": 9, "17": 9, "18": 1, "19": 1, "20": 1, "21": 1, "22": 1, "23": 2}, "2": {"0": 2, "1": 2, "2": 1, "3": 1, "4": 1, "5": 1, "6": 1, "7": 2, "8": 2, "9": 9, "10": 8, "11": 8, "12": 8, "13": 8, "14": 8, "15": 9, "16": 9, "17": 9, "18": 1, "19": 1, "20": 1, "21": 1, "22": 1, "23": 2}, "3": {"0": 2, "1": 2, "2": 1, "3": 1, "4": 1, "5": 1, "6": 1, "7": 3, "8": 3, "9": 10, "10": 9, "11": 9, "12": 9, "13": 9, "14": 9, "15": 11, "16": 11, "17": 11, "18": 2, "19": 2, "20": 2, "21": 2, "22": 2, "23": 4}, "4": {"0": 4, "1": 4, "2": 2, "3": 2, "4": 2, "5": 2, "6": 2, "7": 3, "8": 3, "9": 10, "10": 8, "11": 8, "12": 8, "13": 8, "14": 8, "15": 9, "16": 9, "17": 9, "18": 1, "19": 1, "20": 1, "21": 1, "22": 1, "23": 2}, "5": {"0": 2, "1": 2, "2": 1, "3": 1, "4": 1, "5": 1, "6": 1, "7": 2, "8": 2, "9": 9, "10": 8, "11": 8, "12": 8, "13": 8, "14": 8, "15": 9, "16": 9, "17": 9, "18": 1, "19": 1, "20": 1, "21": 1, "22": 1, "23": 2}, "6": {"0": 2, "1": 2, "2": 1, "3": 1, "4": 1, "5": 1, "6": 1, "7": 2, "8": 2, "9": 2, "10": 1, "11": 1, "12": 1, "13": 1, "14": 1, "15": 2, "16": 2, "17": 2, "18": 1, "19": 1, "20": 1, "21": 1, "22": 1, "23": 2}, "7": {"0": 2, "1": 2, "2": 1, "3": 1, "4": 1, "5": 1, "6": 1, "7": 2, "8": 2, "9": 2, "10": 1, "11": 1, "12": 1, "13": 1, "14": 1, "15": 2, "16": 2, "17": 2, "18": 1, "19": 1, "20": 1, "21": 1, "22": 1, "23": 2}}, "TS": {"1": {"0": 1, "1": 2, "2": 1, "3": 1, "4": 1, "5": 1, "6": 1, "7": 1, "8": 1, "9": 9, "10": 8, "11": 8, "12": 8, "13": 8, "14": 8, "15": 8, "16": 8, "17": 9, "18": 1, "19": 1, "20": 1, "21": 1, "22": 1, "23": 1}, "2": {"0": 1, "1": 3, "2": 2, "3": 2, "4": 2, "5": 2, "6": 2, "7": 2, "8": 2, "9": 10, "10": 8, "11": 8, "12": 8, "13": 8, "14": 8, "15": 8, "16": 8, "17": 10, "18": 2, "19": 2, "20": 2, "21": 2, "22": 2, "23": 2}, "3": {"0": 2, "1": 4, "2": 2, "3": 2, "4": 2, "5": 2, "6": 2, "7": 2, "8": 2, "9": 10, "10": 8, "11": 8, "12": 8, "13": 8, "14": 8, "15": 8, "16": 8, "17": 10, "18": 2, "19": 2, "20": 2, "21": 2, "22": 2, "23": 2}, "4": {"0": 2, "1": 4, "2": 2, "3": 2, "4": 2, "5": 2, "6": 2, "7": 2, "8": 2, "9": 10, "10": 8, "11": 8, "12": 8, "13": 8, "14": 8, "15": 8, "16": 8, "17": 10, "18": 2, "19": 2, "20": 2, "21": 2, "22": 2, "23": 2}, "5": {"0": 2, "1": 3, "2": 1, "3": 1, "4": 1, "5": 1, "6": 1, "7": 1, "8": 1, "9": 8, "10": 7, "11": 7, "12": 7, "13": 7, "14": 7, "15": 7, "16": 7, "17": 8, "18": 1, "19": 1, "20": 1, "21": 1, "22": 1, "23": 1}, "6": {"0": 1, "1": 2, "2": 1, "3": 1, "4": 1, "5": 1, "6": 1, "7": 1, "8": 1, "9": 1, "10": 0, "11": 0, "12": 0, "13": 0, "14": 0, "15": 0, "16": 0, "17": 1, "18": 1, "19": 1, "20": 1, "21": 1, "22": 1, "23": 1}, "7": {"0": 1, "1": 2, "2": 1, "3": 1, "4": 1, "5": 1, "6": 1, "7": 1, "8": 1, "9": 2, "10": 1, "11": 1, "12": 1, "13": 1, "14": 1, "15": 1, "16": 1, "17": 2, "18": 1, "19": 1, "20": 1, "21": 1, "22": 1, "23": 1}}, "IM": {"1": {"0": 0, "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0, "8": 0, "9": 3, "10": 3, "11": 3, "12": 3, "13": 3, "14": 3, "15": 3, "16": 3, "17": 3, "18": 0, "19": 0, "20": 0, "21": 0, "22": 0, "23": 0}, "2": {"0": 0, "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0, "8": 0, "9": 3, "10": 3, "11": 3, "12": 3, "13": 3, "14": 3, "15": 3, "16": 3, "17": 3, "18": 0, "19": 0, "20": 0, "21": 0, "22": 0, "23": 0}, "3": {"0": 0, "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0, "8": 0, "9": 3, "10": 3, "11": 3, "12": 3, "13": 3, "14": 3, "15": 3, "16": 3, "17": 3, "18": 0, "19": 0, "20": 0, "21": 0, "22": 0, "23": 0}, "4": {"0": 0, "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0, "8": 0, "9": 3, "10": 3, "11": 3, "12": 3, "13": 3, "14": 3, "15": 3, "16": 3, "17": 3, "18": 0, "19": 0, "20": 0, "21": 0, "22": 0, "23": 0}, "5": {"0": 0, "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0, "8": 0, "9": 3, "10": 3, "11": 3, "12": 3, "13": 3, "14": 3, "15": 3, "16": 3, "17": 3, "18": 0, "19": 0, "20": 0, "21": 0, "22": 0, "23": 0}, "6": {"0": 0, "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0, "8": 0, "9": 0, "10": 0, "11": 0, "12": 0, "13": 0, "14": 0, "15": 0, "16": 0, "17": 0, "18": 0, "19": 0, "20": 0, "21": 0, "22": 0, "23": 0}, "7": {"0": 0, "1": 0, "2": 0, "3": 0, "4": 0, "5": 0, "6": 0, "7": 0, "8": 0, "9": 0, "10": 0, "11": 0, "12": 0, "13": 0, "14": 0, "15": 0, "16": 0, "17": 0, "18": 0, "19": 0, "20": 0, "21": 0, "22": 0, "23": 0}}}, "team_scheduled_slots": {"CS": [[1, 0], [1, 1], [1, 2], [1, 3], [1, 4], [1, 5], [1, 6], [1, 7], [1, 8], [1, 9], [1, 10], [1, 11], [1, 12], [1, 13], [1, 14], [1, 15], [1, 16], [1, 17], [1, 18], [1, 19], [1, 20], [1, 21], [1, 22], [1, 23], [2, 0], [2, 1], [2, 2], [2, 3], [2, 4], [2, 5], [2, 6], [2, 7], [2, 8], [2, 9], [2, 10], [2, 11], [2, 12], [2, 13], [2, 14], [2, 15], [2, 16], [2, 17], [2, 18], [2, 19], [2, 20], [2, 21], [2, 22], [2, 23], [3, 0], [3, 1], [3, 2], [3, 3], [3, 4], [3, 5], [3, 6], [3, 7], [3, 8], [3, 9], [3, 10], [3, 11], [3, 12], [3, 13], [3, 14], [3, 15], [3, 16], [3, 17], [3, 18], [3, 19], [3, 20], [3, 21], [3, 22], [3, 23], [4, 0], [4, 1], [4, 2], [4, 3], [4, 4], [4, 5], [4, 6], [4, 7], [4, 8], [4, 9], [4, 10], [4, 11], [4, 12], [4, 13], [4, 14], [4, 15], [4, 16], [4, 17], [4, 18], [4, 19], [4, 20], [4, 21], [4, 22], [4, 23], [5, 0], [5, 1], [5, 2], [5, 3], [5, 4], [5, 5], [5, 6], [5, 7], [5, 8], [5, 9], [5, 10], [5, 11], [5, 12], [5, 13], [5, 14], [5, 15], [5, 16], [5, 17], [5, 18], [5, 19], [5, 20], [5, 21], [5, 22], [5, 23], [6, 0], [6, 1], [6, 2], [6, 3], [6, 4], [6, 5], [6, 6], [6, 7], [6, 8], [6, 9], [6, 10], [6, 11], [6, 12], [6, 13], [6, 14], [6, 15], [6, 16], [6, 17], [6, 18], [6, 19], [6, 20], [6, 21], [6, 22], [6, 23], [7, 0], [7, 1], [7, 2], [7, 3], [7, 4], [7, 5], [7, 6], [7, 7], [7, 8], [7, 9], [7, 10], [7, 11], [7, 12], [7, 13], [7, 14], [7, 15], [7, 16], [7, 17], [7, 18], [7, 19], [7, 20], [7, 21], [7, 22], [7, 23]], "TS": [[1, 0], [1, 1], [1, 2], [1, 3], [1, 4], [1, 5], [1, 6], [1, 7], [1, 8], [1, 9], [1, 10], [1, 11], [1, 12], [1, 13], [1, 14], [1, 15], [1, 16], [1, 17], [1, 18], [1, 19], [1, 20], [1, 21], [1, 22], [1, 23], [2, 0], [2, 1], [2, 2], [2, 3], [2, 4], [2, 5], [2, 6], [2, 7], [2, 8], [2, 9], [2, 10], [2, 11], [2, 12], [2, 13], [2, 14], [2, 15], [2, 16], [2, 17], [2, 18], [2, 19], [2, 20], [2, 21], [2, 22], [2, 23], [3, 0], [3, 1], [3, 2], [3, 3], [3, 4], [3, 5], [3, 6], [3, 7], [3, 8], [3, 9], [3, 10], [3, 11], [3, 12], [3, 13], [3, 14], [3, 15], [3, 16], [3, 17], [3, 18], [3, 19], [3, 20], [3, 21], [3, 22], [3, 23], [4, 0], [4, 1], [4, 2], [4, 3], [4, 4], [4, 5], [4, 6], [4, 7], [4, 8], [4, 9], [4, 10], [4, 11], [4, 12], [4, 13], [4, 14], [4, 15], [4, 16], [4, 17], [4, 18], [4, 19], [4, 20], [4, 21], [4, 22], [4, 23], [5, 0], [5, 1], [5, 2], [5, 3], [5, 4], [5, 5], [5, 6], [5, 7], [5, 8], [5, 9], [5, 10], [5, 11], [5, 12], [5, 13], [5, 14], [5, 15], [5, 16], [5, 17], [5, 18], [5, 19], [5, 20], [5, 21], [5, 22], [5, 23], [6, 0], [6, 1], [6, 2], [6, 3], [6, 4], [6, 5], [6, 6], [6, 7], [6, 8], [6, 9], [6, 17], [6, 18], [6, 19], [6, 20], [6, 21], [6, 22], [6, 23], [7, 0], [7, 1], [7, 2], [7, 3], [7, 4], [7, 5], [7, 6], [7, 7], [7, 8], [7, 9], [7, 10], [7, 11], [7, 12], [7, 13], [7, 14], [7, 15], [7, 16], [7, 17], [7, 18], [7, 19], [7, 20], [7, 21], [7, 22], [7, 23]], "IM": [[1, 9], [1, 10], [1, 11], [1, 12], [1, 13], [1, 14], [1, 15], [1, 16], [1, 17], [2, 9], [2, 10], [2, 11], [2, 12], [2, 13], [2, 14], [2, 15], [2, 16], [2, 17], [3, 9], [3, 10], [3, 11], [3, 12], [3, 13], [3, 14], [3, 15], [3, 16], [3, 17], [4, 9], [4, 10], [4, 11], [4, 12], [4, 13], [4, 14], [4, 15], [4, 16], [4, 17], [5, 9], [5, 10], [5, 11], [5, 12], [5, 13], [5, 14], [5, 15], [5, 16], [5, 17]]}, "intraday_24h": {"CS": {"0": 1.29, "1": 1.24, "2": 0.95, "3": 0.62, "4": 0.33, "5": 0.38, "6": 0.52, "7": 0.48, "8": 0.71, "9": 1.29, "10": 0.95, "11": 1.33, "12": 0.81, "13": 1.76, "14": 1.62, "15": 1.9, "16": 2.24, "17": 2.71, "18": 2.19, "19": 1.71, "20": 1.67, "21": 1.14, "22": 1.57, "23": 0.81}, "TS": {"0": 0.1, "1": 0.14, "2": 0.14, "3": 0.14, "4": 0.1, "5": 0.1, "6": 0.1, "7": 0.05, "8": 0.1, "9": 0.24, "10": 0.19, "11": 0.24, "12": 0.24, "13": 0.1, "14": 0.38, "15": 0.14, "16": 0.33, "17": 0.48, "18": 0.29, "19": 0.38, "20": 0.14, "21": 0.29, "22": 0.05, "23": 0.05}, "IM": {"0": 0.0, "1": 0.0, "2": 0.0, "3": 0.0, "4": 0.0, "5": 0.0, "6": 0.0, "7": 0.0, "8": 0.0, "9": 0.05, "10": 0.0, "11": 0.14, "12": 0.0, "13": 0.14, "14": 0.05, "15": 0.14, "16": 0.38, "17": 0.24, "18": 0.29, "19": 0.1, "20": 0.05, "21": 0.05, "22": 0.1, "23": 0.05}}, "agent_shifts": {"Patric Pangan": {"shift": "7AM–6PM", "days": "Sun–Wed"}, "Eunice Suñga": {"shift": "7AM–6PM", "days": "Wed–Sat"}, "LA Carlos": {"shift": "3PM–2AM", "days": "Wed–Sat"}, "Racky Manlapaz": {"shift": "3PM–2AM", "days": "Sun–Wed"}, "Lorenz Agustin": {"shift": "11PM–10AM", "days": "Wed–Sat"}, "Herbert Acpal": {"shift": "11PM–10AM", "days": "Sun–Wed"}, "Mike Cunanan": {"shift": "9AM–6PM", "days": "Mon–Fri"}, "Ediline Postrano": {"shift": "9AM–6PM", "days": "Mon–Fri"}, "Ian Soliman": {"shift": "9AM–6PM", "days": "Mon–Fri"}, "Joe Flores": {"shift": "9AM–6PM", "days": "Mon–Fri"}, "Catherine Sun": {"shift": "9AM–6PM", "days": "Mon–Fri"}, "Chloe Wong": {"shift": "9AM–6PM", "days": "Mon–Fri"}, "Clyde": {"shift": "9AM–6PM", "days": "Mon–Fri"}, "John Jacinto": {"shift": "5PM–2AM", "days": "Tue–Sat"}, "Adrian Maranan": {"shift": "5PM–2AM", "days": "Sun–Thu"}, "Allen Reyes": {"shift": "1AM–10AM", "days": "Sun–Thu"}, "Jan Rivera": {"shift": "9AM–6PM", "days": "Sun–Thu"}, "Hans Wang": {"shift": "9AM–6PM", "days": "Mon–Fri"}, "Raymark Cayanan": {"shift": "9AM–6PM", "days": "Mon–Fri"}, "Gilbert Arces": {"shift": "1AM–10AM", "days": "Tue–Sat"}, "Bogdan Hristovski": {"shift": "9AM–6PM", "days": "Mon–Fri"}, "Jaiber Kler": {"shift": "9AM–6PM", "days": "Mon–Fri"}, "Jose Shardin": {"shift": "9AM–6PM", "days": "Mon–Fri"}, "Weilam Thum": {"shift": "9AM–6PM", "days": "Mon–Fri"}, "Ray": {"shift": "9AM–6PM", "days": "Mon–Fri"}, "Yen Lin": {"shift": "9AM–6PM", "days": "Mon–Fri"}, "Samson Fok": {"shift": "9AM–6PM", "days": "Mon–Fri"}, "Ethan Liou": {"shift": "9AM–6PM", "days": "Mon–Fri"}}};
+
+// ═══════════════════════════════════ FILTER STATE ═══════════════════════════════════
+let filteredTickets = RAW_TICKETS.slice();
+
+// ═══════════════════════════════════ COMPUTE FROM TICKETS ═══════════════════════════════════
+function median(arr){if(!arr.length)return null;const s=[...arr].sort((a,b)=>a-b);const m=Math.floor(s.length/2);return s.length%2?s[m]:(s[m-1]+s[m])/2;}
+function mean(arr){return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:null;}
+function p90(arr){if(!arr.length)return null;const s=[...arr].sort((a,b)=>a-b);return s[Math.floor(s.length*0.9)];}
+
+function computeMetrics(tickets){
+  const total=tickets.length;
+  const statuses={};
+  tickets.forEach(t=>{statuses[t.status]=(statuses[t.status]||0)+1;});
+  const solved=(statuses['Solved']||0);
+  const closed=(statuses['Closed']||0);
+  const escalated=tickets.filter(t=>t.within_cx==='No').length;
+  const esc_rate=total?+(escalated/total*100).toFixed(1):0;
+
+  // CSAT
+  const rated=tickets.filter(t=>t.good||t.bad);
+  const csat_n=rated.length;
+  const csat_score=csat_n?+(rated.filter(t=>t.good).length/csat_n*100).toFixed(1):null;
+  const surveyed=tickets.filter(t=>t.surveyed).length;
+  const csat_rr=surveyed?+(csat_n/surveyed*100).toFixed(1):0;
+
+  // Resolution
+  const res_arr=tickets.filter(t=>t.res!=null&&t.res>0).map(t=>t.res);
+  const med_res=median(res_arr);
+  const mean_res=mean(res_arr);
+  const p90_res=p90(res_arr);
+
+  // Wait times (solved/closed tickets only)
+  const solvedTix=tickets.filter(t=>t.status==='Solved'||t.status==='Closed');
+  const rw_arr=solvedTix.filter(t=>t.rw!=null&&t.rw>0).map(t=>t.rw);
+  const aw_arr=solvedTix.filter(t=>t.aw!=null&&t.aw>0).map(t=>t.aw);
+  const avg_rw=mean(rw_arr);
+  const avg_aw=mean(aw_arr);
+
+  // Daily volume
+  const dailyMap={};
+  tickets.forEach(t=>{if(t.date){dailyMap[t.date]=(dailyMap[t.date]||0)+1;}});
+  const allDates=[...new Set(RAW_TICKETS.map(t=>t.date).filter(Boolean))].sort();
+  const fromDate=tickets.length?tickets.map(t=>t.date).filter(Boolean).sort()[0]:allDates[0];
+  const toDate=tickets.length?tickets.map(t=>t.date).filter(Boolean).sort().reverse()[0]:allDates[allDates.length-1];
+  const rangeStr = fromDate&&toDate ? `Mar ${+fromDate.slice(8)}–${+toDate.slice(8)}, 2026` : 'Mar 2026';
+
+  // Fill dates in range
+  const dailyLabels=[],dailyCounts=[];
+  if(fromDate&&toDate){
+    let cur=new Date(fromDate);const end=new Date(toDate);
+    while(cur<=end){const d=cur.toISOString().slice(0,10);dailyLabels.push(d);dailyCounts.push(dailyMap[d]||0);cur.setDate(cur.getDate()+1);}
+  }
+
+  // DOW
+  const dowOrder=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const dowMap={Mon:0,Tue:0,Wed:0,Thu:0,Fri:0,Sat:0,Sun:0};
+  tickets.forEach(t=>{if(t.dow){const d=t.dow.replace(/^\d/,'');if(dowMap[d]!==undefined)dowMap[d]++;}});
+  const dowCounts=dowOrder.map(d=>dowMap[d]);
+
+  // Channels
+  const chMap={};
+  tickets.forEach(t=>{if(t.channel)chMap[t.channel]=(chMap[t.channel]||0)+1;});
+
+  // Channel performance
+  const chPerf={};
+  tickets.forEach(t=>{
+    if(!t.channel)return;
+    if(!chPerf[t.channel])chPerf[t.channel]={tickets:0,esc:0,res:[],rw:[],aw:[]};
+    chPerf[t.channel].tickets++;
+    if(t.within_cx==='No')chPerf[t.channel].esc++;
+    if(t.res!=null&&t.res>0)chPerf[t.channel].res.push(t.res);
+    const isSolved=(t.status==='Solved'||t.status==='Closed');
+    if(isSolved&&t.rw!=null&&t.rw>0)chPerf[t.channel].rw.push(t.rw);
+    if(isSolved&&t.aw!=null&&t.aw>0)chPerf[t.channel].aw.push(t.aw);
+  });
+  const channelPerf=Object.entries(chPerf).sort((a,b)=>b[1].tickets-a[1].tickets).map(([ch,v])=>({
+    channel:ch,tickets:v.tickets,
+    esc_rate:+(v.esc/v.tickets*100).toFixed(1),
+    median_res:median(v.res),
+    avg_res:mean(v.res),
+    req_wait:mean(v.rw),
+    agent_wait:mean(v.aw),
+  }));
+
+  // Buckets
+  const bLabels=["<1h","1–4h","4–8h","8–24h","1–2d","2–3d","~73h","3–4d","4–7d","7d+"];
+  function bucket(h){
+    if(h<1)return"<1h";if(h<4)return"1–4h";if(h<8)return"4–8h";if(h<24)return"8–24h";
+    if(h<48)return"1–2d";if(h<72)return"2–3d";if(h<=75)return"~73h";
+    if(h<96)return"3–4d";if(h<168)return"4–7d";return"7d+";
+  }
+  const bMap={};bLabels.forEach(l=>bMap[l]=0);
+  res_arr.forEach(h=>bMap[bucket(h)]++);
+  const bCounts=bLabels.map(l=>bMap[l]);
+
+  // Categories
+  const catMap={};
+  tickets.forEach(t=>{
+    const k=t.cat1||'Uncategorized';
+    if(!catMap[k])catMap[k]={tickets:0,esc:0,res:[],rw:[],aw:[]};
+    catMap[k].tickets++;
+    if(t.within_cx==='No')catMap[k].esc++;
+    if(t.res!=null&&t.res>0)catMap[k].res.push(t.res);
+    const isSolved=(t.status==='Solved'||t.status==='Closed');
+    if(isSolved&&t.rw!=null&&t.rw>0)catMap[k].rw.push(t.rw);
+    if(isSolved&&t.aw!=null&&t.aw>0)catMap[k].aw.push(t.aw);
+  });
+  const categories=Object.entries(catMap).sort((a,b)=>b[1].tickets-a[1].tickets).map(([name,v])=>({
+    name,tickets:v.tickets,escalated:v.esc,
+    esc_rate:+(v.esc/v.tickets*100).toFixed(1),
+    avg_res:mean(v.res),req_wait:mean(v.rw),agent_wait:mean(v.aw),
+  }));
+
+  // Agents
+  const agMap={};
+  tickets.forEach(t=>{
+    const k=t.assignee||'Unassigned';
+    if(!agMap[k])agMap[k]={tickets:0,esc:0,res:[],rw:[],aw:[],good:0,bad:0,rated:0};
+    agMap[k].tickets++;
+    if(t.within_cx==='No')agMap[k].esc++;
+    if(t.res!=null&&t.res>0)agMap[k].res.push(t.res);
+    const isSolved=(t.status==='Solved'||t.status==='Closed');
+    if(isSolved&&t.rw!=null&&t.rw>0)agMap[k].rw.push(t.rw);
+    if(isSolved&&t.aw!=null&&t.aw>0)agMap[k].aw.push(t.aw);
+    if(t.good)agMap[k].good++;
+    if(t.bad)agMap[k].bad++;
+    if(t.good||t.bad)agMap[k].rated++;
+  });
+  const agents=Object.entries(agMap).sort((a,b)=>b[1].tickets-a[1].tickets).map(([name,v])=>({
+    name,tickets:v.tickets,escalated:v.esc,
+    esc_rate:+(v.esc/v.tickets*100).toFixed(1),
+    avg_res:mean(v.res),median_res:median(v.res),req_wait:mean(v.rw),agent_wait:mean(v.aw),
+    csat_n:v.rated,
+    csat_score:v.rated>0 ? +((v.good/v.rated)*100).toFixed(0) : null,
+  }));
+
+  return{total,solved,closed,escalated,esc_rate,csat_score,csat_n,csat_rr,surveyed,
+    med_res,mean_res,p90_res,avg_rw,avg_aw,rangeStr,fromDate,toDate,
+    daily:{labels:dailyLabels,counts:dailyCounts},
+    dow:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],counts:dowCounts},
+    channels:chMap,channelPerf,
+    buckets:{labels:bLabels,counts:bCounts},
+    categories,agents};
+}
 
 // ═══════════════════════════════════ DATE FILTER ═══════════════════════════════════
 function applyDateFilter(){
@@ -653,8 +794,10 @@ function applyDateFilter(){
   if(from>to){alert('Start date must be before end date.');return;}
   filteredTickets=RAW_TICKETS.filter(t=>t.date&&t.date>=from&&t.date<=to);
   const days=Math.round((new Date(to)-new Date(from))/(86400000))+1;
+  const allDates=RAW_TICKETS.map(t=>t.date).filter(Boolean).sort();const isFiltered=(from!==(allDates[0]||'')||to!==(allDates[allDates.length-1]||''));
   const statusEl=document.getElementById('filter-status');
   statusEl.textContent=`${days} day${days!==1?'s':''} · ${filteredTickets.length} tickets`;
+  statusEl.className=isFiltered?'filtered':'';
   document.getElementById('header-period').textContent=`${from} → ${to}`;
   refreshAll();
 }
@@ -666,10 +809,141 @@ function resetDateFilter(){
   document.getElementById('date-from').value=minD;
   document.getElementById('date-to').value=maxD;
   filteredTickets=RAW_TICKETS.slice();
-  document.getElementById('filter-status').textContent=`All data · ${RAW_TICKETS.length} tickets`;
-  document.getElementById('header-period').textContent=`${minD} → ${maxD} · ${RAW_TICKETS.length} tickets`;
+  document.getElementById('filter-status').textContent='All data · '+RAW_TICKETS.length+' tickets';
+  document.getElementById('filter-status').className='';
+  document.getElementById('header-period').textContent=minD+' → '+maxD+' · '+RAW_TICKETS.length+' tickets';
   refreshAll();
 }
+
+// ═══════════════════════════════════ KPI UPDATES ═══════════════════════════════════
+function updateKPIs(M){
+  document.getElementById('kpi-total').textContent=M.total;
+  document.getElementById('kpi-period').textContent=M.rangeStr;
+  // Reopen rate — static from OPS data, set once
+  document.getElementById('kpi-reopen-rate').textContent=OPS.summary.reopen_rate+'%';
+  document.getElementById('kpi-reopen-sub').textContent=`${OPS.summary.total_reopen.toLocaleString()} reopens of ${OPS.summary.total.toLocaleString()} total`;
+  document.getElementById('kpi-escrate').textContent=M.esc_rate+'%';
+  document.getElementById('kpi-esc-sub').textContent=`${M.escalated} of ${M.total} escalated`;
+  document.getElementById('kpi-csat').textContent=M.csat_score!=null?M.csat_score+'%':'—';
+  document.getElementById('kpi-csat-sub').textContent=`n=${M.csat_n} rated`;
+  const flag=document.getElementById('kpi-csat-flag');
+  flag.style.display=M.csat_n<30?'block':'none';
+  document.getElementById('kpi-median').textContent=M.mean_res!=null?M.mean_res.toFixed(1)+'h':'—';
+  document.getElementById('kpi-rw').textContent=M.avg_rw!=null?M.avg_rw.toFixed(1)+'h':'—';
+  document.getElementById('kpi-aw').textContent=M.avg_aw!=null?M.avg_aw.toFixed(1)+'h':'—';
+  document.getElementById('kpi-srr').textContent=M.csat_rr+'%';
+  document.getElementById('kpi-srr-sub').textContent=`${M.csat_n} of ${M.surveyed} surveyed responded`;
+}
+
+// ═══════════════════════════════════ PER-TEAM KPI COMPARISON ═══════════════════════════════════
+function updateTeamCompare(){
+  const container=document.getElementById('team-compare');
+  if(!container) return;
+  const teams=[
+    {id:'CS',label:'Customer Support',color:'#4f9cf9',dimBorder:'#4f9cf922'},
+    {id:'TS',label:'Technical Support',color:'#f97058',dimBorder:'#f9705822'},
+    {id:'IM',label:'Implementation',   color:'#7c5cfc',dimBorder:'#7c5cfc22'}
+  ];
+  const allTix=filteredTickets;
+  const totalAll=allTix.length||1;
+
+  container.innerHTML=teams.map(tm=>{
+    const tix=allTix.filter(t=>getGroup(t.assignee)===tm.id);
+    const n=tix.length;
+    const shareP=(n/totalAll*100).toFixed(0);
+    // Resolution
+    const resArr=tix.filter(t=>t.res!=null&&t.res>0).map(t=>t.res);
+    const avgRes=resArr.length?(resArr.reduce((a,b)=>a+b,0)/resArr.length).toFixed(1):'—';
+    // Waits (solved/closed only, non-zero)
+    const solvedTeamTix=tix.filter(t=>t.status==='Solved'||t.status==='Closed');
+    const rwArr=solvedTeamTix.filter(t=>t.rw!=null&&t.rw>0).map(t=>t.rw);
+    const avgRw=rwArr.length?(rwArr.reduce((a,b)=>a+b,0)/rwArr.length).toFixed(1):'—';
+    const awArr=solvedTeamTix.filter(t=>t.aw!=null&&t.aw>0).map(t=>t.aw);
+    const avgAw=awArr.length?(awArr.reduce((a,b)=>a+b,0)/awArr.length).toFixed(1):'—';
+    const rwNum=parseFloat(avgRw)||0, awNum=parseFloat(avgAw)||0;
+    // CSAT
+    const good=tix.filter(t=>t.good===1).length;
+    const bad=tix.filter(t=>t.bad===1).length;
+    const surveyed=tix.filter(t=>t.surveyed===1).length;
+    const csatN=good+bad;
+    const csat=csatN>0?(good/csatN*100).toFixed(1):'—';
+    const respRate=surveyed>0?((csatN/surveyed)*100).toFixed(1):'0.0';
+    const csatFlag=csatN<7;
+    // Escalation
+    const esc=tix.filter(t=>t.within_cx==='No').length;
+    const escRate=n>0?(esc/n*100).toFixed(1):'0.0';
+
+    // Card builder: main value on top, sub-details underneath
+    function card(label, mainVal, mainColor, subs){
+      let h='<div style="flex:1;text-align:center;padding:8px 4px">';
+      h+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:6px">'+label+'</div>';
+      h+='<div class="mono" style="font-size:20px;font-weight:600;color:'+(mainColor||'var(--text1)')+';line-height:1">'+mainVal+'</div>';
+      if(subs && subs.length){
+        h+='<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:6px">';
+        subs.forEach(s=>{
+          h+='<div style="display:flex;justify-content:space-between;align-items:center;padding:1px 6px;font-size:10px">';
+          h+='<span style="color:var(--text3)">'+s.label+'</span>';
+          h+='<span class="mono" style="color:'+(s.color||'var(--text2)')+'">'+s.val+'</span>';
+          h+='</div>';
+        });
+        h+='</div>';
+      }
+      h+='</div>';
+      return h;
+    }
+
+    return '<div style="background:var(--surface);border:1px solid '+tm.dimBorder+';border-radius:10px;padding:14px 12px;position:relative">'+
+      // Header
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'+
+        '<div style="font-size:12px;font-weight:700;color:'+tm.color+';text-transform:uppercase;letter-spacing:0.5px">'+tm.id+' \u2014 '+tm.label+'</div>'+
+        '<div class="mono" style="font-size:11px;color:var(--text3)">'+shareP+'% of volume</div>'+
+      '</div>'+
+      // 4 pillars
+      '<div style="display:flex;gap:2px">'+
+        // 1. Ticket Volume
+        card('Volume', ''+n, tm.color, [
+          {label:'Solved', val:tix.filter(t=>t.status==='Solved').length+'', color:'#4caf7d'},
+          {label:'Open/New', val:tix.filter(t=>t.status==='New'||t.status==='Open').length+'', color:'var(--amber)'}
+        ])+
+        // Divider
+        '<div style="width:1px;background:var(--border);margin:20px 0 8px"></div>'+
+        // 2. Avg Resolution
+        card('Avg Resolution', avgRes==='—'?'—':avgRes+'h', '', [
+          {label:'Cust wait', val:avgRw==='—'?'—':avgRw+'h', color:rwNum>awNum?'#f97058':'var(--text2)'},
+          {label:'Agent wait', val:avgAw==='—'?'—':avgAw+'h', color:awNum>rwNum?'#4f9cf9':'var(--text2)'},
+          {label:'Delay', val:rwNum>awNum?'CX':'Customer', color:rwNum>awNum?'#f97058':'#4f9cf9'},
+          {label:'', val:'solved tix only', color:'var(--text3)'}
+        ])+
+        '<div style="width:1px;background:var(--border);margin:20px 0 8px"></div>'+
+        // 3. CSAT
+        card('CSAT', csat==='—'?'—':csat+'%', csatFlag?'var(--amber)':'#4caf7d', [
+          {label:'Responses', val:''+csatN+(csatFlag?' \u26a0':''), color:csatFlag?'var(--amber)':'var(--text2)'},
+          {label:'Resp. rate', val:respRate+'%', color:'var(--text2)'},
+          {label:'Surveyed', val:''+surveyed, color:'var(--text2)'}
+        ])+
+        '<div style="width:1px;background:var(--border);margin:20px 0 8px"></div>'+
+        // 4. Escalation Rate
+        card('Escalation', escRate+'%', parseFloat(escRate)>30?'#f97058':parseFloat(escRate)>15?'var(--amber)':'#4caf7d', [
+          {label:'Escalated', val:''+esc, color:'var(--text2)'},
+          {label:'In-CX', val:''+(n-esc), color:'#4caf7d'},
+        ])+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════ KPI DRILL-DOWN ═══════════════════════════════════
+let activeKpi=null, activeGranularity='weekly';
+
+const KPI_META={
+  total:  {label:'Total Tickets',     color:'#4f9cf9', unit:'',  type:'count'},
+  escrate:{label:'Escalation Rate',   color:'#f97058', unit:'%', type:'rate'},
+  csat:   {label:'CSAT Score',        color:'#f5a623', unit:'%', type:'csat'},
+  median: {label:'Avg Resolution', color:'#4f9cf9', unit:'h', type:'mean'},
+  rw:     {label:'Avg Customer Wait',color:'#f97058', unit:'h', type:'rw'},
+  aw:     {label:'Avg Agent Wait',    color:'#4f9cf9', unit:'h', type:'aw'},
+  srr:    {label:'Survey Response Rate',color:'#f5a623',unit:'%',type:'srr'},
+};
 
 function getMondayWeekKey(dateStr){
   const d=new Date(dateStr+'T00:00:00');
@@ -811,7 +1085,6 @@ function renderDrilldownChart(){
 function refreshAll(){
   const M=computeMetrics(filteredTickets);
   updateKPIs(M);
-  updateResTabKPIs(M);
   updateTeamCompare();
   updateCharts(M);
   renderCatTable();
@@ -2435,15 +2708,16 @@ function updateCapExplainer(cap){
   document.getElementById('date-from').max = yesterday;
   document.getElementById('date-to').max   = yesterday;
 })();
-// Initialize filter-status and header-period from actual data
+
+// Initialize filter-status and header-period from actual data on page load
 (function(){
   const dates=RAW_TICKETS.map(t=>t.date).filter(Boolean).sort();
   const minD=dates[0]||'';
   const maxD=dates[dates.length-1]||'';
   const el=document.getElementById('filter-status');
-  if(el) el.textContent=`All data · ${RAW_TICKETS.length} tickets`;
+  if(el) el.textContent='All data · '+RAW_TICKETS.length+' tickets';
   const hp=document.getElementById('header-period');
-  if(hp) hp.textContent=`${minD} → ${maxD} · ${RAW_TICKETS.length} tickets`;
+  if(hp) hp.textContent=minD+' → '+maxD+' · '+RAW_TICKETS.length+' tickets';
 })();
 const M0=computeMetrics(filteredTickets);
 updateKPIs(M0);
