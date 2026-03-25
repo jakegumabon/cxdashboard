@@ -686,7 +686,7 @@ function computeMetrics(tickets){
   // Wait times (solved/closed tickets only)
   const solvedTix=tickets.filter(t=>t.status==='Solved'||t.status==='Closed');
   const rw_arr=solvedTix.filter(t=>t.rw!=null&&t.rw>0).map(t=>t.rw);
-  const aw_arr=solvedTix.filter(t=>t.aw!=null&&t.aw>0).map(t=>t.aw);
+  const aw_arr=solvedTix.filter(t=>t.aw!=null).map(t=>t.aw);
   const avg_rw=mean(rw_arr);
   const avg_aw=mean(aw_arr);
 
@@ -725,7 +725,7 @@ function computeMetrics(tickets){
     const isSolved=(t.status==='Solved'||t.status==='Closed');
     if(isSolved&&t.res!=null&&t.res>0)chPerf[t.channel].res.push(t.res);
     if(isSolved&&t.rw!=null&&t.rw>0)chPerf[t.channel].rw.push(t.rw);
-    if(isSolved&&t.aw!=null&&t.aw>0)chPerf[t.channel].aw.push(t.aw);
+    if(isSolved&&t.aw!=null)chPerf[t.channel].aw.push(t.aw);
   });
   const channelPerf=Object.entries(chPerf).sort((a,b)=>b[1].tickets-a[1].tickets).map(([ch,v])=>({
     channel:ch,tickets:v.tickets,
@@ -757,7 +757,7 @@ function computeMetrics(tickets){
     const isSolved=(t.status==='Solved'||t.status==='Closed');
     if(isSolved&&t.res!=null&&t.res>0)catMap[k].res.push(t.res);
     if(isSolved&&t.rw!=null&&t.rw>0)catMap[k].rw.push(t.rw);
-    if(isSolved&&t.aw!=null&&t.aw>0)catMap[k].aw.push(t.aw);
+    if(isSolved&&t.aw!=null)catMap[k].aw.push(t.aw);
   });
   const categories=Object.entries(catMap).sort((a,b)=>b[1].tickets-a[1].tickets).map(([name,v])=>({
     name,tickets:v.tickets,escalated:v.esc,
@@ -775,7 +775,7 @@ function computeMetrics(tickets){
     const isSolved=(t.status==='Solved'||t.status==='Closed');
     if(isSolved&&t.res!=null&&t.res>0)agMap[k].res.push(t.res);
     if(isSolved&&t.rw!=null&&t.rw>0)agMap[k].rw.push(t.rw);
-    if(isSolved&&t.aw!=null&&t.aw>0)agMap[k].aw.push(t.aw);
+    if(isSolved&&t.aw!=null)agMap[k].aw.push(t.aw);
     if(t.good)agMap[k].good++;
     if(t.bad)agMap[k].bad++;
     if(t.good||t.bad)agMap[k].rated++;
@@ -868,7 +868,7 @@ function updateTeamCompare(){
     const solvedTeamTix=tix.filter(t=>t.status==='Solved'||t.status==='Closed');
     const rwArr=solvedTeamTix.filter(t=>t.rw!=null&&t.rw>0).map(t=>t.rw);
     const avgRw=rwArr.length?(rwArr.reduce((a,b)=>a+b,0)/rwArr.length).toFixed(1):'—';
-    const awArr=solvedTeamTix.filter(t=>t.aw!=null&&t.aw>0).map(t=>t.aw);
+    const awArr=solvedTeamTix.filter(t=>t.aw!=null).map(t=>t.aw);
     const avgAw=awArr.length?(awArr.reduce((a,b)=>a+b,0)/awArr.length).toFixed(1):'—';
     const rwNum=parseFloat(avgRw)||0, awNum=parseFloat(avgAw)||0;
     // CSAT
