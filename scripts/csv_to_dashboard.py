@@ -439,6 +439,12 @@ def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_
             html
         )
         print(f"  Date inputs set to: {min_date} → {max_date}")
+        # Update static filter-status text (also updated dynamically by IIFE on page load)
+        html = re.sub(
+            r'id="filter-status">[^<]*<',
+            f'id="filter-status">All data \u00b7 {len(raw_tickets)} tickets<',
+            html
+        )
 
     os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
