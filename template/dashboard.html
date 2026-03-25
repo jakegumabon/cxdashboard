@@ -1,0 +1,2404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CX Performance Dashboard — Mar 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0d0d0d;--surface:#151515;--surface2:#1e1e1e;--surface3:#252525;--border:#2a2a2a;--border2:#333;--coral:#f97058;--coral-dim:#7a3828;--coral-faint:#2a1510;--blue:#4f9cf9;--blue-dim:#1e3d6e;--blue-faint:#0d1e36;--text:#f0f0f0;--text2:#aaa;--text3:#666;--green:#4caf7d;--amber:#f5a623}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;min-height:100vh}
+.mono{font-family:'IBM Plex Mono',monospace}
+/* Layout */
+.header{padding:20px 28px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:18px;font-weight:600;letter-spacing:-0.3px}
+.header .period{font-size:12px;color:var(--text3);font-family:'IBM Plex Mono',monospace}
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);padding:0 28px}
+.tab{padding:12px 20px;font-size:13px;font-weight:500;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;user-select:none}
+.tab:hover{color:var(--text2)}
+.tab.active{color:var(--coral);border-bottom-color:var(--coral)}
+.content{padding:24px 28px;max-width:1400px}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+/* KPI Cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.kpi-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.kpi-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.kpi-value{font-size:26px;font-weight:600;line-height:1;margin-bottom:4px}
+.kpi-sub{font-size:11px;color:var(--text3)}
+.kpi-flag{font-size:11px;color:var(--amber);margin-top:4px}
+.kpi-coral .kpi-value{color:var(--coral)}
+.kpi-blue .kpi-value{color:var(--blue)}
+.kpi-green .kpi-value{color:var(--green)}
+.kpi-amber .kpi-value{color:var(--amber)}
+/* Charts */
+.chart-row{display:grid;gap:16px;margin-bottom:24px}
+.chart-row-2{grid-template-columns:1fr 1fr}
+.chart-row-3{grid-template-columns:2fr 1fr}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px}
+.chart-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px}
+.chart-wrap{position:relative}
+/* Tables */
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:24px}
+.table-card-title{padding:14px 18px;font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;cursor:pointer;user-select:none;border-bottom:1px solid var(--border);white-space:nowrap}
+th:hover{color:var(--text2)}
+th.sorted{color:var(--coral)}
+td{padding:10px 14px;font-size:13px;border-bottom:1px solid var(--border);color:var(--text2)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+.td-name{color:var(--text);font-weight:500}
+/* Badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;font-family:'IBM Plex Mono',monospace}
+.badge-red{background:#3a0e0e;color:#f87171;border:1px solid #5a1e1e}
+.badge-amber{background:#3a280a;color:#f5a623;border:1px solid #5a3a10}
+.badge-green{background:#0d2e1e;color:#4caf7d;border:1px solid #1a4a2e}
+/* Delay pills */
+.delay-team{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:var(--coral-faint);color:var(--coral);border:1px solid var(--coral-dim)}
+.delay-cust{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:var(--blue-faint);color:var(--blue);border:1px solid var(--blue-dim)}
+/* Section headers */
+.section-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.section-note{font-size:11px;color:var(--text3);margin-top:4px;font-weight:400}
+/* CS/TS section */
+.group-section{margin-top:24px}
+.group-kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.group-kpi-block{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px}
+.group-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px}
+.group-cs .group-label{color:var(--blue)}
+.group-ts .group-label{color:var(--coral)}
+.mini-kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.mini-kpi .label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.mini-kpi .val{font-size:16px;font-weight:600;color:var(--text)}
+/* KPI drill-down */
+.kpi{cursor:pointer;transition:border-color .15s,transform .1s}
+.kpi:hover{border-color:var(--border2);transform:translateY(-1px)}
+.kpi.active{border-color:var(--coral)!important;background:var(--surface2)}
+#kpi-drilldown{display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:24px}
+#kpi-drilldown.visible{display:block}
+#kpi-drilldown-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+#kpi-drilldown-title{font-size:13px;font-weight:600;color:var(--text)}
+.drilldown-controls{display:flex;align-items:center;gap:6px}
+.granularity-btn{padding:4px 12px;font-size:11px;font-weight:600;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .15s}
+.granularity-btn:hover{color:var(--text2);border-color:var(--text3)}
+.granularity-btn.active{background:var(--coral);border-color:var(--coral);color:#fff}
+#kpi-drilldown-close{background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:2px 6px;line-height:1}
+#kpi-drilldown-close:hover{color:var(--text2)}
+#drilldown-wrap{height:180px;position:relative}
+/* Date Range Filter */
+#date-filter-bar{padding:10px 28px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+#date-filter-bar label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.date-input{background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text);font-family:'IBM Plex Mono',monospace;outline:none;cursor:pointer}
+.date-input:focus{border-color:var(--coral)}
+.date-sep{color:var(--text3);font-size:12px}
+.filter-apply{background:var(--coral);border:none;color:#fff;padding:6px 16px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'IBM Plex Sans',sans-serif}
+.filter-apply:hover{background:#e85f48}
+.filter-reset{background:none;border:1px solid var(--border2);color:var(--text3);padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif}
+.filter-reset:hover{color:var(--text2);border-color:var(--text3)}
+#filter-status{font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace}
+#filter-status.filtered{color:var(--coral)}
+/* AI Panel */
+#ai-toggle-btn{position:fixed;bottom:28px;right:28px;z-index:1000;background:var(--coral);color:#fff;border:none;padding:12px 20px;border-radius:24px;font-family:'IBM Plex Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 16px rgba(249,112,88,0.35);transition:all .2s}
+#ai-toggle-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(249,112,88,0.45)}
+#ai-panel{position:fixed;top:0;right:-420px;width:400px;height:100vh;background:#111;border-left:1px solid #333;z-index:999;display:flex;flex-direction:column;transition:right .3s cubic-bezier(.4,0,.2,1)}
+#ai-panel.open{right:0}
+#ai-panel-header{padding:16px 18px;border-bottom:1px solid #222;display:flex;align-items:center;justify-content:space-between}
+#ai-panel-header h2{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+#ai-panel-header h2 span{color:var(--coral)}
+#ai-close{background:none;border:none;color:#666;font-size:18px;cursor:pointer;padding:4px}
+#ai-close:hover{color:#aaa}
+#ai-key-section{padding:12px 18px;border-bottom:1px solid #1e1e1e;background:#0d0d0d}
+#ai-key-section label{font-size:11px;color:#666;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.key-row{display:flex;gap:8px}
+#ai-key-input{flex:1;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:8px 10px;font-size:12px;color:#eee;font-family:'IBM Plex Mono',monospace;outline:none}
+#ai-key-input:focus{border-color:#444}
+#ai-key-save{background:var(--coral);border:none;color:#fff;padding:8px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+#ai-key-status{font-size:11px;margin-top:6px;min-height:14px}
+#ai-messages{flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:10px}
+.ai-welcome{background:#1a1a1a;border:1px solid #252525;border-radius:8px;padding:14px;font-size:12px;color:#888;line-height:1.6}
+.ai-welcome strong{color:#aaa;display:block;margin-bottom:6px}
+.ai-welcome ul{padding-left:14px;margin-top:6px}
+.ai-welcome li{margin-bottom:3px}
+.msg-user{background:#3a1e18;color:#f0d0c8;border:1px solid #6a3020;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.5;align-self:flex-end;max-width:90%}
+.msg-ai{background:#1e1e1e;color:#bbb;border:1px solid #2a2a2a;border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.6;align-self:flex-start;max-width:95%}
+.typing{display:flex;gap:5px;padding:10px 14px}
+.typing span{width:6px;height:6px;background:#555;border-radius:50%;animation:bounce .9s infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+#ai-input-area{padding:12px 18px;border-top:1px solid #222;display:flex;gap:8px;align-items:flex-end}
+#ai-input{flex:1;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:10px 12px;font-size:13px;color:#eee;font-family:'IBM Plex Sans',sans-serif;resize:none;outline:none;max-height:120px;min-height:40px}
+#ai-input:focus{border-color:#444}
+#ai-send{background:var(--coral);border:none;color:#fff;width:38px;height:38px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+#ai-send:disabled{background:#3a2020;color:#775050;cursor:not-allowed}
+#ai-send:not(:disabled):hover{background:#e85f48}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>CX Performance Dashboard</h1>
+    <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
+  </div>
+  <div style="font-size:11px;color:var(--text3)">Generated Mar 22, 2026</div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('overview')">Overview</div>
+  <div class="tab" onclick="switchTab('resolution')">Resolution Time</div>
+  <div class="tab" onclick="switchTab('volume')">Volume</div>
+  <div class="tab" onclick="switchTab('team')">Team</div>
+    <div class="tab" onclick="switchTab('ops')">Operational Volume</div>
+    <div class="tab" onclick="switchTab('capacity')">Capacity</div>
+</div>
+
+<div id="date-filter-bar">
+  <label>Date Range</label>
+  <input type="date" id="date-from" class="date-input" value="2026-03-01" min="2026-03-01">
+  <span class="date-sep">→</span>
+  <input type="date" id="date-to" class="date-input" value="2026-03-22" min="2026-03-01">
+  <button class="filter-apply" onclick="applyDateFilter()">Apply</button>
+  <button class="filter-reset" onclick="resetDateFilter()">Reset</button>
+  <span id="filter-status">All 21 days · 906 tickets</span>
+</div>
+
+<div class="content">
+
+<!-- ═══════════════════════════════════ OVERVIEW TAB ═══════════════════════════════════ -->
+<div id="tab-overview" class="tab-panel active">
+  <div class="kpi-grid" id="overview-kpis">
+    <div class="kpi" data-kpi="total" onclick="openDrilldown('total',this)"><div class="kpi-label">Total Tickets</div><div class="kpi-value mono" id="kpi-total">681</div><div class="kpi-sub" id="kpi-period">Mar 1–16, 2026</div></div>
+    <div class="kpi kpi-coral"><div class="kpi-label">Reopen Rate</div><div class="kpi-value mono" id="kpi-reopen-rate">—</div><div class="kpi-sub" id="kpi-reopen-sub">—</div></div>
+    <div class="kpi kpi-coral" data-kpi="escrate" onclick="openDrilldown('escrate',this)"><div class="kpi-label">Escalation Rate</div><div class="kpi-value mono" id="kpi-escrate">28.8%</div><div class="kpi-sub" id="kpi-esc-sub">196 of 681 escalated</div></div>
+    <div class="kpi kpi-amber" data-kpi="csat" onclick="openDrilldown('csat',this)"><div class="kpi-label">CSAT Score</div><div class="kpi-value mono" id="kpi-csat">100%</div><div class="kpi-sub" id="kpi-csat-sub">n=7 rated</div><div class="kpi-flag" id="kpi-csat-flag">⚠ Unreliable — n&lt;30</div></div>
+    <div class="kpi kpi-blue" data-kpi="median" onclick="openDrilldown('median',this)"><div class="kpi-label">Avg Resolution</div><div class="kpi-value mono" id="kpi-median">68.5h</div><div class="kpi-sub">Resolved tickets only</div></div>
+    <div class="kpi" data-kpi="rw" onclick="openDrilldown('rw',this)"><div class="kpi-label">Avg Customer Wait</div><div class="kpi-value mono" id="kpi-rw">23.4h</div><div class="kpi-sub">Customer waiting on CX · <span style="opacity:0.7">solved tickets</span></div></div>
+    <div class="kpi" data-kpi="aw" onclick="openDrilldown('aw',this)"><div class="kpi-label">Avg Agent Wait</div><div class="kpi-value mono" id="kpi-aw">42.5h</div><div class="kpi-sub">Agent waiting on customer · <span style="opacity:0.7">solved tickets</span></div></div>
+    <div class="kpi" data-kpi="srr" onclick="openDrilldown('srr',this)"><div class="kpi-label">Survey Response Rate</div><div class="kpi-value mono" id="kpi-srr">2.1%</div><div class="kpi-sub" id="kpi-srr-sub">7 of 328 surveyed responded</div></div>
+  </div>
+
+  <!-- Per-team comparison -->
+  <div id="team-compare" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:24px"></div>
+
+  <!-- KPI Drill-down panel -->
+  <div id="kpi-drilldown">
+    <div id="kpi-drilldown-header">
+      <span id="kpi-drilldown-title">Trend</span>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="drilldown-controls">
+          <button class="granularity-btn" onclick="setGranularity('daily',this)">Daily</button>
+          <button class="granularity-btn active" onclick="setGranularity('weekly',this)">Weekly</button>
+          <button class="granularity-btn" onclick="setGranularity('monthly',this)">Monthly</button>
+        </div>
+        <button id="kpi-drilldown-close" onclick="closeDrilldown()">✕</button>
+      </div>
+    </div>
+    <div id="drilldown-wrap"><canvas id="drilldownChart"></canvas></div>
+  </div>
+
+  <div class="chart-row chart-row-3">
+    <div class="chart-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="chart-title" style="margin-bottom:0" id="sparkline-title">Daily Volume</div>
+        <div style="display:flex;gap:4px">
+          <button class="granularity-btn active" id="voltrd-daily" onclick="setVolumeTrend('daily')">Daily</button>
+          <button class="granularity-btn" id="voltrd-weekly" onclick="setVolumeTrend('weekly')">Weekly</button>
+          <button class="granularity-btn" id="voltrd-monthly" onclick="setVolumeTrend('monthly')">Monthly</button>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:160px"><canvas id="sparklineChart"></canvas></div>
+    </div>
+    <div class="chart-card"><div class="chart-title">Channels</div><div class="chart-wrap" style="height:160px"><canvas id="overviewDoughnutChart"></canvas></div></div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-card-title" style="display:flex;align-items:center;justify-content:space-between">
+      <span>Category Breakdown</span>
+      <div style="display:flex;gap:4px">
+        <button class="granularity-btn active" id="catgrp-all" onclick="setCatGroupFilter('ALL')">All</button>
+        <button class="granularity-btn" id="catgrp-cs" onclick="setCatGroupFilter('CS')">CS</button>
+        <button class="granularity-btn" id="catgrp-ts" onclick="setCatGroupFilter('TS')">TS</button>
+        <button class="granularity-btn" id="catgrp-im" onclick="setCatGroupFilter('IM')">IM</button>
+      </div>
+    </div>
+    <table id="cat-table">
+      <thead><tr>
+        <th onclick="sortTable('cat-table',0)">Category</th>
+        <th onclick="sortTable('cat-table',1)">Tickets</th>
+        <th onclick="sortTable('cat-table',2)">Esc Rate</th>
+        <th onclick="sortTable('cat-table',3)">Avg Res (h)</th>
+        <th onclick="sortTable('cat-table',4)">Cust Wait (h)</th>
+        <th onclick="sortTable('cat-table',5)">Agent Wait (h)</th>
+        <th onclick="sortTable('cat-table',6)">Delay Source</th>
+      </tr></thead>
+      <tbody id="cat-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ RESOLUTION TAB ═══════════════════════════════════ -->
+<div id="tab-resolution" class="tab-panel">
+  <div class="kpi-grid-4">
+    <div class="kpi kpi-blue"><div class="kpi-label">Avg Res</div><div class="kpi-value mono" id="rt-avg">—</div><div class="kpi-sub">Mean of resolved</div></div>
+    <div class="kpi"><div class="kpi-label">Median Res</div><div class="kpi-value mono" id="rt-median">—</div><div class="kpi-sub">50th percentile</div></div>
+    <div class="kpi kpi-coral"><div class="kpi-label">P90 Res</div><div class="kpi-value mono" id="rt-p90">—</div><div class="kpi-sub">90th percentile</div></div>
+    <div class="kpi kpi-amber"><div class="kpi-label">~73h Wall</div><div class="kpi-value mono" id="rt-wall-n">—</div><div class="kpi-sub" id="rt-wall-sub">—</div></div>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div class="chart-title" style="margin-bottom:0">OKR — Resolution Speed</div>
+      <div style="display:flex;gap:16px">
+        <span style="font-size:11px;color:var(--text3)"><span style="display:inline-block;width:10px;height:10px;background:#4caf7d;border-radius:2px;margin-right:4px"></span>Resolved &lt;24h</span>
+        <span style="font-size:11px;color:var(--text3)"><span style="display:inline-block;width:10px;height:10px;background:#4f9cf9;border-radius:2px;margin-right:4px"></span>24–48h</span>
+        <span style="font-size:11px;color:var(--text3)"><span style="display:inline-block;width:10px;height:10px;background:#3a3a3a;border-radius:2px;margin-right:4px"></span>48h+</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:200px 1fr;gap:24px;align-items:center">
+      <div style="position:relative;height:180px">
+        <canvas id="resShareDonut"></canvas>
+        <div id="res-share-center" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none">
+          <div id="res-share-pct" class="mono" style="font-size:24px;font-weight:600;color:var(--green)">—</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">&lt;24h</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+        <div class="kpi" style="background:var(--surface2)">
+          <div class="kpi-label">Resolved &lt;24h</div>
+          <div class="kpi-value mono kpi-green" id="res-u24-n">—</div>
+          <div class="kpi-sub" id="res-u24-pct">—</div>
+        </div>
+        <div class="kpi" style="background:var(--surface2)">
+          <div class="kpi-label">Resolved 24–48h</div>
+          <div class="kpi-value mono kpi-blue" id="res-u48-n">—</div>
+          <div class="kpi-sub" id="res-u48-pct">—</div>
+        </div>
+        <div class="kpi" style="background:var(--surface2)">
+          <div class="kpi-label">Resolved 48h+</div>
+          <div class="kpi-value mono" style="color:var(--text3)" id="res-48p-n">—</div>
+          <div class="kpi-sub" id="res-48p-pct">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-row chart-row-2" style="margin-bottom:24px">
+    <div class="chart-card"><div class="chart-title">Resolution Bucket Distribution</div><div class="chart-wrap" style="height:220px"><canvas id="bucketsChart"></canvas></div></div>
+    <div class="chart-card">
+      <div class="chart-title">~73h Wall Attribution</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div class="kpi" style="background:var(--surface2)"><div class="kpi-label">Avg Cust Wait (wall tix)</div><div class="kpi-value mono" style="color:var(--coral)">1.8h</div><div class="kpi-sub">Customer barely waited</div></div>
+        <div class="kpi" style="background:var(--surface2)"><div class="kpi-label">Avg Agent Wait (wall tix)</div><div class="kpi-value mono" style="color:var(--blue)">71.6h</div><div class="kpi-sub">Agent waited for customer</div></div>
+      </div>
+      <div style="background:var(--coral-faint);border:1px solid var(--coral-dim);border-radius:8px;padding:12px;font-size:12px;color:#f0c0b0;line-height:1.6">
+        <strong style="color:var(--coral)">Interpretation:</strong> The 73h wall is almost entirely <strong>customer-side delay</strong> — agent wait avg 71.3h vs customer wait 2.1h. These are auto-closed SLA tickets where customers stopped responding, not a CX performance issue.
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:24px">
+    <div class="chart-title">Wait Time Decomposition by Category <span style="color:var(--text3);font-size:11px;font-weight:400;margin-left:8px">■ Customer Wait (CX delay)  ■ Agent Wait (customer delay) · solved tickets only</span></div>
+    <div class="chart-wrap" style="height:280px"><canvas id="waitDecompChart"></canvas></div>
+  </div>
+
+  <div class="group-section">
+    <div class="section-title">CS / TS / IM Breakdown <span class="section-note">CS · TS · IM — based on assignee group</span></div>
+    <div class="group-kpi-row" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="group-kpi-block group-cs">
+        <div class="group-label">CS — Customer Support</div>
+        <div class="mini-kpi-row">
+          <div class="mini-kpi"><div class="label">Tickets</div><div class="val mono" id="grp-cs-tickets">—</div></div>
+          <div class="mini-kpi"><div class="label">Avg Res</div><div class="val mono" id="grp-cs-median">—</div></div>
+          <div class="mini-kpi"><div class="label">Esc Rate</div><div class="val mono" id="grp-cs-esc">—</div></div>
+          <div class="mini-kpi"><div class="label">Cust Wait</div><div class="val mono" id="grp-cs-rw">—</div></div>
+          <div class="mini-kpi"><div class="label">Agent Wait</div><div class="val mono" id="grp-cs-aw">—</div></div>
+        </div>
+      </div>
+      <div class="group-kpi-block group-ts">
+        <div class="group-label">TS — Technical Support</div>
+        <div class="mini-kpi-row">
+          <div class="mini-kpi"><div class="label">Tickets</div><div class="val mono" id="grp-ts-tickets">—</div></div>
+          <div class="mini-kpi"><div class="label">Avg Res</div><div class="val mono" id="grp-ts-median">—</div></div>
+          <div class="mini-kpi"><div class="label">Esc Rate</div><div class="val mono" id="grp-ts-esc">—</div></div>
+          <div class="mini-kpi"><div class="label">Cust Wait</div><div class="val mono" id="grp-ts-rw">—</div></div>
+          <div class="mini-kpi"><div class="label">Agent Wait</div><div class="val mono" id="grp-ts-aw">—</div></div>
+        </div>
+      </div>
+      <div class="group-kpi-block" style="border-color:var(--border)">
+        <div class="group-label" style="color:#7c5cfc">IM — Implementation</div>
+        <div class="mini-kpi-row">
+          <div class="mini-kpi"><div class="label">Tickets</div><div class="val mono" id="grp-im-tickets">—</div></div>
+          <div class="mini-kpi"><div class="label">Avg Res</div><div class="val mono" id="grp-im-median">—</div></div>
+          <div class="mini-kpi"><div class="label">Esc Rate</div><div class="val mono" id="grp-im-esc">—</div></div>
+          <div class="mini-kpi"><div class="label">Cust Wait</div><div class="val mono" id="grp-im-rw">—</div></div>
+          <div class="mini-kpi"><div class="label">Agent Wait</div><div class="val mono" id="grp-im-aw">—</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">CS / TS / IM — Resolution Buckets (% of resolved)</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="csTsChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ VOLUME TAB ═══════════════════════════════════ -->
+<div id="tab-volume" class="tab-panel">
+  <div class="chart-row chart-row-2">
+    <div class="chart-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="chart-title" style="margin-bottom:0" id="daily-chart-title">Daily Volume</div>
+        <div style="display:flex;gap:4px">
+          <button class="granularity-btn active" id="voltab-daily" onclick="setVolumeTrend2('daily')">Daily</button>
+          <button class="granularity-btn" id="voltab-weekly" onclick="setVolumeTrend2('weekly')">Weekly</button>
+          <button class="granularity-btn" id="voltab-monthly" onclick="setVolumeTrend2('monthly')">Monthly</button>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:200px"><canvas id="dailyChart"></canvas></div>
+    </div>
+    <div class="chart-card"><div class="chart-title">Day of Week</div><div class="chart-wrap" style="height:200px"><canvas id="dowChart"></canvas></div></div>
+  </div>
+  <div class="chart-row chart-row-2">
+    <div class="chart-card"><div class="chart-title">Channel Split</div><div class="chart-wrap" style="height:200px"><canvas id="channelDoughnutChart"></canvas></div></div>
+    <div class="table-card" style="margin-bottom:0">
+      <div class="table-card-title">Channel Performance</div>
+      <table><thead><tr><th>Channel</th><th>Tickets</th><th>Share</th><th>Esc Rate</th><th>Avg Res</th><th>Cust Wait</th></tr></thead>
+      <tbody id="ch-tbody"></tbody></table>
+    </div>
+  </div>
+  <div class="chart-card" style="margin-top:16px">
+    <div class="chart-title">Volume Heatmap — Avg Tickets / Hour</div>
+    <canvas id="heatmapCanvas"></canvas>
+    <div id="heatmap-tooltip" style="display:none;position:fixed;background:#1e1e1e;border:1px solid #333;border-radius:6px;padding:8px 12px;font-size:12px;pointer-events:none;z-index:100"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ TEAM TAB ═══════════════════════════════════ -->
+<div id="tab-team" class="tab-panel">
+  <div class="table-card">
+    <div class="table-card-title" style="display:flex;align-items:center;justify-content:space-between">
+      <span>Agent Performance <span style="font-size:11px;font-weight:400;color:var(--text3)">(click headers to sort)</span></span>
+      <div style="display:flex;gap:4px">
+        <button class="granularity-btn active" id="teamflt-all" onclick="setTeamFilter('ALL')">All</button>
+        <button class="granularity-btn" id="teamflt-cs" onclick="setTeamFilter('CS')">CS</button>
+        <button class="granularity-btn" id="teamflt-ts" onclick="setTeamFilter('TS')">TS</button>
+        <button class="granularity-btn" id="teamflt-im" onclick="setTeamFilter('IM')">IM</button>
+      </div>
+    </div>
+    <table id="agent-table">
+      <thead><tr>
+        <th onclick="sortTable('agent-table',0)">Agent</th>
+        <th onclick="sortTable('agent-table',1)">Tickets</th>
+        <th onclick="sortTable('agent-table',2)">Esc Rate</th>
+        <th onclick="sortTable('agent-table',3)">Avg Res (h)</th>
+        <th onclick="sortTable('agent-table',4)">Cust Wait (h)</th>
+        <th onclick="sortTable('agent-table',5)">Agent Wait (h)</th>
+        <th onclick="sortTable('agent-table',6)">Dominant Delay</th>
+        <th onclick="sortTable('agent-table',7)">CSAT</th>
+      </tr></thead>
+      <tbody id="agent-tbody"></tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════ OPERATIONS TAB ═══════════════════════════════════ -->
+<div id="tab-ops" class="tab-panel">
+  <div class="kpi-grid-4">
+    <div class="kpi kpi-blue"><div class="kpi-label">Total New</div><div class="kpi-value mono" id="ops-kpi-new">906</div><div class="kpi-sub">New tickets opened</div></div>
+    <div class="kpi kpi-coral"><div class="kpi-label">Total Reopens</div><div class="kpi-value mono" id="ops-kpi-reopen">1,350</div><div class="kpi-sub">Previously solved, reopened</div></div>
+    <div class="kpi"><div class="kpi-label">Combined Volume</div><div class="kpi-value mono" id="ops-kpi-total">2,256</div><div class="kpi-sub" id="ops-kpi-sub-total">Over 21 days</div></div>
+    <div class="kpi kpi-amber"><div class="kpi-label">Reopen Rate</div><div class="kpi-value mono" id="ops-kpi-rate">59.8%</div><div class="kpi-sub">Reopens as % of total</div></div>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="chart-title" style="margin-bottom:0" id="ops-trend-title">Daily Volume — New vs Reopen</div>
+      <div style="display:flex;gap:4px">
+        <button class="granularity-btn active" id="opstrd-daily" onclick="setOpsTrend('daily')">Daily</button>
+        <button class="granularity-btn" id="opstrd-weekly" onclick="setOpsTrend('weekly')">Weekly</button>
+        <button class="granularity-btn" id="opstrd-monthly" onclick="setOpsTrend('monthly')">Monthly</button>
+      </div>
+    </div>
+    <div class="chart-wrap" style="height:220px"><canvas id="opsTrendChart"></canvas></div>
+  </div>
+
+  <div class="chart-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div class="chart-title" style="margin-bottom:0">Hourly Heatmap — Avg Tickets / Hour</div>
+      <div style="display:flex;gap:4px">
+        <button class="granularity-btn active" id="opshm-all"    onclick="setOpsHeatmap('all')">All</button>
+        <button class="granularity-btn" id="opshm-new"    onclick="setOpsHeatmap('new')" style="color:#4f9cf9">New</button>
+        <button class="granularity-btn" id="opshm-reopen" onclick="setOpsHeatmap('reopen')" style="color:#f97058">Reopen</button>
+      </div>
+    </div>
+    <canvas id="opsHeatmapCanvas"></canvas>
+    <div id="ops-heatmap-tooltip" style="display:none;position:fixed;background:#1e1e1e;border:1px solid #333;border-radius:6px;padding:8px 12px;font-size:12px;pointer-events:none;z-index:100"></div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════ CAPACITY TAB ═══════════════════════════════════ -->
+<div id="tab-capacity" class="tab-panel">
+
+    <div class="section-title">Capacity <span class="section-note" id="cap-period-note">— · adjusted for new + reopen volume · per-agent schedules</span></div>
+
+    <!-- How to Read This — collapsible methodology card -->
+    <div id="cap-explainer" style="background:#141414;border:1px solid #2a2a2a;border-radius:10px;margin-bottom:20px;overflow:hidden">
+      <button onclick="toggleCapExplainer()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:none;border:none;cursor:pointer;color:var(--text1)">
+        <span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600">
+          <span style="font-size:15px">&#128214;</span> How to read this section
+        </span>
+        <span id="cap-explainer-arrow" style="font-size:13px;color:var(--text3);transition:transform 0.2s">&#9660;</span>
+      </button>
+      <div id="cap-explainer-body" style="display:none;padding:0 16px 16px;border-top:1px solid #222">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px">
+          <div style="background:#1a1a1a;border-radius:8px;padding:14px">
+            <div style="font-size:12px;font-weight:700;color:#4f9cf9;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">What is Adjusted Volume?</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7">
+              The CX data tracks <strong style="color:var(--text1)"><span id="cap-ex-new">—</span> new tickets</strong> created in the selected period. But agents also handle <strong style="color:var(--text1)">reopened tickets</strong> — cases that were previously solved but came back. Operational Volume data shows <strong style="color:var(--text1)"><span id="cap-ex-reopen">—</span> reopens</strong>, bringing the true total to <strong style="color:#f5a623"><span id="cap-ex-total">—</span> tickets</strong>.<br><br>
+              Since reopens can't be tracked per agent individually, we apply the <strong style="color:var(--text1)">ops ratio (<span id="cap-ex-ratio1">—</span>)</strong> uniformly — each agent's workload is estimated at <span id="cap-ex-ratio2">—</span> their new ticket count. This is an approximation; actual distribution may vary by agent.
+            </div>
+          </div>
+          <div style="background:#1a1a1a;border-radius:8px;padding:14px">
+            <div style="font-size:12px;font-weight:700;color:#4caf7d;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">Tickets / Day and Tickets / Hour</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7">
+              <strong style="color:var(--text1)">Tickets / Day</strong> = Adjusted Volume &divide; Work Days in the selected period.<br>
+              <strong style="color:var(--text1)">Tickets / Hour</strong> = Adjusted Volume &divide; Total Work Hours in the selected period.<br><br>
+              These show the estimated ticket load per agent relative to their actual schedule. Higher numbers mean heavier workload per shift, making it easier to spot imbalances across agents in the same team.
+            </div>
+          </div>
+          <div style="background:#1a1a1a;border-radius:8px;padding:14px">
+            <div style="font-size:12px;font-weight:700;color:#f97058;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Agent Schedules — <span id="cap-ex-days-header">—</span></div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.8">
+              <div style="margin-bottom:4px"><span style="background:#f9705822;color:#f97058;padding:2px 7px;border-radius:4px;font-weight:600;font-size:11px">4d/wk &middot; 11h</span>&nbsp;&rarr;&nbsp;<span id="cap-ex-days-a">—</span></div>
+              <div style="color:#888;font-size:11px;margin-bottom:10px;padding-left:2px">Patric &middot; Eunice &middot; LA &middot; Racky &middot; Lorenz &middot; Herbert</div>
+              <div style="margin-bottom:4px"><span style="background:#4f9cf922;color:#4f9cf9;padding:2px 7px;border-radius:4px;font-weight:600;font-size:11px">5d/wk &middot; 9h shift</span>&nbsp;&rarr;&nbsp;<span id="cap-ex-days-b">—</span></div>
+              <div style="color:#888;font-size:11px;margin-bottom:10px;padding-left:2px">John &middot; Gilbert &middot; Jan &middot; AJ (Adrian) &middot; Allen</div>
+              <div style="margin-bottom:4px"><span style="background:#7c5cfc22;color:#7c5cfc;padding:2px 7px;border-radius:4px;font-weight:600;font-size:11px">Mon&ndash;Fri &middot; 9h</span>&nbsp;&rarr;&nbsp;<span id="cap-ex-days-c">—</span></div>
+              <div style="color:#888;font-size:11px;padding-left:2px">All other agents</div>
+            </div>
+          </div>
+          <div style="background:#1a1a1a;border-radius:8px;padding:14px">
+            <div style="font-size:12px;font-weight:700;color:#f5a623;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px">How to Interpret the Charts</div>
+            <div style="font-size:12px;color:var(--text2);line-height:1.7">
+              The <strong style="color:var(--text1)">Agent Throughput chart</strong> ranks agents by tickets per work day. A longer bar means more volume relative to scheduled hours — useful for spotting who's carrying the most load.<br><br>
+              The <strong style="color:var(--text1)">Intraday Load chart</strong> shows which hours are busiest per team. This helps with planning coverage and identifying gaps in shift schedules.<br><br>
+              <span style="color:#f5a623">&#9888; No target is set yet.</span> Once a benchmark is defined (e.g. max X tickets/day per agent), these numbers can be directly compared to flag overload risk.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Team summary blocks (dynamic) -->
+    <div id="cap-team-summary" class="group-kpi-row" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:24px"></div>
+
+    <!-- Methodology note (dynamic) -->
+    <div id="cap-method-note" style="background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;margin-bottom:20px;font-size:11px;color:var(--text3);line-height:1.6"></div>
+
+    <!-- Agent throughput chart -->
+    <div class="chart-card" style="margin-bottom:24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="chart-title" style="margin-bottom:0">Agent Throughput — Adj. Tickets per Work Day <span id="cap-tpd-period" style="font-weight:400;color:var(--text3);font-size:10px;text-transform:none"></span></div>
+        <div style="display:flex;gap:12px;font-size:11px;color:var(--text3)">
+          <span><span style="display:inline-block;width:10px;height:10px;background:#4f9cf9;border-radius:2px;margin-right:4px"></span>CS</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#f97058;border-radius:2px;margin-right:4px"></span>TS</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#7c5cfc;border-radius:2px;margin-right:4px"></span>IM</span>
+        </div>
+      </div>
+      <div class="chart-wrap" id="agentTpdWrap" style="height:320px"><canvas id="agentTpdChart"></canvas></div>
+    </div>
+
+    <!-- Intraday load chart (24h) -->
+    <div class="chart-card" style="margin-bottom:24px">
+      <div class="chart-title">Intraday Load — Avg Tickets per Hour (24h) <span id="cap-intra-period" style="font-weight:400;color:var(--text3);font-size:10px;text-transform:none"></span></div>
+      <div class="chart-wrap" style="height:200px"><canvas id="intradayChart"></canvas></div>
+    </div>
+
+    <!-- Day × Hour Matrix -->
+    <div class="chart-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="chart-title" style="margin-bottom:0">Day &times; Hour Matrix — Avg Tickets per Slot</div>
+        <div style="display:flex;gap:6px">
+          <button id="dh-cs" class="granularity-btn active" onclick="setDHTeam('CS')" style="background:#4f9cf9;border-color:#4f9cf9;color:#fff">CS</button>
+          <button id="dh-ts" class="granularity-btn" onclick="setDHTeam('TS')" style="color:#f97058;border-color:#f97058">TS</button>
+          <button id="dh-im" class="granularity-btn" onclick="setDHTeam('IM')" style="color:#7c5cfc;border-color:#7c5cfc">IM</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px">
+        Shaded cells = agent scheduled. Bright = more tickets. Dim = off-shift (tickets may still arrive but no agent is rostered).
+      </div>
+      <!-- Matrix readme -->
+      <div style="margin-bottom:12px">
+        <button onclick="toggleDHReadme()" style="display:flex;align-items:center;gap:6px;background:none;border:1px solid #2a2a2a;border-radius:6px;padding:5px 10px;cursor:pointer;color:var(--text3);font-size:11px;font-weight:600">
+          <span>📐</span> How is this calculated? <span id="dh-readme-arrow" style="transition:transform 0.2s;font-size:10px">▼</span>
+        </button>
+        <div id="dh-readme-body" style="display:none;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:0 6px 6px 6px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.75;margin-top:0">
+          <strong style="color:var(--text1)">Each cell = how many tickets one agent would need to handle in that 1-hour slot, on average.</strong><br><br>
+          Here's the formula: <code style="background:#222;padding:2px 6px;border-radius:4px;font-size:11px;color:#4caf7d">avg arrivals × ops ratio ÷ agents scheduled</code><br><br>
+          We start with the average ticket arrivals for that day/hour combination across the full loaded period (<span id="dh-rm-period" style="color:var(--text1);font-weight:600">—</span>). We then multiply by the <strong style="color:var(--text1)">ops ratio (<span id="dh-rm-ratio">—</span>)</strong> — this accounts for reopened tickets, since agents handle both new and reopened cases and not just the newly created ones. Finally, we divide by the <strong style="color:var(--text1)">number of agents scheduled</strong> in that slot based on their individual shift rosters.<br><br>
+          <strong style="color:var(--text1)">Color intensity</strong> = workload level. Brighter/more saturated = more tickets per agent per hour. <span style="color:#555">■</span> <strong style="color:#888">Dark gray</strong> = no agents rostered (tickets still arrive but nobody is assigned to handle them).<br><br>
+          <div id="dh-rm-note" style="background:#0d1e36;border:1px solid #1e3d6e;border-radius:6px;padding:8px 10px;margin-top:2px">
+            <span style="color:#4f9cf9">ℹ</span> <span style="color:var(--text2)">This matrix updates with the date range filter. Averages are computed over <strong style="color:var(--text1)"><span id="dh-rm-weeks">—</span></strong> of data. Shorter periods = less averaging = more volatile numbers.</span>
+          </div>
+        </div>
+      </div>
+      <canvas id="dayHourCanvas"></canvas>
+      <div id="dh-tooltip" style="display:none;position:fixed;background:#1e1e1e;border:1px solid #333;border-radius:6px;padding:8px 12px;font-size:12px;pointer-events:none;z-index:100"></div>
+    </div>
+
+    <!-- Agent Schedule Reference — collapsible -->
+    <div id="sched-ref" style="background:#141414;border:1px solid #2a2a2a;border-radius:10px;margin-top:16px;overflow:hidden">
+      <button onclick="toggleSchedRef()" style="width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:none;border:none;cursor:pointer;color:var(--text1)">
+        <span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600">
+          <span>📅</span> Agent Schedule Reference
+        </span>
+        <span id="sched-ref-arrow" style="font-size:13px;color:var(--text3);transition:transform 0.2s">▼</span>
+      </button>
+      <div id="sched-ref-body" style="display:none;padding:0 16px 16px;border-top:1px solid #222">
+        <div style="font-size:12px;color:var(--text3);margin:10px 0 12px">Shift times shown in local time (PHT/HKT). Dots indicate schedule group: <span style="color:#f97058">●</span> 4d/wk·11h &nbsp;<span style="color:#4f9cf9">●</span> 5d/wk·9h &nbsp;<span style="color:#7c5cfc">●</span> Mon–Fri·9h</div>
+        <div id="sched-ref-content"></div>
+      </div>
+    </div>
+
+</div>
+
+</div><!-- end .content -->
+
+<!-- AI Panel -->
+<button id="ai-toggle-btn" onclick="toggleAI()"><span>✦</span> Ask AI</button>
+<div id="ai-panel">
+  <div id="ai-panel-header">
+    <h2><span>✦</span> CX AI Assistant</h2>
+    <button id="ai-close" onclick="toggleAI()">✕</button>
+  </div>
+  <div id="ai-key-section">
+    <label>Anthropic API Key</label>
+    <div class="key-row">
+      <input id="ai-key-input" type="password" placeholder="sk-ant-api03-…" oninput="checkKey()">
+      <button id="ai-key-save" onclick="saveKey()">Save</button>
+    </div>
+    <div id="ai-key-status"></div>
+  </div>
+  <div id="ai-messages">
+    <div class="ai-welcome">
+      <strong>Hi! I'm your CX data assistant.</strong>
+      I have full context on this report — all metrics, categories, agents, and daily volumes. Ask me anything, for example:
+      <ul>
+        <li>Which agent has the highest escalation rate?</li>
+        <li>What's driving the 73h wall?</li>
+        <li>Which categories need the most attention?</li>
+        <li>What composes Cards &amp; Transactions?</li>
+      </ul>
+      <div style="margin-top:8px;color:#555">Paste your Anthropic API key above to get started.</div>
+    </div>
+  </div>
+  <div id="ai-input-area">
+    <textarea id="ai-input" placeholder="Ask about the data…" rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button id="ai-send" onclick="sendMessage()" disabled>➤</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════ ASSIGNEE → GROUP MAP ═══════════════════════════════════
+const ASSIGNEE_GROUP = /*{{ASSIGNEE_GROUP}}*/{};
+function getGroup(assignee){ return ASSIGNEE_GROUP[assignee] || null; }
+
+// ═══════════════════════════════════ RAW TICKETS ═══════════════════════════════════
+const RAW_TICKETS = /*{{RAW_TICKETS}}*/[];
+
+// ═══════════════════════════════════ PRECOMPUTED FULL DATA (for heatmap/DOW — always full range) ═══════════════════════════════════
+const D = {"period":{"from":"2026-03-01","to":"2026-03-21"},"summary":{"total":906,"status":{"Solved":650,"New":109,"Hold":59,"Pending":42,"Open":33,"Closed":13},"escalated":288,"within_cx":618,"esc_rate":31.8,"csat_score":91.7,"csat_n":12,"csat_rr":2.6,"surveyed":470,"median_res":73.0,"mean_res":68.5,"p90_res":124.5,"resolved_n":663,"avg_req_wait":27.0,"avg_agent_wait":42.0,"wall73_count":211,"wall73_pct":31.8,"wall73_avg_req_wait":1.8,"wall73_avg_agent_wait":71.6},"daily":{"labels":["2026-03-01","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-07","2026-03-08","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-14","2026-03-15","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-21"],"counts":[10,38,46,47,47,52,20,19,71,67,58,63,51,25,12,54,39,64,55,53,15]},"dow":{"labels":["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],"counts":[163,152,169,165,156,60,41]},"channels":{"Live Chat":377,"Email":288,"Slack":213,"Telegram":18,"WhatsApp":10},"buckets":{"labels":["<1h","1\u20134h","4\u20138h","8\u201324h","1\u20132d","2\u20133d","~73h","3\u20134d","4\u20137d","7d+"],"counts":[62,50,16,37,56,36,211,80,73,42]},"heatmap":{"Mon":{"0":0.0,"1":0.7,"2":0.7,"3":0.7,"4":0.7,"5":0.3,"6":0.0,"7":1.3,"8":1.3,"9":3.7,"10":4.0,"11":2.7,"12":2.0,"13":2.7,"14":3.3,"15":5.7,"16":4.3,"17":5.7,"18":3.3,"19":3.7,"20":2.3,"21":2.0,"22":2.0,"23":1.3},"Tue":{"0":2.3,"1":1.3,"2":1.3,"3":1.3,"4":1.0,"5":0.0,"6":0.7,"7":0.0,"8":0.7,"9":3.3,"10":2.3,"11":1.7,"12":1.3,"13":3.3,"14":2.3,"15":3.7,"16":4.7,"17":6.0,"18":3.3,"19":3.3,"20":2.3,"21":2.3,"22":1.3,"23":0.7},"Wed":{"0":0.7,"1":2.3,"2":2.0,"3":1.3,"4":1.0,"5":2.0,"6":1.0,"7":1.0,"8":1.3,"9":5.0,"10":1.3,"11":2.3,"12":1.7,"13":3.3,"14":3.3,"15":3.0,"16":5.3,"17":5.0,"18":2.7,"19":1.7,"20":2.7,"21":2.3,"22":3.0,"23":1.0},"Thu":{"0":2.0,"1":0.7,"2":1.0,"3":0.7,"4":1.0,"5":0.7,"6":0.7,"7":0.0,"8":1.0,"9":4.3,"10":1.3,"11":3.3,"12":2.3,"13":2.7,"14":3.3,"15":1.7,"16":5.7,"17":4.3,"18":6.0,"19":2.7,"20":3.7,"21":2.0,"22":2.7,"23":1.3},"Fri":{"0":2.7,"1":1.7,"2":1.7,"3":0.3,"4":0.7,"5":0.0,"6":0.7,"7":1.7,"8":0.3,"9":1.3,"10":2.3,"11":2.0,"12":1.0,"13":3.3,"14":2.3,"15":3.7,"16":5.0,"17":5.0,"18":3.7,"19":3.7,"20":2.0,"21":2.3,"22":2.7,"23":2.0},"Sat":{"0":2.3,"1":1.7,"2":1.0,"3":1.3,"4":0.3,"5":0.3,"6":1.3,"7":0.3,"8":1.0,"9":1.7,"10":0.3,"11":0.0,"12":0.3,"13":1.0,"14":0.3,"15":1.0,"16":0.7,"17":0.7,"18":0.7,"19":0.7,"20":0.0,"21":0.7,"22":0.7,"23":1.7},"Sun":{"0":0.3,"1":1.3,"2":0.3,"3":0.0,"4":0.0,"5":0.3,"6":0.3,"7":0.0,"8":0.3,"9":0.7,"10":0.3,"11":1.7,"12":0.3,"13":0.3,"14":1.0,"15":0.7,"16":0.7,"17":0.7,"18":2.0,"19":1.3,"20":0.7,"21":0.0,"22":0.3,"23":0.0}},"categories":[{"name":"Cards & Transactions","tickets":155,"escalated":56,"avg_res":71.0,"req_wait":25.0,"agent_wait":43.4,"esc_rate":36.1},{"name":"Other","tickets":155,"escalated":32,"avg_res":67.4,"req_wait":18.8,"agent_wait":49.3,"esc_rate":20.6},{"name":"Account Management","tickets":51,"escalated":19,"avg_res":74.8,"req_wait":28.9,"agent_wait":50.2,"esc_rate":37.3},{"name":"Payments & Transfers","tickets":50,"escalated":34,"avg_res":107.1,"req_wait":67.2,"agent_wait":41.0,"esc_rate":68.0},{"name":"Statements, Repayments & Fees","tickets":47,"escalated":26,"avg_res":83.7,"req_wait":38.6,"agent_wait":51.8,"esc_rate":55.3},{"name":"Disputes, Fraud & Refunds","tickets":44,"escalated":18,"avg_res":82.1,"req_wait":42.8,"agent_wait":53.3,"esc_rate":40.9},{"name":"Product Usage & Limits","tickets":19,"escalated":2,"avg_res":47.5,"req_wait":10.3,"agent_wait":36.0,"esc_rate":10.5},{"name":"Account Access & Restrictions","tickets":18,"escalated":2,"avg_res":80.1,"req_wait":22.6,"agent_wait":63.4,"esc_rate":11.1},{"name":"Card Functionality","tickets":5,"escalated":3,"avg_res":90.9,"req_wait":28.8,"agent_wait":34.2,"esc_rate":60.0},{"name":"Transactions","tickets":4,"escalated":2,"avg_res":90.8,"req_wait":30.0,"agent_wait":48.8,"esc_rate":50.0},{"name":"API","tickets":2,"escalated":0,"avg_res":61.2,"req_wait":59.5,"agent_wait":0.6,"esc_rate":0.0},{"name":"UI & UX","tickets":2,"escalated":2,"avg_res":268.4,"req_wait":256.9,"agent_wait":38.0,"esc_rate":100.0},{"name":"Digital Wallets","tickets":1,"escalated":0,"avg_res":29.6,"req_wait":1.9,"agent_wait":27.7,"esc_rate":0.0},{"name":"Logistics & Fulfillment","tickets":1,"escalated":0,"avg_res":78.4,"req_wait":4.7,"agent_wait":73.7,"esc_rate":0.0}],"agents":[{"name":"LA Carlos","tickets":156,"escalated":51,"median_res":72.8,"req_wait":24.4,"agent_wait":39.9,"esc_rate":32.7},{"name":"Racky Manlapaz","tickets":131,"escalated":32,"median_res":73.2,"req_wait":17.1,"agent_wait":53.1,"esc_rate":24.4},{"name":"Patric Pangan","tickets":109,"escalated":38,"median_res":72.5,"req_wait":20.7,"agent_wait":38.5,"esc_rate":34.9},{"name":"Eunice Su\u00f1ga","tickets":85,"escalated":45,"median_res":73.2,"req_wait":29.6,"agent_wait":38.2,"esc_rate":52.9},{"name":"Herbert Acpal","tickets":59,"escalated":16,"median_res":73.9,"req_wait":30.6,"agent_wait":55.2,"esc_rate":27.1},{"name":"Lorenz Agustin","tickets":59,"escalated":20,"median_res":72.9,"req_wait":23.4,"agent_wait":43.6,"esc_rate":33.9},{"name":"Mike Cunanan","tickets":23,"escalated":7,"median_res":35.5,"req_wait":24.8,"agent_wait":26.4,"esc_rate":30.4},{"name":"Yen Lin","tickets":21,"escalated":11,"median_res":60.7,"req_wait":43.9,"agent_wait":11.6,"esc_rate":52.4},{"name":"John Jacinto","tickets":19,"escalated":9,"median_res":24.8,"req_wait":23.9,"agent_wait":24.4,"esc_rate":47.4},{"name":"Allen Reyes","tickets":14,"escalated":4,"median_res":73.8,"req_wait":15.5,"agent_wait":51.7,"esc_rate":28.6},{"name":"Adrian Maranan","tickets":14,"escalated":6,"median_res":76.2,"req_wait":17.2,"agent_wait":50.0,"esc_rate":42.9},{"name":"Jan Rivera","tickets":13,"escalated":11,"median_res":106.1,"req_wait":68.5,"agent_wait":51.3,"esc_rate":84.6},{"name":"Raymark Cayanan","tickets":9,"escalated":4,"median_res":84.5,"req_wait":48.2,"agent_wait":41.4,"esc_rate":44.4},{"name":"Samson Fok","tickets":9,"escalated":1,"median_res":0.5,"req_wait":27.0,"agent_wait":6.5,"esc_rate":11.1},{"name":"Hans Wang","tickets":9,"escalated":8,"median_res":97.0,"req_wait":30.3,"agent_wait":36.2,"esc_rate":88.9},{"name":"Ethan Liou","tickets":7,"escalated":1,"median_res":96.1,"req_wait":80.4,"agent_wait":57.4,"esc_rate":14.3},{"name":"Gilbert Arces","tickets":7,"escalated":2,"median_res":53.2,"req_wait":23.6,"agent_wait":49.5,"esc_rate":28.6},{"name":"Ediline Postrano","tickets":4,"escalated":3,"median_res":77.9,"req_wait":68.9,"agent_wait":5.7,"esc_rate":75.0},{"name":"Bogdan Hristovski","tickets":4,"escalated":1,"median_res":89.8,"req_wait":32.3,"agent_wait":55.2,"esc_rate":25.0},{"name":"Chloe Wong","tickets":3,"escalated":0,"median_res":4.2,"req_wait":1.5,"agent_wait":11.5,"esc_rate":0.0},{"name":"Joe Flores","tickets":2,"escalated":1,"median_res":125.6,"req_wait":55.9,"agent_wait":36.5,"esc_rate":50.0},{"name":"Ian Soliman","tickets":2,"escalated":0,"median_res":110.2,"req_wait":0.0,"agent_wait":99.5,"esc_rate":0.0},{"name":"Ray","tickets":2,"escalated":1,"median_res":308.8,"req_wait":99.3,"agent_wait":110.3,"esc_rate":50.0},{"name":"Jose Shardin","tickets":1,"escalated":1,"median_res":null,"req_wait":40.1,"agent_wait":0.0,"esc_rate":100.0},{"name":"Catherine Sun","tickets":1,"escalated":1,"median_res":9.4,"req_wait":9.4,"agent_wait":0.0,"esc_rate":100.0},{"name":"Jaiber Kler","tickets":1,"escalated":1,"median_res":33.1,"req_wait":33.1,"agent_wait":0.0,"esc_rate":100.0},{"name":"Weilam Thum","tickets":1,"escalated":0,"median_res":21.6,"req_wait":21.6,"agent_wait":0.0,"esc_rate":0.0},{"name":"Clyde","tickets":1,"escalated":0,"median_res":0.0,"req_wait":0.0,"agent_wait":0.0,"esc_rate":0.0}],"channel_performance":[{"channel":"Email","tickets":151,"esc_rate":58.9,"avg_res":81.4,"median_res":73.2,"req_wait":39.3,"agent_wait":38.1},{"channel":"Live Chat","tickets":341,"esc_rate":14.1,"avg_res":59.3,"median_res":73.1,"req_wait":7.0,"agent_wait":51.3},{"channel":"Slack","tickets":150,"esc_rate":42.7,"avg_res":72.8,"median_res":69.3,"req_wait":34.1,"agent_wait":33.3},{"channel":"Telegram","tickets":12,"esc_rate":50.0,"avg_res":105.4,"median_res":74.6,"req_wait":51.5,"agent_wait":53.9},{"channel":"WhatsApp","tickets":9,"esc_rate":22.2,"avg_res":82.9,"median_res":73.8,"req_wait":12.5,"agent_wait":57.4}],"request_types":[{"request_type":"Support Request","tickets":797,"esc_rate":33.5,"avg_res":71.3},{"request_type":"Question / Guidance","tickets":93,"esc_rate":14.0,"avg_res":44.2},{"request_type":"Product Issue","tickets":16,"esc_rate":50.0,"avg_res":97.1}],"groups":{"CS":{"tickets":890,"resolved":648,"median_res":73.0,"mean_res":67.9,"p90_res":122.9,"esc_rate":31.5,"escalated":280,"req_wait":26.3,"agent_wait":42.0,"buckets":{"<1h":62,"1\u20134h":49,"4\u20138h":16,"8\u201324h":36,"1\u20132d":55,"2\u20133d":35,"~73h":209,"3\u20134d":77,"4\u20137d":69,"7d+":40}},"TS":{"tickets":16,"resolved":15,"median_res":78.4,"mean_res":97.1,"p90_res":180.1,"esc_rate":50.0,"escalated":8,"req_wait":58.5,"agent_wait":40.8,"buckets":{"<1h":0,"1\u20134h":1,"4\u20138h":0,"8\u201324h":1,"1\u20132d":1,"2\u20133d":1,"~73h":2,"3\u20134d":3,"4\u20137d":4,"7d+":2}}}};
+const OPS = /*{{OPS}}*/{};
+
+function getMondayWeekKey(dateStr){
+  const d=new Date(dateStr+'T00:00:00');
+  const day=d.getDay(); // 0=Sun
+  const diff=day===0?-6:1-day; // shift to Monday
+  const mon=new Date(d);mon.setDate(d.getDate()+diff);
+  return mon.toISOString().slice(0,10);
+}
+
+function getMonthKey(dateStr){return dateStr.slice(0,7);}
+
+function buildDrilldownData(kpiKey, granularity){
+  const tickets=filteredTickets;
+  const meta=KPI_META[kpiKey];
+  // Group tickets by period
+  const groups={};
+  tickets.forEach(t=>{
+    if(!t.date)return;
+    let key;
+    if(granularity==='daily') key=t.date;
+    else if(granularity==='weekly') key=getMondayWeekKey(t.date);
+    else key=getMonthKey(t.date);
+    if(!groups[key])groups[key]=[];
+    groups[key].push(t);
+  });
+
+  const sortedKeys=Object.keys(groups).sort();
+
+  const labels=sortedKeys.map(k=>{
+    if(granularity==='daily') return k.slice(5); // MM-DD
+    if(granularity==='weekly'){const d=new Date(k+'T00:00:00');return`W/M ${d.getMonth()+1}/${d.getDate()}`;}
+    return k; // YYYY-MM
+  });
+
+  const values=sortedKeys.map(k=>{
+    const grp=groups[k];
+    const type=meta.type;
+    if(type==='count') return grp.length;
+    if(type==='solved') return grp.filter(t=>t.status==='Solved').length;
+    if(type==='rate'){
+      const esc=grp.filter(t=>t.within_cx==='No').length;
+      return grp.length?+(esc/grp.length*100).toFixed(1):0;
+    }
+    if(type==='csat'){
+      const rated=grp.filter(t=>t.good||t.bad);
+      if(!rated.length)return null;
+      return+(rated.filter(t=>t.good).length/rated.length*100).toFixed(1);
+    }
+    if(type==='mean'){
+      const res=grp.filter(t=>t.res!=null&&t.res>0).map(t=>t.res);
+      return res.length?+mean(res).toFixed(1):null;
+    }
+    if(type==='rw'){
+      const rws=grp.filter(t=>t.rw!=null).map(t=>t.rw);
+      return rws.length?+mean(rws).toFixed(1):null;
+    }
+    if(type==='aw'){
+      const aws=grp.filter(t=>t.aw!=null).map(t=>t.aw);
+      return aws.length?+mean(aws).toFixed(1):null;
+    }
+    if(type==='srr'){
+      const surv=grp.filter(t=>t.surveyed).length;
+      const resp=grp.filter(t=>t.good||t.bad).length;
+      return surv?+(resp/surv*100).toFixed(1):0;
+    }
+    return null;
+  });
+
+  return{labels,values};
+}
+
+function openDrilldown(kpiKey, el){
+  // Toggle off if same card clicked again
+  if(activeKpi===kpiKey){closeDrilldown();return;}
+  activeKpi=kpiKey;
+  // Clear active state from all cards
+  document.querySelectorAll('.kpi').forEach(k=>k.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('kpi-drilldown-title').textContent=KPI_META[kpiKey].label+' — Trend';
+  document.getElementById('kpi-drilldown').classList.add('visible');
+  renderDrilldownChart();
+}
+
+function closeDrilldown(){
+  activeKpi=null;
+  document.querySelectorAll('.kpi').forEach(k=>k.classList.remove('active'));
+  document.getElementById('kpi-drilldown').classList.remove('visible');
+  destroyChart('drilldownChart');
+}
+
+function setGranularity(g, btn){
+  activeGranularity=g;
+  document.querySelectorAll('.granularity-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(activeKpi) renderDrilldownChart();
+}
+
+function renderDrilldownChart(){
+  if(!activeKpi) return;
+  destroyChart('drilldownChart');
+  const meta=KPI_META[activeKpi];
+  const {labels,values}=buildDrilldownData(activeKpi,activeGranularity);
+  const isRate=['escrate','csat','srr'].includes(activeKpi);
+  const hasNull=values.some(v=>v===null);
+
+  chartInstances['drilldownChart']=new Chart(document.getElementById('drilldownChart'),{
+    type: isRate?'line':'bar',
+    data:{labels,datasets:[{
+      data:values,
+      backgroundColor:meta.color+'99',
+      borderColor:meta.color,
+      borderWidth:isRate?2:0,
+      borderRadius:isRate?0:4,
+      tension:0.35,
+      fill:isRate,
+      pointBackgroundColor:meta.color,
+      pointRadius:isRate?4:0,
+      spanGaps:true,
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{...tooltipDefaults,callbacks:{label:(ctx)=>`${ctx.parsed.y!=null?ctx.parsed.y:'—'}${meta.unit}`}}
+      },
+      scales:{
+        x:{ticks:{color:textColor,font:{size:10}},grid:{display:false}},
+        y:{
+          ticks:{color:textColor,font:{size:10},callback:v=>`${v}${meta.unit}`},
+          grid:{color:gridColor},
+          beginAtZero:true,
+        }
+      }
+    }
+  });
+}
+
+// patch refreshAll to re-render drilldown if open
+function refreshAll(){
+  const M=computeMetrics(filteredTickets);
+  updateKPIs(M);
+  updateResTabKPIs(M);
+  updateTeamCompare();
+  updateCharts(M);
+  renderCatTable();
+  renderTeamTab();
+  buildChannelTable(M.channelPerf,M.total);
+  if(document.getElementById('tab-volume').classList.contains('active'))drawHeatmap();
+  if(activeKpi) renderDrilldownChart();
+  // ── Ops tab dynamic updates ──
+  updateOpsKPIs();
+  renderOpsTrendChart();
+  if(document.getElementById('tab-ops').classList.contains('active')){
+    drawOpsHeatmap(opsHeatmapMode||'all');
+  }
+  // ── Capacity tab dynamic updates ──
+  const cap = computeCapacity();
+  updateCapExplainer(cap);
+  renderCapTeamSummary(cap);
+  renderCapMethodNote(cap);
+  initCapacityCharts(cap);
+  if(document.getElementById('tab-capacity').classList.contains('active')){
+    drawDayHourMatrix(dhTeam);
+  }
+}
+
+function updateGroupKPIs(){
+  ['cs','ts','im'].forEach(g=>{
+    const G=g.toUpperCase();
+    const tix=filteredTickets.filter(t=>getGroup(t.assignee)===G);
+    const esc=tix.filter(t=>t.within_cx==='No').length;
+    const res=tix.filter(t=>t.res!=null&&t.res>0).map(t=>t.res);
+    const rws=tix.filter(t=>t.rw!=null).map(t=>t.rw);
+    const aws=tix.filter(t=>t.aw!=null).map(t=>t.aw);
+    document.getElementById(`grp-${g}-tickets`).textContent=tix.length||'—';
+    document.getElementById(`grp-${g}-median`).textContent=res.length?mean(res).toFixed(1)+'h':'—';
+    document.getElementById(`grp-${g}-esc`).textContent=tix.length?(esc/tix.length*100).toFixed(1)+'%':'—';
+    document.getElementById(`grp-${g}-rw`).textContent=rws.length?mean(rws).toFixed(1)+'h':'—';
+    document.getElementById(`grp-${g}-aw`).textContent=aws.length?mean(aws).toFixed(1)+'h':'—';
+  });
+}
+
+// ═══════════════════════════════════ HELPERS ═══════════════════════════════════
+const coral='#f97058',blue='#4f9cf9',green='#4caf7d',amber='#f5a623';
+const gridColor='rgba(255,255,255,0.05)',textColor='#888';
+const tooltipDefaults={backgroundColor:'#1e1e1e',borderColor:'#333',borderWidth:1,titleColor:'#eee',bodyColor:'#aaa',padding:10};
+
+function escBadge(r){
+  if(r>=50) return `<span class="badge badge-red">${r.toFixed(1)}%</span>`;
+  if(r>=30) return `<span class="badge badge-amber">${r.toFixed(1)}%</span>`;
+  return `<span class="badge badge-green">${r.toFixed(1)}%</span>`;
+}
+function delayPill(req,agent){
+  return (req||0)>(agent||0)?`<span class="delay-team">Team</span>`:`<span class="delay-cust">Customer</span>`;
+}
+function fmt(v,d=1){return v==null?'—':v.toFixed(d);}
+
+// ═══════════════════════════════════ TABS ═══════════════════════════════════
+function switchTab(id){
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    const ids=['overview','resolution','volume','team','ops','capacity'];
+    t.classList.toggle('active',ids[i]===id);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='volume'){setTimeout(drawHeatmap,50);}
+  if(id==='ops'){setTimeout(()=>{drawOpsHeatmap(opsHeatmapMode||'all');},50);}
+  if(id==='team'){setTimeout(()=>{},50);}
+  if(id==='capacity'){setTimeout(()=>{const c=capCache||computeCapacity();initCapacityCharts(c);drawDayHourMatrix(dhTeam);},50);}
+}
+
+// ═══════════════════════════════════ TABLES ═══════════════════════════════════
+// ── Other Category aggregation groups ──
+function aggregateOtherCat(val){
+  if(!val) return 'N/A / Not Specified';
+  const v=val.toLowerCase().trim();
+  if(['n/a','nil','na','-','n/a - deleted the message',''].includes(v)) return 'N/A / Not Specified';
+  if(v.includes('more info')||v==='did not provide concern yet'||v==='no concern stated'||v==='no concern mentioned'||v==='unclear issue') return 'More Info Needed';
+  if(v.includes('presale')||v.includes('pre-sale')||v==='caas - presale inquiry') return 'Presale Inquiry';
+  if(v.includes('onboarding')||v.includes('signup')||v.includes('signing up')||v==='reapplication'||v==='application status') return 'Onboarding / Signup';
+  if(v.includes('kyc')||v==='sumsub') return 'KYC / KYB';
+  if(v.includes('card design')||v.includes('card stock')||v==='design id inquiry'||v==='card category inquiry') return 'Card Design / Stock';
+  if(v.includes('card delivery')||v.includes('card shipping')||v.includes('card tracking')||v==='pre-shipping issues'||v==='pre card shipping'||v==='delivery address'||v==='updating shipping address') return 'Card Shipping / Delivery';
+  if(v.includes('card replacement')||v==='reset pin retries'||v==='re-enablement of apple pay'||v==='google wallet inquiry'||v==='atm usage') return 'Card Operations';
+  if(v.includes('spam')||v==='test'||v==='no cx action'||v==='incorrect support'||v==='request to the client') return 'Spam / No Action';
+  if(v.includes('partnership')||v==='affiliate program'||v==='business partnership'||v==='marketing team reach out'||v==='set meeting'||v==='setting up weekly call') return 'Partnership / Outreach';
+  if(v.includes('payment')||v==='move funds'||v==='deposit'||v==='paymentops task') return 'Payments / Funds';
+  if(v.includes('api')||v.includes('webhook')||v==='3ds forwarding setup'||v==='mcc codes'||v==='data not synced') return 'API / Technical';
+  if(v.includes('invoice')||v.includes('report')||v==='crs reporting inquiry'||v==='confirmation letter request'||v==='email balance report'||v==='view account details for invoicing') return 'Reporting / Documents';
+  if(v==='bug'||v==='app not available in app store'||v==='updating spending limit issue'||v==='low acceptance rate'||v==='country restriction'||v==='dashboard access') return 'Product Issues';
+  if(v.includes('caas')) return 'CaaS Related';
+  return 'Misc';
+}
+
+function buildCatSubBreakdown(catName){
+  const tickets = filteredTickets;
+  if(catName==='Other'){
+    const groups={};
+    tickets.filter(t=>t.cat1==='Other').forEach(t=>{
+      const g=aggregateOtherCat(t.oc||'');
+      if(!groups[g]) groups[g]={count:0,esc:0};
+      groups[g].count++;
+      if(t.within_cx==='No') groups[g].esc++;
+    });
+    const sorted=Object.entries(groups).sort((a,b)=>b[1].count-a[1].count);
+    let html='<table style="width:100%;border-collapse:collapse;margin:0"><thead><tr>';
+    html+='<th style="padding:6px 12px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)">Sub-Category</th>';
+    html+='<th style="padding:6px 12px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)">Tickets</th>';
+    html+='<th style="padding:6px 12px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)">Share</th>';
+    html+='<th style="padding:6px 12px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)">Esc Rate</th>';
+    html+='</tr></thead><tbody>';
+    const total=sorted.reduce((s,e)=>s+e[1].count,0);
+    sorted.forEach(([name,v])=>{
+      const share=(v.count/total*100).toFixed(1);
+      const esc=(v.esc/v.count*100).toFixed(1);
+      const barW=Math.round(v.count/total*100);
+      const safeSub=name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      html+=`<tr style="border-bottom:1px solid var(--border);cursor:pointer" onclick="toggleTicketList('Other','${safeSub}',this)">
+        <td style="padding:6px 12px;font-size:12px">${name} <span class="sub-arrow" style="font-size:9px;color:var(--text3)">▸</span></td>
+        <td class="mono" style="padding:6px 12px;font-size:12px">${v.count}</td>
+        <td style="padding:6px 12px;font-size:12px"><div style="display:flex;align-items:center;gap:6px"><div style="width:60px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden"><div style="width:${barW}%;height:100%;background:var(--coral);border-radius:2px"></div></div><span class="mono" style="font-size:11px;color:var(--text3)">${share}%</span></div></td>
+        <td style="padding:6px 12px;font-size:12px">${escBadge(parseFloat(esc))}</td>
+      </tr>`;
+    });
+    html+='</tbody></table>';
+    return html;
+  }
+  if(catName==='Uncategorized'){
+    const groups={};
+    tickets.filter(t=>!t.cat1).forEach(t=>{
+      const s=t.status||'Unknown';
+      if(!groups[s]) groups[s]={count:0,channels:{},assignees:{}};
+      groups[s].count++;
+      const ch=t.channel||'Unknown';
+      groups[s].channels[ch]=(groups[s].channels[ch]||0)+1;
+    });
+    const sorted=Object.entries(groups).sort((a,b)=>b[1].count-a[1].count);
+    const total=sorted.reduce((s,e)=>s+e[1].count,0);
+    let html='<table style="width:100%;border-collapse:collapse;margin:0"><thead><tr>';
+    html+='<th style="padding:6px 12px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)">Status</th>';
+    html+='<th style="padding:6px 12px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)">Tickets</th>';
+    html+='<th style="padding:6px 12px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)">Share</th>';
+    html+='<th style="padding:6px 12px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)">Top Channels</th>';
+    html+='</tr></thead><tbody>';
+    sorted.forEach(([status,v])=>{
+      const share=(v.count/total*100).toFixed(1);
+      const barW=Math.round(v.count/total*100);
+      const topCh=Object.entries(v.channels).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,n])=>c+' ('+n+')').join(', ');
+      const statusColor=status==='New'?'var(--amber)':status==='Solved'?'var(--green)':status==='Open'?'var(--blue)':'var(--text2)';
+      const safeSub=status.replace(/'/g,"\\'");
+      html+=`<tr style="border-bottom:1px solid var(--border);cursor:pointer" onclick="toggleTicketList('Uncategorized','${safeSub}',this)">
+        <td style="padding:6px 12px;font-size:12px"><span style="color:${statusColor};font-weight:500">${status}</span> <span class="sub-arrow" style="font-size:9px;color:var(--text3)">▸</span></td>
+        <td class="mono" style="padding:6px 12px;font-size:12px">${v.count}</td>
+        <td style="padding:6px 12px;font-size:12px"><div style="display:flex;align-items:center;gap:6px"><div style="width:60px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden"><div style="width:${barW}%;height:100%;background:var(--amber);border-radius:2px"></div></div><span class="mono" style="font-size:11px;color:var(--text3)">${share}%</span></div></td>
+        <td style="padding:6px 12px;font-size:11px;color:var(--text3)">${topCh}</td>
+      </tr>`;
+    });
+    html+='</tbody></table>';
+    return html;
+  }
+  // ── Default: break down by Cat Lv 2 ──
+  const groups={};
+  tickets.filter(t=>(t.cat1||'Uncategorized')===catName).forEach(t=>{
+    const g=t.cat2||'(Unspecified)';
+    if(!groups[g]) groups[g]={count:0,esc:0,res:[]};
+    groups[g].count++;
+    if(t.within_cx==='No') groups[g].esc++;
+    if(t.res!=null&&t.res>0) groups[g].res.push(t.res);
+  });
+  const sorted=Object.entries(groups).sort((a,b)=>b[1].count-a[1].count);
+  const total=sorted.reduce((s,e)=>s+e[1].count,0);
+  let html='<table style="width:100%;border-collapse:collapse;margin:0"><thead><tr>';
+  html+='<th style="padding:6px 12px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)">Sub-Category (Lv 2)</th>';
+  html+='<th style="padding:6px 12px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)">Tickets</th>';
+  html+='<th style="padding:6px 12px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)">Share</th>';
+  html+='<th style="padding:6px 12px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)">Esc Rate</th>';
+  html+='<th style="padding:6px 12px;text-align:left;font-size:10px;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)">Avg Res (h)</th>';
+  html+='</tr></thead><tbody>';
+  sorted.forEach(([name,v])=>{
+    const share=(v.count/total*100).toFixed(1);
+    const esc=(v.esc/v.count*100).toFixed(1);
+    const barW=Math.round(v.count/total*100);
+    const avgRes=v.res.length?v.res.reduce((a,b)=>a+b,0)/v.res.length:0;
+    const safeCat=catName.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const safeSub=name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    html+=`<tr style="border-bottom:1px solid var(--border);cursor:pointer" onclick="toggleTicketList('${safeCat}','${safeSub}',this)">
+      <td style="padding:6px 12px;font-size:12px">${name} <span class="sub-arrow" style="font-size:9px;color:var(--text3)">▸</span></td>
+      <td class="mono" style="padding:6px 12px;font-size:12px">${v.count}</td>
+      <td style="padding:6px 12px;font-size:12px"><div style="display:flex;align-items:center;gap:6px"><div style="width:60px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden"><div style="width:${barW}%;height:100%;background:var(--blue);border-radius:2px"></div></div><span class="mono" style="font-size:11px;color:var(--text3)">${share}%</span></div></td>
+      <td style="padding:6px 12px;font-size:12px">${escBadge(parseFloat(esc))}</td>
+      <td class="mono" style="padding:6px 12px;font-size:12px">${avgRes>0?avgRes.toFixed(1):'—'}</td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  return html;
+}
+
+// ── 3rd level: ticket ID list under any sub-breakdown row ──
+function getTicketsForSubRow(catName, subName){
+  const tickets = filteredTickets;
+  if(catName==='Other'){
+    return tickets.filter(t=>t.cat1==='Other' && aggregateOtherCat(t.oc||'')===subName);
+  }
+  if(catName==='Uncategorized'){
+    return tickets.filter(t=>!t.cat1 && (t.status||'Unknown')===subName);
+  }
+  // Default: cat1 match + cat2 match
+  return tickets.filter(t=>(t.cat1||'Uncategorized')===catName && (t.cat2||'(Unspecified)')===subName);
+}
+
+function toggleTicketList(catName, subName, trEl){
+  const rowId='tix-list-'+catName.replace(/[^a-zA-Z0-9]/g,'')+'-'+subName.replace(/[^a-zA-Z0-9]/g,'');
+  const existing=document.getElementById(rowId);
+  if(existing){
+    existing.remove();
+    const a=trEl.querySelector('.sub-arrow'); if(a) a.textContent='▸';
+    return;
+  }
+  const tix=getTicketsForSubRow(catName, subName);
+  if(!tix.length) return;
+  const a=trEl.querySelector('.sub-arrow'); if(a) a.textContent='▾';
+  // Build ticket list — compact grid of linked IDs with key info
+  let html='<div style="padding:8px 12px 10px;background:#0d0d0d">';
+  html+='<div style="font-size:10px;color:var(--text3);margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px">'+tix.length+' Ticket'+(tix.length!==1?'s':'')+' — click to open in Zendesk</div>';
+  html+='<div style="display:flex;flex-wrap:wrap;gap:4px">';
+  tix.sort((a,b)=>a.id-b.id).forEach(t=>{
+    const statusC=t.status==='Solved'?'#4caf7d':t.status==='New'?'#f5a623':t.status==='Open'?'#4f9cf9':t.status==='Pending'?'#f97058':'#888';
+    const esc=t.within_cx==='No';
+    const border=esc?'border:1px solid #f9705844;':'border:1px solid #2a2a2a;';
+    html+='<a href="https://reapglobal.zendesk.com/agent/tickets/'+t.id+'" target="_blank" rel="noopener" ';
+    html+='style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;background:#1a1a1a;'+border+'border-radius:4px;text-decoration:none;font-size:11px;font-family:IBM Plex Mono,monospace;color:var(--text2);transition:background 0.15s" ';
+    html+='onmouseenter="this.style.background=\'#252525\'" onmouseleave="this.style.background=\'#1a1a1a\'" ';
+    html+='title="#'+t.id+' · '+t.status+(t.assignee?' · '+t.assignee:'')+(t.res?' · '+t.res.toFixed(1)+'h res':'')+(esc?' · ESCALATED':'')+'">';
+    html+='<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:'+statusC+'"></span>';
+    html+=t.id;
+    if(esc) html+='<span style="color:#f97058;font-size:9px">↗</span>';
+    html+='</a>';
+  });
+  html+='</div>';
+  html+='<div style="margin-top:6px;font-size:10px;color:#555">Legend: <span style="color:#4caf7d">●</span> Solved <span style="color:#f5a623">●</span> New <span style="color:#4f9cf9">●</span> Open <span style="color:#f97058">●</span> Pending <span style="color:#f97058;font-size:9px">↗</span> Escalated</div>';
+  html+='</div>';
+  const newRow=document.createElement('tr');
+  newRow.id=rowId;
+  const colSpan=catName==='Other'?4:catName==='Uncategorized'?4:5;
+  newRow.innerHTML='<td colspan="'+colSpan+'" style="padding:0;border-left:3px solid #333">'+html+'</td>';
+  trEl.after(newRow);
+}
+
+function toggleCatSub(catName, el){
+  const rowId='cat-sub-'+catName.replace(/[^a-zA-Z0-9]/g,'');
+  const existing=document.getElementById(rowId);
+  if(existing){
+    existing.remove();
+    // flip arrow back
+    const arrowEl=el?el.querySelector('.cat-arrow'):null;
+    if(arrowEl) arrowEl.textContent='▸';
+    return;
+  }
+  // Find the parent row — walk up from clicked element
+  let targetRow=el;
+  while(targetRow && targetRow.tagName!=='TR') targetRow=targetRow.parentElement;
+  if(!targetRow) return;
+  const subHtml=buildCatSubBreakdown(catName);
+  if(!subHtml) return;
+  // flip arrow
+  const arrowEl=el?el.querySelector('.cat-arrow'):null;
+  if(arrowEl) arrowEl.textContent='▾';
+  const newRow=document.createElement('tr');
+  newRow.id=rowId;
+  const bColor=catName==='Other'?'var(--coral)':catName==='Uncategorized'?'var(--amber)':'var(--blue)';
+  newRow.innerHTML='<td colspan="7" style="padding:0;background:var(--bg);border-left:3px solid '+bColor+'">'+subHtml+'</td>';
+  targetRow.after(newRow);
+}
+
+function buildCatTable(cats){
+  const categories=cats||computeMetrics(filteredTickets).categories;
+  const tbody=document.getElementById('cat-tbody');
+  tbody.innerHTML=categories.map(c=>{
+    const safeName=c.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return '<tr style="cursor:pointer" onclick="toggleCatSub(\''+safeName+'\',this)">'+
+    '<td class="td-name">'+c.name+' <span class="cat-arrow" style="font-size:10px;margin-left:4px;color:var(--text3)">▸</span></td>'+
+    '<td class="mono">'+c.tickets+'</td>'+
+    '<td>'+escBadge(c.esc_rate)+'</td>'+
+    '<td class="mono">'+fmt(c.avg_res)+'</td>'+
+    '<td class="mono" style="color:'+((c.req_wait||0)>(c.agent_wait||0)?coral:'var(--text2)')+'">'+fmt(c.req_wait)+'</td>'+
+    '<td class="mono" style="color:'+((c.agent_wait||0)>(c.req_wait||0)?blue:'var(--text2)')+'">'+fmt(c.agent_wait)+'</td>'+
+    '<td>'+delayPill(c.req_wait,c.agent_wait)+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+// ═══════════════════════════════════ VOLUME TREND TOGGLE ═══════════════════════════════════
+let volumeTrend = 'daily';
+function setVolumeTrend(g){
+  volumeTrend = g;
+  ['daily','weekly','monthly'].forEach(t=>{
+    const btn = document.getElementById('voltrd-'+t);
+    if(!btn) return;
+    const isActive = t === g;
+    btn.classList.toggle('active', isActive);
+    btn.style.background = isActive ? coral : 'transparent';
+    btn.style.borderColor = isActive ? coral : 'var(--border2)';
+    btn.style.color = isActive ? '#fff' : 'var(--text3)';
+  });
+  const titles = {daily:'Daily Volume', weekly:'Weekly Volume', monthly:'Monthly Volume'};
+  const el = document.getElementById('sparkline-title');
+  if(el) el.textContent = titles[g];
+  renderSparkline();
+}
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function getWeekStart(dateStr){
+  // Parse date parts directly to avoid UTC-vs-local shift (critical for UTC+8)
+  const [y,m,dd] = dateStr.split('-').map(Number);
+  const d = new Date(y, m-1, dd); // local midnight
+  const day = d.getDay(); // 0=Sun
+  const diff = dd - day + (day === 0 ? -6 : 1); // roll back to Monday
+  const mon = new Date(y, m-1, diff);
+  const my = mon.getFullYear(), mm = String(mon.getMonth()+1).padStart(2,'0'), md = String(mon.getDate()).padStart(2,'0');
+  return `${my}-${mm}-${md}`;
+}
+function renderSparkline(){
+  destroyChart('sparklineChart');
+  let labels=[], counts=[];
+  if(volumeTrend === 'daily'){
+    const M = computeMetrics(filteredTickets);
+    labels = M.daily.labels.map(l=>l.slice(5));
+    counts = M.daily.counts;
+  } else if(volumeTrend === 'weekly'){
+    const wMap={};
+    filteredTickets.forEach(t=>{ if(!t.date) return; const k=getWeekStart(t.date); wMap[k]=(wMap[k]||0)+1; });
+    const sorted=Object.keys(wMap).sort();
+    labels = sorted.map(k=>{ const [,mm,dd]=k.split('-').map(Number); return 'Wk '+MONTHS[mm-1]+' '+dd; });
+    counts = sorted.map(k=>wMap[k]);
+  } else {
+    const mMap={};
+    filteredTickets.forEach(t=>{ if(!t.date) return; const k=t.date.slice(0,7); mMap[k]=(mMap[k]||0)+1; });
+    const sorted=Object.keys(mMap).sort();
+    labels = sorted.map(k=>{ const [y,m]=k.split('-'); return MONTHS[+m-1]+' '+y; });
+    counts = sorted.map(k=>mMap[k]);
+  }
+  if(!counts.length){ counts=[0]; labels=['—']; }
+  const peakIdx=counts.indexOf(Math.max(...counts));
+  const ptColors=counts.map((_,i)=>i===peakIdx?coral:blue);
+  const ptRadii=counts.map((_,i)=>i===peakIdx?5:3);
+  chartInstances['sparklineChart']=new Chart(document.getElementById('sparklineChart'),{
+    type: volumeTrend==='daily' ? 'line' : 'bar',
+    data:{labels,datasets:[{data:counts,
+      ...(volumeTrend==='daily'
+        ? {borderColor:blue,backgroundColor:'rgba(79,156,249,0.08)',tension:0.3,fill:true,pointBackgroundColor:ptColors,pointRadius:ptRadii,pointBorderWidth:0}
+        : {backgroundColor:counts.map((_,i)=>i===peakIdx?coral:blue),borderRadius:4})
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tooltipDefaults}},scales:{x:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor}},y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor}}}}
+  });
+}
+
+// ═══════════════════════════════════ VOLUME TAB TREND TOGGLE ═══════════════════════════════════
+let volumeTabTrend = 'daily';
+function setVolumeTrend2(g){
+  volumeTabTrend = g;
+  ['daily','weekly','monthly'].forEach(t=>{
+    const btn = document.getElementById('voltab-'+t);
+    if(!btn) return;
+    const isActive = t === g;
+    btn.classList.toggle('active', isActive);
+    btn.style.background = isActive ? coral : 'transparent';
+    btn.style.borderColor = isActive ? coral : 'var(--border2)';
+    btn.style.color = isActive ? '#fff' : 'var(--text3)';
+  });
+  renderDailyChart();
+}
+function renderDailyChart(){
+  destroyChart('dailyChart');
+  let labels=[], counts=[];
+  if(volumeTabTrend === 'daily'){
+    const M = computeMetrics(filteredTickets);
+    labels = M.daily.labels.map(l=>l.slice(5));
+    counts = M.daily.counts;
+  } else if(volumeTabTrend === 'weekly'){
+    const wMap={};
+    filteredTickets.forEach(t=>{ if(!t.date) return; const k=getWeekStart(t.date); wMap[k]=(wMap[k]||0)+1; });
+    const sorted=Object.keys(wMap).sort();
+    labels = sorted.map(k=>{ const [,mm,dd]=k.split('-').map(Number); return 'Wk '+MONTHS[mm-1]+' '+dd; });
+    counts = sorted.map(k=>wMap[k]);
+  } else {
+    const mMap={};
+    filteredTickets.forEach(t=>{ if(!t.date) return; const k=t.date.slice(0,7); mMap[k]=(mMap[k]||0)+1; });
+    const sorted=Object.keys(mMap).sort();
+    labels = sorted.map(k=>{ const [y,m]=k.split('-'); return MONTHS[+m-1]+' '+y; });
+    counts = sorted.map(k=>mMap[k]);
+  }
+  if(!counts.length){ counts=[0]; labels=['—']; }
+  const peakI = counts.indexOf(Math.max(...counts));
+  const titles = {daily:'Daily Volume', weekly:'Weekly Volume', monthly:'Monthly Volume'};
+  const titleEl = document.getElementById('daily-chart-title');
+  if(titleEl){
+    const peakLabel = counts[peakI] ? ` (peak: ${labels[peakI]} — ${counts[peakI]} tickets)` : '';
+    titleEl.textContent = titles[volumeTabTrend] + (volumeTabTrend === 'daily' ? peakLabel : peakLabel);
+  }
+  chartInstances['dailyChart']=new Chart(document.getElementById('dailyChart'),{
+    type:'bar',
+    data:{labels,datasets:[{data:counts,backgroundColor:counts.map((_,i)=>i===peakI?coral:blue),borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tooltipDefaults}},scales:{x:{ticks:{color:textColor,font:{size:10}},grid:{display:false}},y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor}}}}
+  });
+}
+
+// ═══════════════════════════════════ TEAM TAB FILTER ═══════════════════════════════════
+let teamFilter = 'ALL';
+const TEAM_COLORS = {ALL: coral, CS: '#4f9cf9', TS: '#f97058', IM: '#7c5cfc'};
+function setTeamFilter(group){
+  teamFilter = group;
+  ['ALL','CS','TS','IM'].forEach(g=>{
+    const btn = document.getElementById('teamflt-'+g.toLowerCase());
+    if(!btn) return;
+    const isActive = g === group;
+    btn.classList.toggle('active', isActive);
+    btn.style.background = isActive ? TEAM_COLORS[g] : 'transparent';
+    btn.style.borderColor = isActive ? TEAM_COLORS[g] : 'var(--border2)';
+    btn.style.color = isActive ? '#fff' : TEAM_COLORS[g];
+  });
+  renderTeamTab();
+}
+function renderTeamTab(){
+  const tickets = teamFilter === 'ALL' ? filteredTickets : filteredTickets.filter(t=>getGroup(t.assignee)===teamFilter);
+  buildAgentTable(computeMetrics(tickets).agents);
+}
+
+// ═══════════════════════════════════ CATEGORY GROUP FILTER ═══════════════════════════════════
+let catGroupFilter = 'ALL';
+const CAT_GROUP_COLORS = {ALL: coral, CS: '#4f9cf9', TS: '#f97058', IM: '#7c5cfc'};
+function setCatGroupFilter(group){
+  catGroupFilter = group;
+  ['ALL','CS','TS','IM'].forEach(g=>{
+    const btn = document.getElementById('catgrp-'+g.toLowerCase());
+    if(!btn) return;
+    const isActive = g === group;
+    const c = CAT_GROUP_COLORS[g];
+    btn.classList.toggle('active', isActive);
+    btn.style.background = isActive ? c : 'transparent';
+    btn.style.borderColor = isActive ? c : 'var(--border2)';
+    btn.style.color = isActive ? '#fff' : c;
+  });
+  renderCatTable();
+}
+function renderCatTable(){
+  let tickets = filteredTickets;
+  if(catGroupFilter !== 'ALL'){
+    tickets = filteredTickets.filter(t => getGroup(t.assignee) === catGroupFilter);
+  }
+  const cats = computeMetrics(tickets).categories;
+  buildCatTable(cats);
+}
+
+function csatCell(a){
+  if(!a.csat_n) return `<span style="color:var(--text3)">—</span>`;
+  const c = a.csat_score>=80 ? green : a.csat_score>=60 ? amber : coral;
+  const warn = a.csat_n<3 ? `<span style="font-size:10px;color:var(--amber);margin-left:3px">⚠</span>` : '';
+  return `<span class="mono" style="color:${c}">${a.csat_score}%</span><span style="font-size:10px;color:var(--text3);margin-left:4px">n=${a.csat_n}</span>${warn}`;
+}
+function buildAgentTable(ags){
+  const agents=ags||computeMetrics(filteredTickets).agents;
+  const tbody=document.getElementById('agent-tbody');
+  tbody.innerHTML=agents.map(a=>`<tr>
+    <td class="td-name">${a.name}</td>
+    <td class="mono">${a.tickets}</td>
+    <td>${escBadge(a.esc_rate)}</td>
+    <td class="mono">${fmt(a.avg_res)}</td>
+    <td class="mono" style="color:${(a.req_wait||0)>(a.agent_wait||0)?coral:'var(--text2)'}">${fmt(a.req_wait)}</td>
+    <td class="mono" style="color:${(a.agent_wait||0)>(a.req_wait||0)?blue:'var(--text2)'}">${fmt(a.agent_wait)}</td>
+    <td>${delayPill(a.req_wait||0,a.agent_wait||0)}</td>
+    <td>${csatCell(a)}</td>
+  </tr>`).join('');
+}
+
+function buildChannelTable(cp,total){
+  const chPerf=cp||computeMetrics(filteredTickets).channelPerf;
+  const tot=total||filteredTickets.length;
+  const tbody=document.getElementById('ch-tbody');
+  tbody.innerHTML=chPerf.map(c=>`<tr>
+    <td class="td-name">${c.channel}</td>
+    <td class="mono">${c.tickets}</td>
+    <td class="mono">${(c.tickets/tot*100).toFixed(1)}%</td>
+    <td>${escBadge(c.esc_rate)}</td>
+    <td class="mono">${fmt(c.avg_res)}</td>
+    <td class="mono">${fmt(c.req_wait)}</td>
+  </tr>`).join('');
+}
+
+// ═══════════════════════════════════ SORT ═══════════════════════════════════
+const sortState={};
+function sortTable(tableId,col){
+  const table=document.getElementById(tableId);
+  const tbody=table.querySelector('tbody');
+  const rows=Array.from(tbody.querySelectorAll('tr'));
+  const key=tableId+'_'+col;
+  sortState[key]=(sortState[key]==='asc')?'desc':'asc';
+  const asc=sortState[key]==='asc';
+  table.querySelectorAll('th').forEach((th,i)=>{th.classList.toggle('sorted',i===col);});
+  rows.sort((a,b)=>{
+    const av=a.cells[col].textContent.replace(/[%,h]/g,'').trim();
+    const bv=b.cells[col].textContent.replace(/[%,h]/g,'').trim();
+    const an=parseFloat(av),bn=parseFloat(bv);
+    if(!isNaN(an)&&!isNaN(bn)) return asc?an-bn:bn-an;
+    return asc?av.localeCompare(bv):bv.localeCompare(av);
+  });
+  rows.forEach(r=>tbody.appendChild(r));
+}
+
+// ═══════════════════════════════════ CHARTS ═══════════════════════════════════
+let chartInstances={};
+function destroyChart(id){if(chartInstances[id]){chartInstances[id].destroy();delete chartInstances[id];}}
+
+function initCharts(){
+  const M=computeMetrics(filteredTickets);
+  updateCharts(M);
+}
+
+function updateCharts(M){
+  // Sparkline — delegates to renderSparkline() which respects the active volumeTrend
+  renderSparkline();
+
+  // Overview doughnut
+  destroyChart('overviewDoughnutChart');
+  const chLabels=Object.keys(M.channels),chCounts=Object.values(M.channels);
+  chartInstances['overviewDoughnutChart']=new Chart(document.getElementById('overviewDoughnutChart'),{
+    type:'doughnut',
+    data:{labels:chLabels,datasets:[{data:chCounts,backgroundColor:[coral,blue,'#7c5cfc',amber,green],borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'right',labels:{color:textColor,font:{size:11},boxWidth:10}},tooltip:{...tooltipDefaults}},cutout:'65%'}
+  });
+
+  // Volume doughnut
+  destroyChart('channelDoughnutChart');
+  chartInstances['channelDoughnutChart']=new Chart(document.getElementById('channelDoughnutChart'),{
+    type:'doughnut',
+    data:{labels:chLabels,datasets:[{data:chCounts,backgroundColor:[coral,blue,'#7c5cfc',amber,green],borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'right',labels:{color:textColor,font:{size:11},boxWidth:10}},tooltip:{...tooltipDefaults}},cutout:'65%'}
+  });
+
+  // Buckets chart
+  destroyChart('bucketsChart');
+  const bColors=M.buckets.labels.map(l=>l==='~73h'||l==='3–4d'?coral:l==='7d+'?'#555':blue);
+  chartInstances['bucketsChart']=new Chart(document.getElementById('bucketsChart'),{
+    type:'bar',
+    data:{labels:M.buckets.labels,datasets:[{data:M.buckets.counts,backgroundColor:bColors,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tooltipDefaults}},scales:{x:{ticks:{color:textColor,font:{size:11}},grid:{display:false}},y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor}}}}
+  });
+
+  // OKR Resolution Share donut
+  destroyChart('resShareDonut');
+  const resArr = filteredTickets.filter(t=>t.res!=null&&t.res>0).map(t=>t.res);
+  const u24 = resArr.filter(r=>r<24).length;
+  const u48 = resArr.filter(r=>r>=24&&r<48).length;
+  const p48 = resArr.filter(r=>r>=48).length;
+  const resTotal = resArr.length;
+  const u24Pct = resTotal ? (u24/resTotal*100).toFixed(1) : '0.0';
+  const u48Pct = resTotal ? (u48/resTotal*100).toFixed(1) : '0.0';
+  const p48Pct = resTotal ? (p48/resTotal*100).toFixed(1) : '0.0';
+  document.getElementById('res-u24-n').textContent = u24;
+  document.getElementById('res-u24-pct').textContent = u24Pct + '% of resolved';
+  document.getElementById('res-u48-n').textContent = u48;
+  document.getElementById('res-u48-pct').textContent = u48Pct + '% of resolved';
+  document.getElementById('res-48p-n').textContent = p48;
+  document.getElementById('res-48p-pct').textContent = p48Pct + '% of resolved';
+  document.getElementById('res-share-pct').textContent = u24Pct + '%';
+  chartInstances['resShareDonut'] = new Chart(document.getElementById('resShareDonut'), {
+    type: 'doughnut',
+    data: {
+      labels: ['<24h', '24–48h', '48h+'],
+      datasets: [{ data: [u24||0, u48||0, p48||0], backgroundColor: [green, blue, '#3a3a3a'], borderWidth: 0, hoverOffset: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { ...tooltipDefaults, callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} tickets (${resTotal?(ctx.parsed/resTotal*100).toFixed(1):0}%)` } } },
+      cutout: '72%'
+    }
+  });
+
+  // Wait decomposition
+  destroyChart('waitDecompChart');
+  const catNames=M.categories.filter(c=>c.tickets>=3).map(c=>c.name);
+  const reqWaits=M.categories.filter(c=>c.tickets>=3).map(c=>c.req_wait||0);
+  const agentWaits=M.categories.filter(c=>c.tickets>=3).map(c=>c.agent_wait||0);
+  chartInstances['waitDecompChart']=new Chart(document.getElementById('waitDecompChart'),{
+    type:'bar',
+    data:{labels:catNames,datasets:[{label:'Cust Wait (CX delay)',data:reqWaits,backgroundColor:coral+'cc',borderRadius:3},{label:'Agent Wait (cust delay)',data:agentWaits,backgroundColor:blue+'cc',borderRadius:3}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{color:textColor,font:{size:11},boxWidth:10}},tooltip:{...tooltipDefaults}},scales:{x:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor}},y:{ticks:{color:textColor,font:{size:11}},grid:{display:false}}}}
+  });
+
+  // Daily volume bar — delegates to renderDailyChart() which respects the active volumeTabTrend
+  renderDailyChart();
+
+  // DOW bar
+  destroyChart('dowChart');
+  const dowColors=M.dow.labels.map(l=>l==='Mon'?coral:l==='Sat'||l==='Sun'?'#3a3a3a':blue);
+  chartInstances['dowChart']=new Chart(document.getElementById('dowChart'),{
+    type:'bar',
+    data:{labels:M.dow.labels,datasets:[{data:M.dow.counts,backgroundColor:dowColors,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tooltipDefaults}},scales:{x:{ticks:{color:textColor,font:{size:11}},grid:{display:false}},y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor}}}}
+  });
+
+  // CS / TS / IM group buckets — computed dynamically from filteredTickets
+  destroyChart('csTsChart');
+  const bLabels=D.buckets.labels;
+  function bucket(h){
+    if(h<1)return"<1h";if(h<4)return"1–4h";if(h<8)return"4–8h";if(h<24)return"8–24h";
+    if(h<48)return"1–2d";if(h<72)return"2–3d";if(h<=75)return"~73h";
+    if(h<96)return"3–4d";if(h<168)return"4–7d";return"7d+";
+  }
+  const grpBuckets={CS:{},TS:{},IM:{}};
+  const grpResolved={CS:0,TS:0,IM:0};
+  bLabels.forEach(l=>{grpBuckets.CS[l]=0;grpBuckets.TS[l]=0;grpBuckets.IM[l]=0;});
+  filteredTickets.forEach(t=>{
+    const g=getGroup(t.assignee);
+    if(!g||!grpBuckets[g])return;
+    if(t.res!=null&&t.res>0){grpBuckets[g][bucket(t.res)]=(grpBuckets[g][bucket(t.res)]||0)+1;grpResolved[g]++;}
+  });
+  updateGroupKPIs();
+  const csPctD=bLabels.map(l=>grpResolved.CS?grpBuckets.CS[l]/grpResolved.CS*100:0);
+  const tsPctD=bLabels.map(l=>grpResolved.TS?grpBuckets.TS[l]/grpResolved.TS*100:0);
+  const imPctD=bLabels.map(l=>grpResolved.IM?grpBuckets.IM[l]/grpResolved.IM*100:0);
+  chartInstances['csTsChart']=new Chart(document.getElementById('csTsChart'),{
+    type:'bar',
+    data:{labels:bLabels,datasets:[
+      {label:'CS',data:csPctD,backgroundColor:blue+'cc',borderRadius:3},
+      {label:'TS',data:tsPctD,backgroundColor:coral+'cc',borderRadius:3},
+      {label:'IM',data:imPctD,backgroundColor:'#7c5cfc99',borderRadius:3},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'top',labels:{color:textColor,font:{size:11},boxWidth:10}},tooltip:{...tooltipDefaults,callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`}}},scales:{x:{ticks:{color:textColor,font:{size:11}},grid:{display:false}},y:{ticks:{color:textColor,font:{size:10},callback:v=>v+'%'},grid:{color:gridColor}}}}
+  });
+}
+
+// ═══════════════════════════════════ HEATMAP ═══════════════════════════════════
+function drawHeatmap(){
+  const canvas=document.getElementById('heatmapCanvas');
+  const parent=canvas.parentElement;
+  const W=parent.clientWidth-36;
+  const LABEL_W=42,LEGEND_H=40,TOP_PAD=30,CELL_GAP=2,RADIUS=3;
+  const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const COLS=DAYS.length,ROWS=24;
+  const availW=W-LABEL_W;
+  const CELL_W=Math.floor((availW-CELL_GAP*(COLS-1))/COLS);
+  const CELL_H=16;
+  const H=TOP_PAD+ROWS*(CELL_H+CELL_GAP)-CELL_GAP+LEGEND_H+16;
+  canvas.width=W; canvas.height=H;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  // Find max
+  let maxVal=0;
+  DAYS.forEach(d=>Object.values(D.heatmap[d]||{}).forEach(v=>{if(v>maxVal)maxVal=v;}));
+
+  // Day labels
+  ctx.font='11px IBM Plex Sans';
+  ctx.fillStyle='#888';
+  ctx.textAlign='center';
+  DAYS.forEach((day,ci)=>{
+    const x=LABEL_W+ci*(CELL_W+CELL_GAP)+CELL_W/2;
+    ctx.fillText(day,x,TOP_PAD-10);
+  });
+
+  // Hour labels — all 24
+  ctx.textAlign='right'; ctx.textBaseline='middle'; ctx.font='9px IBM Plex Mono'; ctx.fillStyle='#888';
+  for(let h=0;h<24;h++){
+    const y=TOP_PAD+h*(CELL_H+CELL_GAP)+CELL_H/2;
+    const label=h===0?'12am':h<12?h+'am':h===12?'12pm':(h-12)+'pm';
+    ctx.fillText(label,LABEL_W-5,y);
+  }
+
+  // Cells
+  function cellColor(t){
+    if(t===0)return[22,22,30];
+    const r=Math.round(26+t*223),g=Math.round(40+t*72),b=Math.round(92-t*56);
+    return[r,g,b];
+  }
+  function roundRect(ctx,x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+    ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+    ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+    ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+  }
+
+  for(let h=0;h<24;h++){
+    for(let ci=0;ci<COLS;ci++){
+      const day=DAYS[ci];
+      const v=D.heatmap[day]?D.heatmap[day][String(h)]||0:0;
+      const t=maxVal>0?v/maxVal:0;
+      const[r,g,b]=cellColor(t);
+      const x=LABEL_W+ci*(CELL_W+CELL_GAP);
+      const y=TOP_PAD+h*(CELL_H+CELL_GAP);
+      ctx.shadowColor='transparent';ctx.shadowBlur=0;
+      if(t>0.7){ctx.shadowColor=`rgba(249,112,88,${(t-0.7)*0.6})`;ctx.shadowBlur=8;}
+      ctx.fillStyle=`rgb(${r},${g},${b})`;
+      roundRect(ctx,x,y,CELL_W,CELL_H,RADIUS);ctx.fill();
+      ctx.shadowColor='transparent';ctx.shadowBlur=0;
+      if(v>0){
+        ctx.save();
+        ctx.font=`9px IBM Plex Mono`;
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillStyle=t>0.45?'rgba(255,255,255,0.92)':'rgba(255,255,255,0.4)';
+        ctx.fillText(v.toFixed(1),x+CELL_W/2,y+CELL_H/2);
+        ctx.restore();
+      }
+    }
+  }
+
+  // Legend
+  const legY=TOP_PAD+ROWS*(CELL_H+CELL_GAP)+8;
+  const legX=LABEL_W,legW=W-LABEL_W-20,legH=12;
+  const grad=ctx.createLinearGradient(legX,0,legX+legW,0);
+  grad.addColorStop(0,'#161622');
+  grad.addColorStop(0.5,`rgb(${Math.round(26+0.5*223)},${Math.round(40+0.5*72)},${Math.round(92-0.5*56)})`);
+  grad.addColorStop(1,'#f97058');
+  roundRect(ctx,legX,legY,legW,legH,3);
+  ctx.fillStyle=grad;ctx.fill();
+  ctx.font='10px IBM Plex Sans';ctx.fillStyle='#666';
+  ctx.textAlign='left';ctx.fillText('Low',legX,legY+legH+12);
+  ctx.textAlign='center';ctx.fillText('Avg tickets / hour',legX+legW/2,legY+legH+12);
+  ctx.textAlign='right';ctx.fillText('High',legX+legW,legY+legH+12);
+
+  // Tooltip
+  const tooltip=document.getElementById('heatmap-tooltip');
+  canvas.onmousemove=(e)=>{
+    const rect=canvas.getBoundingClientRect();
+    const mx=e.clientX-rect.left,my=e.clientY-rect.top;
+    let found=false;
+    for(let h=0;h<24;h++){
+      for(let ci=0;ci<COLS;ci++){
+        const x=LABEL_W+ci*(CELL_W+CELL_GAP),y=TOP_PAD+h*(CELL_H+CELL_GAP);
+        if(mx>=x&&mx<=x+CELL_W&&my>=y&&my<=y+CELL_H){
+          const day=DAYS[ci];
+          const v=D.heatmap[day]?D.heatmap[day][String(h)]||0:0;
+          const hr=h===0?'12am':h<12?h+'am':h===12?'12pm':(h-12)+'pm';
+          tooltip.innerHTML=`<span style="color:#aaa">${day} ${hr}</span> <span style="color:#f97058;font-family:'IBM Plex Mono'">${v.toFixed(1)}</span>`;
+          tooltip.style.display='block';
+          tooltip.style.left=(e.clientX+12)+'px';
+          tooltip.style.top=(e.clientY-8)+'px';
+          found=true;break;
+        }
+      }
+      if(found)break;
+    }
+    if(!found){tooltip.style.display='none';}
+  };
+  canvas.onmouseleave=()=>{tooltip.style.display='none';};
+}
+window.addEventListener('resize',()=>{
+  if(document.getElementById('tab-volume').classList.contains('active'))drawHeatmap();
+});
+
+// ═══════════════════════════════════ AI PANEL ═══════════════════════════════════
+let apiKey='';
+let chatHistory=[];
+const SYSTEM_PROMPT=`You are a CX analytics expert assistant for Reap. Be direct, specific, and number-grounded. When asked about agents or categories, cite actual figures. Keep responses concise unless the question requires detail. Never hedge unnecessarily.
+
+Key column definitions:
+- req_wait_hrs = Customer Wait Time = customer waiting on CX (CX-side delay)
+- agent_wait_hrs = Agent Wait Time = agent waiting on customer reply (customer-side delay)
+- esc_rate = escalation rate % (Answered within CX = No)
+- CS = Customer Support agents: Timothy Hernandez, Ediline Postrano, Ian Soliman, Joe Flores, Lorenz Agustin, Mike Cunanan, LA Carlos, Eunice Suñga, Patric Pangan, Herbert Acpal, Racky Manlapaz
+- TS = Technical Support agents: Chang, Jose Shardin, Jaiber Kler, Jan Rivera, Bogdan Hristovski, Gilbert Arces, John Jacinto, Raymark Cayanan, Hans Wang, Allen Reyes, Adrian Maranan
+- IM = Implementation agents: Yen Lin, Samson Fok, Ethan Liou, Nicholas Tan, Michael Tjendra
+
+Full dataset (Mar 1–16, 2026):
+${JSON.stringify(D,null,2)}`;
+
+function toggleAI(){
+  document.getElementById('ai-panel').classList.toggle('open');
+}
+function checkKey(){
+  const v=document.getElementById('ai-key-input').value.trim();
+  document.getElementById('ai-send').disabled=!v&&!apiKey;
+}
+function saveKey(){
+  const v=document.getElementById('ai-key-input').value.trim();
+  if(!v){document.getElementById('ai-key-status').innerHTML='<span style="color:#f87171">Enter a key first</span>';return;}
+  apiKey=v;
+  document.getElementById('ai-key-status').innerHTML='<span style="color:#4caf7d">✓ Key saved</span>';
+  document.getElementById('ai-send').disabled=false;
+  setTimeout(()=>{document.getElementById('ai-key-status').innerHTML='';},3000);
+}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+async function sendMessage(){
+  const input=document.getElementById('ai-input');
+  const msg=input.value.trim();
+  if(!msg||!apiKey)return;
+  input.value='';input.style.height='40px';
+  appendMsg(msg,'user');
+  chatHistory.push({role:'user',content:msg});
+  const typing=appendTyping();
+  document.getElementById('ai-send').disabled=true;
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,system:SYSTEM_PROMPT,messages:chatHistory})
+    });
+    const data=await res.json();
+    typing.remove();
+    if(data.error){appendMsg('Error: '+data.error.message,'ai');}
+    else{
+      const reply=data.content[0].text;
+      chatHistory.push({role:'assistant',content:reply});
+      appendMsg(reply,'ai');
+    }
+  }catch(err){typing.remove();appendMsg('Network error: '+err.message,'ai');}
+  document.getElementById('ai-send').disabled=false;
+}
+function appendMsg(text,role){
+  const div=document.createElement('div');
+  div.className=role==='user'?'msg-user':'msg-ai';
+  div.textContent=text;
+  const msgs=document.getElementById('ai-messages');
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+  return div;
+}
+function appendTyping(){
+  const div=document.createElement('div');
+  div.className='msg-ai typing';
+  div.innerHTML='<span></span><span></span><span></span>';
+  const msgs=document.getElementById('ai-messages');
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+  return div;
+}
+
+
+// ═══════════════════════════════════ OPERATIONS TAB ═══════════════════════════════════
+let opsTrend = 'daily';
+let opsHeatmapMode = 'all';
+
+// ═══ Ops tab — dynamic filtering ═══════════════════════════════════════════
+function updateOpsKPIs(){
+  const from=document.getElementById('date-from').value;
+  const to=document.getElementById('date-to').value;
+  let newT=0, reT=0;
+  OPS.daily.labels.forEach((d,i)=>{
+    if(d>=from&&d<=to){newT+=OPS.daily.new[i]||0; reT+=OPS.daily.reopen[i]||0;}
+  });
+  const total=newT+reT;
+  const rate=total>0?(reT/total*100).toFixed(1):'0.0';
+  const days=Math.round((new Date(to)-new Date(from))/86400000)+1;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+  set('ops-kpi-new',       newT.toLocaleString());
+  set('ops-kpi-reopen',    reT.toLocaleString());
+  set('ops-kpi-total',     total.toLocaleString());
+  set('ops-kpi-rate',      rate+'%');
+  set('ops-kpi-sub-total', 'Over '+days+' days');
+}
+
+function getFilteredOpsDaily(){
+  const from=document.getElementById('date-from').value;
+  const to=document.getElementById('date-to').value;
+  const idx=[];
+  OPS.daily.labels.forEach((d,i)=>{if(d>=from&&d<=to)idx.push(i);});
+  return {
+    labels: idx.map(i=>OPS.daily.labels[i]),
+    new:    idx.map(i=>OPS.daily.new[i]),
+    reopen: idx.map(i=>OPS.daily.reopen[i])
+  };
+}
+
+function getFilteredOpsHeatmaps(){
+  const from=document.getElementById('date-from').value;
+  const to=document.getElementById('date-to').value;
+  const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const dowCount={}; DAYS.forEach(d=>{dowCount[d]=0;});
+  let cur=new Date(from+'T00:00:00'); const end=new Date(to+'T00:00:00');
+  while(cur<=end){
+    const dow=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][cur.getDay()];
+    dowCount[dow]++; cur.setDate(cur.getDate()+1);
+  }
+  // new ticket heatmap from RAW_TICKETS
+  const hmNew={}; DAYS.forEach(d=>{hmNew[d]={}; for(let h=0;h<24;h++) hmNew[d][String(h)]=0;});
+  RAW_TICKETS.forEach(t=>{
+    if(!t.date||t.date<from||t.date>to) return;
+    const dow=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(t.date+'T00:00:00').getDay()];
+    hmNew[dow][String(t.hour)]=(hmNew[dow][String(t.hour)]||0)+1;
+  });
+  DAYS.forEach(d=>{for(let h=0;h<24;h++){const k=String(h); hmNew[d][k]=dowCount[d]>0?+(hmNew[d][k]/dowCount[d]).toFixed(2):0;}});
+  // ops ratio for period
+  let newT=0, reT=0;
+  OPS.daily.labels.forEach((d,i)=>{if(d>=from&&d<=to){newT+=OPS.daily.new[i]||0; reT+=OPS.daily.reopen[i]||0;}});
+  const ratio=newT>0?(newT+reT)/newT:1;
+  // estimated reopen & all heatmaps (reopens distributed proportionally to new)
+  const hmRe={}, hmAll={};
+  DAYS.forEach(d=>{
+    hmRe[d]={}; hmAll[d]={};
+    for(let h=0;h<24;h++){
+      const k=String(h);
+      hmRe[d][k]=+(hmNew[d][k]*(ratio-1)).toFixed(2);
+      hmAll[d][k]=+(hmNew[d][k]*ratio).toFixed(2);
+    }
+  });
+  return {hmNew, hmRe, hmAll};
+}
+
+function setOpsTrend(g){
+  opsTrend = g;
+  ['daily','weekly','monthly'].forEach(t=>{
+    const btn=document.getElementById('opstrd-'+t);
+    if(!btn)return;
+    const isActive=t===g;
+    btn.classList.toggle('active',isActive);
+    btn.style.background=isActive?coral:'transparent';
+    btn.style.borderColor=isActive?coral:'var(--border2)';
+    btn.style.color=isActive?'#fff':'var(--text3)';
+  });
+  const titles={daily:'Daily Volume — New vs Reopen',weekly:'Weekly Volume — New vs Reopen',monthly:'Monthly Volume — New vs Reopen'};
+  const el=document.getElementById('ops-trend-title');
+  if(el) el.textContent=titles[g];
+  renderOpsTrendChart();
+}
+
+function setOpsHeatmap(mode){
+  opsHeatmapMode=mode;
+  const colors={all:coral, new:'#4f9cf9', reopen:'#f97058'};
+  ['all','new','reopen'].forEach(m=>{
+    const btn=document.getElementById('opshm-'+m);
+    if(!btn)return;
+    const isActive=m===mode;
+    btn.classList.toggle('active',isActive);
+    btn.style.background=isActive?colors[m]:'transparent';
+    btn.style.borderColor=isActive?colors[m]:'var(--border2)';
+    btn.style.color=isActive?'#fff':colors[m];
+  });
+  drawOpsHeatmap(mode);
+}
+
+function getOpsWeekStart(dateStr){
+  const [y,m,dd]=dateStr.split('-').map(Number);
+  const d=new Date(y,m-1,dd);
+  const day=d.getDay();
+  const diff=dd-day+(day===0?-6:1);
+  const mon=new Date(y,m-1,diff);
+  const my=mon.getFullYear(),mm=String(mon.getMonth()+1).padStart(2,'0'),md=String(mon.getDate()).padStart(2,'0');
+  return `${my}-${mm}-${md}`;
+}
+
+function renderOpsTrendChart(){
+  destroyChart('opsTrendChart');
+  const daily=getFilteredOpsDaily();
+  let labels=[], newCounts=[], reopenCounts=[];
+
+  if(opsTrend==='daily'){
+    labels=daily.labels.map(l=>l.slice(5));
+    newCounts=daily.new;
+    reopenCounts=daily.reopen;
+  } else if(opsTrend==='weekly'){
+    const wNew={}, wRe={};
+    daily.labels.forEach((d,i)=>{
+      const k=getOpsWeekStart(d);
+      wNew[k]=(wNew[k]||0)+daily.new[i];
+      wRe[k]=(wRe[k]||0)+daily.reopen[i];
+    });
+    const sorted=Object.keys(wNew).sort();
+    labels=sorted.map(k=>{const [,mm,dd]=k.split('-').map(Number);return 'Wk '+MONTHS[mm-1]+' '+dd;});
+    newCounts=sorted.map(k=>wNew[k]);
+    reopenCounts=sorted.map(k=>wRe[k]);
+  } else {
+    const mNew={}, mRe={};
+    daily.labels.forEach((d,i)=>{
+      const k=d.slice(0,7);
+      mNew[k]=(mNew[k]||0)+daily.new[i];
+      mRe[k]=(mRe[k]||0)+daily.reopen[i];
+    });
+    const sorted=Object.keys(mNew).sort();
+    labels=sorted.map(k=>{const [y,m]=k.split('-');return MONTHS[+m-1]+' '+y;});
+    newCounts=sorted.map(k=>mNew[k]);
+    reopenCounts=sorted.map(k=>mRe[k]);
+  }
+
+  const opsTotalLabelPlugin={
+    id:'opsTotalLabel',
+    afterDatasetsDraw(chart){
+      const ctx=chart.ctx;
+      const ds=chart.data.datasets;
+      const meta1=chart.getDatasetMeta(1); // Reopen is top of stack
+      meta1.data.forEach((bar,i)=>{
+        const total=(ds[0].data[i]||0)+(ds[1].data[i]||0);
+        if(!total)return;
+        ctx.save();
+        ctx.fillStyle='#ccc';
+        ctx.font='bold 10px IBM Plex Mono';
+        ctx.textAlign='center';
+        ctx.textBaseline='bottom';
+        ctx.fillText(total, bar.x, bar.y-4);
+        ctx.restore();
+      });
+    }
+  };
+  chartInstances['opsTrendChart']=new Chart(document.getElementById('opsTrendChart'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'New',data:newCounts,backgroundColor:blue+'cc',borderRadius:3,stack:'s'},
+      {label:'Reopen',data:reopenCounts,backgroundColor:coral+'cc',borderRadius:3,stack:'s'},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'top',labels:{color:textColor,font:{size:11},boxWidth:10}},tooltip:{...tooltipDefaults}},
+      scales:{
+        x:{ticks:{color:textColor,font:{size:10}},grid:{display:false},stacked:true},
+        y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},stacked:true}
+      }
+    },
+    plugins:[opsTotalLabelPlugin]
+  });
+}
+
+function drawOpsHeatmap(mode){
+  const filt=getFilteredOpsHeatmaps();
+  const hmData = mode==='new' ? filt.hmNew : mode==='reopen' ? filt.hmRe : filt.hmAll;
+  const accentColor = mode==='new' ? '#4f9cf9' : mode==='reopen' ? '#f97058' : coral;
+  const canvas=document.getElementById('opsHeatmapCanvas');
+  if(!canvas)return;
+  const parent=canvas.parentElement;
+  const W=parent.clientWidth-36;
+  const LABEL_W=42,LEGEND_H=40,TOP_PAD=30,CELL_GAP=2,RADIUS=3;
+  const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const COLS=DAYS.length,ROWS=24;
+  const availW=W-LABEL_W;
+  const CELL_W=Math.floor((availW-CELL_GAP*(COLS-1))/COLS);
+  const CELL_H=16;
+  const H=TOP_PAD+ROWS*(CELL_H+CELL_GAP)-CELL_GAP+LEGEND_H+16;
+  canvas.width=W; canvas.height=H;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  let maxVal=0;
+  DAYS.forEach(d=>Object.values(hmData[d]||{}).forEach(v=>{if(v>maxVal)maxVal=v;}));
+
+  // Day labels
+  ctx.font='11px IBM Plex Sans'; ctx.fillStyle='#888'; ctx.textAlign='center';
+  DAYS.forEach((day,ci)=>{
+    const x=LABEL_W+ci*(CELL_W+CELL_GAP)+CELL_W/2;
+    ctx.fillText(day,x,TOP_PAD-10);
+  });
+
+  // Hour labels + cells — all 24
+  ctx.textAlign='right';
+  for(let ri=0;ri<ROWS;ri++){
+    const y=TOP_PAD+ri*(CELL_H+CELL_GAP);
+    {ctx.fillStyle='#888';ctx.font='9px IBM Plex Mono';ctx.textBaseline='middle';ctx.fillText(`${ri}:00`,LABEL_W-5,y+CELL_H/2);}
+    DAYS.forEach((day,ci)=>{
+      const x=LABEL_W+ci*(CELL_W+CELL_GAP);
+      const val=(hmData[day]||{})[String(ri)]||0;
+      const t=maxVal>0?val/maxVal:0;
+      // navy → accent gradient
+      const r1=13,g1=30,b1=96; // navy
+      const r2=parseInt(accentColor.slice(1,3),16);
+      const g2=parseInt(accentColor.slice(3,5),16);
+      const b2=parseInt(accentColor.slice(5,7),16);
+      const r=Math.round(r1+(r2-r1)*t);
+      const g=Math.round(g1+(g2-g1)*t);
+      const b=Math.round(b1+(b2-b1)*t);
+      ctx.fillStyle=`rgb(${r},${g},${b})`;
+      ctx.beginPath();
+      ctx.roundRect(x,y,CELL_W,CELL_H,RADIUS);
+      ctx.fill();
+      // data label
+      if(val>0){
+        ctx.save();
+        ctx.fillStyle = t>0.5 ? 'rgba(0,0,0,0.75)' : 'rgba(255,255,255,0.7)';
+        ctx.font=`bold 9px IBM Plex Mono`;
+        ctx.textAlign='center';
+        ctx.textBaseline='middle';
+        ctx.fillText(val.toFixed(1), x+CELL_W/2, y+CELL_H/2);
+        ctx.restore();
+      }
+    });
+  }
+
+  // Legend
+  const LY=H-LEGEND_H+8,LW=160,LX=(W-LW)/2;
+  const grad=ctx.createLinearGradient(LX,0,LX+LW,0);
+  grad.addColorStop(0,'rgb(13,30,96)'); grad.addColorStop(1,accentColor);
+  ctx.fillStyle=grad; ctx.fillRect(LX,LY,LW,10);
+  ctx.font='10px IBM Plex Sans'; ctx.fillStyle='#888'; ctx.textAlign='left';
+  ctx.fillText('Low',LX,LY+24); ctx.textAlign='center';
+  ctx.fillText('Avg tickets / hour',LX+LW/2,LY+24); ctx.textAlign='right';
+  ctx.fillText('High',LX+LW,LY+24);
+
+  // Tooltip
+  const tooltip=document.getElementById('ops-heatmap-tooltip');
+  const newHandler=function(e){
+    const rect=canvas.getBoundingClientRect();
+    const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+    let found=false;
+    for(let ri=0;ri<ROWS;ri++){
+      for(let ci=0;ci<COLS;ci++){
+        const x=LABEL_W+ci*(CELL_W+CELL_GAP), y=TOP_PAD+ri*(CELL_H+CELL_GAP);
+        if(mx>=x&&mx<=x+CELL_W&&my>=y&&my<=y+CELL_H){
+          const val=((hmData[DAYS[ci]]||{})[String(ri)]||0).toFixed(2);
+          tooltip.style.display='block';
+          tooltip.style.left=(e.clientX+12)+'px';
+          tooltip.style.top=(e.clientY-20)+'px';
+          tooltip.innerHTML=`<span style="color:#4f9cf9;font-family:IBM Plex Mono">${DAYS[ci]} ${ri}:00</span><br><span style="color:${accentColor}">${val}</span> avg tickets/hr`;
+          found=true; break;
+        }
+      }
+      if(found)break;
+    }
+    if(!found){tooltip.style.display='none';}
+  };
+  canvas.onmousemove=newHandler;
+  canvas.onmouseleave=()=>{tooltip.style.display='none';};
+}
+
+
+// ═══════════════════════════════════ CAPACITY CHARTS ═══════════════════════════════════
+// ═══════════════════════════════════ DYNAMIC CAPACITY COMPUTATION ═══════════════════════════════════
+let capCache = null;  // cached result of computeCapacity()
+
+function computeCapacity(){
+  const from = document.getElementById('date-from').value;
+  const to   = document.getElementById('date-to').value;
+  const tickets = filteredTickets;
+
+  // ── Ops ratio for selected period ──
+  let opsNew = 0, opsReopen = 0;
+  OPS.daily.labels.forEach((d, i) => {
+    if(d >= from && d <= to){
+      opsNew    += OPS.daily.new[i]    || 0;
+      opsReopen += OPS.daily.reopen[i] || 0;
+    }
+  });
+  const opsTotal = opsNew + opsReopen;
+  const opsRatio = opsNew > 0 ? (opsTotal / opsNew) : 1;
+
+  // ── Calendar metrics ──
+  const msPerDay = 86400000;
+  const calDays  = Math.round((new Date(to) - new Date(from)) / msPerDay) + 1;
+  const weeks    = calDays / 7;
+
+  // ── Count unique DOWs in the date range (for accurate day-of-week averaging) ──
+  const dowCounts = {};  // {1:3, 2:3, ...} how many Mondays, Tuesdays, etc.
+  let cur = new Date(from + 'T00:00:00');
+  const endD = new Date(to + 'T00:00:00');
+  let weekdayCount = 0;
+  while(cur <= endD){
+    const jsDay = cur.getDay(); // 0=Sun
+    const dow = jsDay === 0 ? 7 : jsDay; // 1=Mon..7=Sun
+    dowCounts[dow] = (dowCounts[dow]||0) + 1;
+    if(jsDay >= 1 && jsDay <= 5) weekdayCount++;
+    cur.setDate(cur.getDate()+1);
+  }
+
+  // ── Work days per schedule group ──
+  const wdA = Math.round(weeks * 4), whA = wdA * 11;
+  const wdB = Math.round(weeks * 5), whB = wdB * 9;
+  const wdC = weekdayCount, whC = wdC * 9;
+  const schedWork = { A: {days:wdA, hours:whA}, B: {days:wdB, hours:whB}, C: {days:wdC, hours:whC} };
+
+  // ── Per-agent ticket counts from filtered data ──
+  const agentNew = {};
+  tickets.forEach(t => {
+    const a = t.assignee; if(!a) return;
+    agentNew[a] = (agentNew[a]||0) + 1;
+  });
+
+  // ── Build agent throughput data ──
+  const agentData = CAP.agents.map(a => {
+    const newT = agentNew[a.name] || 0;
+    const adjVol = Math.round(newT * opsRatio * 10) / 10;
+    const sw = schedWork[a.schedule] || schedWork.C;
+    const tpd = sw.days > 0 ? Math.round(adjVol / sw.days * 100) / 100 : 0;
+    const tph = sw.hours > 0 ? Math.round(adjVol / sw.hours * 1000) / 1000 : 0;
+    return { ...a, new_tickets: newT, adj_volume: adjVol, work_days: sw.days, work_hours: sw.hours, tpd, tph };
+  });
+
+  // ── Team summaries ──
+  const teamSummary = {};
+  ['CS','TS','IM'].forEach(g => {
+    const agents = agentData.filter(a => a.group === g);
+    const totalNew = agents.reduce((s,a) => s + a.new_tickets, 0);
+    const totalAdj = Math.round(totalNew * opsRatio * 10) / 10;
+    const totalReopen = Math.round(totalAdj - totalNew);
+    const totalWorkDays = agents.reduce((s,a) => s + a.work_days, 0);
+    const totalWorkHours = agents.reduce((s,a) => s + a.work_hours, 0);
+    const avgTpd = totalWorkDays > 0 ? totalAdj / totalWorkDays * agents.length : 0;
+    const avgTph = totalWorkHours > 0 ? totalAdj / totalWorkHours * agents.length : 0;
+    teamSummary[g] = {
+      agents: agents.length, newT: totalNew, reopen: totalReopen, adj: totalAdj,
+      avgTpd: Math.round(avgTpd * 100) / 100, avgTph: Math.round(avgTph * 100) / 100
+    };
+  });
+
+  // ── Intraday load per team (24h) — new tickets by hour, ops-adjusted ──
+  const hourByTeam = { CS:{}, TS:{}, IM:{} };
+  tickets.forEach(t => {
+    const g = getGroup(t.assignee); if(!g || !hourByTeam[g]) return;
+    hourByTeam[g][t.hour] = (hourByTeam[g][t.hour]||0) + 1;
+  });
+  const intraday24 = {};
+  ['CS','TS','IM'].forEach(g => {
+    intraday24[g] = {};
+    for(let h=0;h<24;h++){
+      const raw = hourByTeam[g][h] || 0;
+      intraday24[g][h] = calDays > 0 ? Math.round(raw * opsRatio / calDays * 100) / 100 : 0;
+    }
+  });
+
+  // ── Day×Hour matrix (dynamic) ──
+  // Pre-bucket tickets by (team, dow, hour) in a single pass
+  const teamDowHour = {}; // { 'CS': { '1': { '0': count } } }
+  ['CS','TS','IM'].forEach(g => { teamDowHour[g] = {}; for(let d=1;d<=7;d++){ teamDowHour[g][d]={}; for(let h=0;h<24;h++) teamDowHour[g][d][h]=0; }});
+  tickets.forEach(t => {
+    const g = getGroup(t.assignee); if(!g || !teamDowHour[g]) return;
+    const dow = parseInt(t.dow); if(isNaN(dow)) return;
+    teamDowHour[g][dow][t.hour]++;
+  });
+
+  const dayHourRaw = {}, dayHourMatrix = {}, dayHourAgents = {};
+  ['CS','TS','IM'].forEach(team => {
+    dayHourRaw[team] = {};
+    dayHourMatrix[team] = {};
+    dayHourAgents[team] = {};
+    const scheduled = new Set((CAP.team_scheduled_slots[team]||[]).map(([d,h])=>d+','+h));
+
+    for(let d=1;d<=7;d++){
+      dayHourRaw[team][d] = {};
+      dayHourMatrix[team][d] = {};
+      dayHourAgents[team][d] = {};
+      const nWeeks = dowCounts[d] || 0;
+      for(let h=0;h<24;h++){
+        const teamNew = teamDowHour[team][d][h];
+        const avgArrivals = nWeeks > 0 ? (teamNew / nWeeks) * opsRatio : 0;
+        dayHourRaw[team][d][h] = Math.round(avgArrivals * 100) / 100;
+
+        const agents = getAgentsOnShift(team, d, h);
+        const nAgents = agents.length;
+        dayHourAgents[team][d][h] = nAgents;
+
+        if(scheduled.has(d+','+h) && nAgents > 0){
+          dayHourMatrix[team][d][h] = Math.round(avgArrivals / nAgents * 100) / 100;
+        } else {
+          dayHourMatrix[team][d][h] = null;
+        }
+      }
+    }
+  });
+
+  capCache = {
+    opsNew, opsReopen, opsTotal, opsRatio,
+    calDays, weeks, weekdayCount, dowCounts,
+    schedWork, agentData, teamSummary,
+    intraday24, dayHourRaw, dayHourMatrix, dayHourAgents
+  };
+  return capCache;
+}
+
+// ═══════════════════════════════════ RENDER CAPACITY ═══════════════════════════════════
+function renderCapTeamSummary(cap){
+  const container = document.getElementById('cap-team-summary');
+  if(!container) return;
+  const teams = [
+    {id:'CS', label:'Customer Support', color:'#4f9cf9'},
+    {id:'TS', label:'Technical Support', color:'#f97058'},
+    {id:'IM', label:'Implementation',    color:'#7c5cfc'}
+  ];
+  container.innerHTML = teams.map(tm => {
+    const s = cap.teamSummary[tm.id];
+    return '<div class="group-kpi-block" style="border-color:'+tm.color+'22">'+
+      '<div class="group-label" style="color:'+tm.color+'">'+tm.id+' — '+tm.label+'</div>'+
+      '<div class="mini-kpi-row" style="grid-template-columns:repeat(4,1fr)">'+
+        '<div class="mini-kpi"><div class="label">Agents</div><div class="val mono" style="color:'+tm.color+'">'+s.agents+'</div></div>'+
+        '<div class="mini-kpi"><div class="label">Adj. Volume</div><div class="val mono">'+Math.round(s.adj).toLocaleString()+'</div><div style="font-size:10px;color:var(--text3)">'+s.newT+' new · '+s.reopen+' reopen</div></div>'+
+        '<div class="mini-kpi"><div class="label">Tickets / Day</div><div class="val mono">'+s.avgTpd.toFixed(2)+'</div><div style="font-size:10px;color:var(--text3)">per agent avg</div></div>'+
+        '<div class="mini-kpi"><div class="label">Tickets / Hour</div><div class="val mono">'+s.avgTph.toFixed(2)+'</div><div style="font-size:10px;color:var(--text3)">per work hour</div></div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function renderCapMethodNote(cap){
+  const el = document.getElementById('cap-method-note');
+  if(!el) return;
+  const r = cap.opsRatio.toFixed(2);
+  const sw = cap.schedWork;
+  el.innerHTML = '<strong style="color:#888">How throughput is computed:</strong> '+
+    'Volume = new tickets \u00d7 '+r+' (ops ratio for selected period, which includes reopens). '+
+    'Tickets/day divides adjusted volume by each agent\u2019s scheduled work days ('+cap.calDays+' calendar days → '+
+    'Group A: '+sw.A.days+'d/'+sw.A.hours+'h · Group B: '+sw.B.days+'d/'+sw.B.hours+'h · Group C: '+sw.C.days+'d/'+sw.C.hours+'h). '+
+    'Tickets/hour divides by total scheduled work hours. '+
+    '<span style="color:#666;margin-left:6px">Schedules: Patric / Eunice / LA / Racky / Lorenz / Herbert \u2192 4d/wk 11h · John / Gilbert / Jan / AJ (Adrian) / Allen \u2192 5d/wk 9h · Others \u2192 Mon\u2013Fri 9h</span>';
+}
+
+function initCapacityCharts(cap){
+  if(!cap) cap = capCache || computeCapacity();
+  const GROUP_COLORS = {CS:'#4f9cf9', TS:'#f97058', IM:'#7c5cfc'};
+
+  // Agent throughput bar chart
+  destroyChart('agentTpdChart');
+  const agData = cap.agentData.filter(a=>a.new_tickets>0).sort((a,b)=>b.tpd-a.tpd);
+  const agChartH = Math.max(320, agData.length * 22 + 40);
+  const agWrap = document.getElementById('agentTpdWrap');
+  if(agWrap) agWrap.style.height = agChartH + 'px';
+  chartInstances['agentTpdChart'] = new Chart(document.getElementById('agentTpdChart'),{
+    type:'bar',
+    data:{labels:agData.map(a=>a.name), datasets:[{data:agData.map(a=>a.tpd), backgroundColor:agData.map(a=>GROUP_COLORS[a.group]+'cc'), borderRadius:4}]},
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{...tooltipDefaults, callbacks:{
+          label: ctx => {
+            const a = agData[ctx.dataIndex];
+            return [
+              ' '+ctx.parsed.x.toFixed(2)+' tickets/day (adj)',
+              ' new: '+a.new_tickets+' · adj vol: '+a.adj_volume+' · work days: '+a.work_days+' · sched: '+a.schedule_label
+            ];
+          }
+        }},
+        datalabels: false
+      },
+      scales:{
+        x:{ticks:{color:textColor,font:{size:10}}, grid:{color:gridColor}, title:{display:true,text:'Adj. tickets / work day',color:textColor,font:{size:10}}},
+        y:{ticks:{color:textColor,font:{size:11},autoSkip:false}, grid:{display:false}}
+      }
+    }
+  });
+
+  // Period label
+  const from = document.getElementById('date-from').value;
+  const to   = document.getElementById('date-to').value;
+  const periodLabel = '('+from+' to '+to+' · ops ratio '+cap.opsRatio.toFixed(2)+'\u00d7)';
+  const tpdPeriod = document.getElementById('cap-tpd-period');
+  if(tpdPeriod) tpdPeriod.textContent = periodLabel;
+  const intraPeriod = document.getElementById('cap-intra-period');
+  if(intraPeriod) intraPeriod.textContent = periodLabel;
+
+  // Intraday load line chart — 24h
+  destroyChart('intradayChart');
+  const hours24 = Array.from({length:24},(_,h)=>h+':00');
+  const allH    = Array.from({length:24},(_,h)=>h);
+  chartInstances['intradayChart'] = new Chart(document.getElementById('intradayChart'),{
+    type:'line',
+    data:{labels:hours24, datasets:[
+      {label:'CS', data:allH.map(h=>cap.intraday24.CS[h]||0), borderColor:'#4f9cf9', backgroundColor:'rgba(79,156,249,0.08)', tension:0.3, fill:true, pointRadius:2, pointBorderWidth:0, pointBackgroundColor:'#4f9cf9'},
+      {label:'TS', data:allH.map(h=>cap.intraday24.TS[h]||0), borderColor:'#f97058', backgroundColor:'rgba(249,112,88,0.06)',  tension:0.3, fill:true, pointRadius:2, pointBorderWidth:0, pointBackgroundColor:'#f97058'},
+      {label:'IM', data:allH.map(h=>cap.intraday24.IM[h]||0), borderColor:'#7c5cfc', backgroundColor:'rgba(124,92,252,0.06)', tension:0.3, fill:true, pointRadius:2, pointBorderWidth:0, pointBackgroundColor:'#7c5cfc'},
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:true,position:'top',labels:{color:textColor,font:{size:11},boxWidth:10}}, tooltip:{...tooltipDefaults}},
+      scales:{
+        x:{ticks:{color:textColor,font:{size:10},maxRotation:0}, grid:{color:gridColor}},
+        y:{ticks:{color:textColor,font:{size:10}}, grid:{color:gridColor}, title:{display:true,text:'Avg tickets / hour',color:textColor,font:{size:10}}}
+      }
+    }
+  });
+}
+
+// ── DAY × HOUR MATRIX ────────────────────────────────────────────────────────
+let dhTeam = 'CS';
+const DH_TEAM_COLORS = {CS:'#4f9cf9', TS:'#f97058', IM:'#7c5cfc'};
+const DH_DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];  // cols
+const DH_DOW  = [1,2,3,4,5,6,7];
+
+function setDHTeam(t){
+  dhTeam = t;
+  ['CS','TS','IM'].forEach(g=>{
+    const btn = document.getElementById('dh-'+g.toLowerCase());
+    if(!btn) return;
+    const active = g===t;
+    const c = DH_TEAM_COLORS[g];
+    btn.style.background   = active ? c : 'transparent';
+    btn.style.borderColor  = active ? c : c+'88';
+    btn.style.color        = active ? '#fff' : c;
+  });
+  drawDayHourMatrix(t);
+}
+
+// ── which agents from this team are on shift at (dow, hour)? ──────────────────
+function getAgentsOnShift(team, dow, hour){
+  const DOW_ORDER=[1,2,3,4,5,6,7];
+  function prevDow(d){return DOW_ORDER[(DOW_ORDER.indexOf(d)+6)%7];}
+  function parseT(s){const m=s.match(/(\d+)(AM|PM)/i);let h=parseInt(m[1]);if(/PM/i.test(m[2])&&h!==12)h+=12;if(/AM/i.test(m[2])&&h===12)h=0;return h;}
+  function parseDays(s){
+    const dm={Sun:7,Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6};
+    const [a,b]=s.split('–');
+    const si=DOW_ORDER.indexOf(dm[a]),ei=DOW_ORDER.indexOf(dm[b]);
+    if(si<=ei)return new Set(DOW_ORDER.slice(si,ei+1));
+    return new Set([...DOW_ORDER.slice(si),...DOW_ORDER.slice(0,ei+1)]);
+  }
+  return CAP.agents.filter(a=>a.group===team).filter(a=>{
+    const sh=CAP.agent_shifts[a.name]; if(!sh)return false;
+    const parts=sh.shift.split('–'), start=parseT(parts[0]), end=parseT(parts[1]);
+    const days=parseDays(sh.days);
+    if(start<end) return days.has(dow)&&hour>=start&&hour<end;
+    return (hour>=start&&days.has(dow))||(hour<end&&days.has(prevDow(dow)));
+  }).map(a=>a.name);
+}
+
+function drawDayHourMatrix(team){
+  const canvas = document.getElementById('dayHourCanvas');
+  if(!canvas) return;
+  const cap = capCache || computeCapacity();
+  const matrix    = cap.dayHourMatrix[team];      // load per agent (null = off-shift)
+  const rawMatrix = cap.dayHourRaw[team];          // ops-adj avg arrivals
+  const agtMatrix = cap.dayHourAgents[team];       // n agents scheduled
+  const scheduled = new Set((CAP.team_scheduled_slots[team]||[]).map(([d,h])=>d+','+h));
+  const accent    = DH_TEAM_COLORS[team];
+  const parent    = canvas.parentElement;
+  const W         = parent.clientWidth - 36;
+
+  const LABEL_W=42, LEGEND_H=36, TOP_PAD=28, CELL_GAP=2, RADIUS=3;
+  const COLS=7, ROWS=24;
+  const availW = W - LABEL_W;
+  const CELL_W = Math.floor((availW - CELL_GAP*(COLS-1)) / COLS);
+  const CELL_H = 16;
+  const H = TOP_PAD + ROWS*(CELL_H+CELL_GAP) - CELL_GAP + LEGEND_H + 12;
+  canvas.width=W; canvas.height=H;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  // max over scheduled cells only (load per agent)
+  let maxVal = 0;
+  DH_DOW.forEach(d=>{ for(let h=0;h<24;h++){ const v=matrix[String(d)]?.[String(h)]; if(v!=null&&v>maxVal) maxVal=v; }});
+  if(maxVal===0) maxVal=1;
+
+  const ar = parseInt(accent.slice(1,3),16);
+  const ag = parseInt(accent.slice(3,5),16);
+  const ab = parseInt(accent.slice(5,7),16);
+
+  // Day labels
+  ctx.font='11px IBM Plex Sans'; ctx.fillStyle='#888'; ctx.textAlign='center';
+  DH_DAYS.forEach((day,ci)=>{
+    ctx.fillText(day, LABEL_W+ci*(CELL_W+CELL_GAP)+CELL_W/2, TOP_PAD-8);
+  });
+
+  // Hour labels + cells
+  for(let h=0;h<24;h++){
+    const y = TOP_PAD + h*(CELL_H+CELL_GAP);
+    ctx.textAlign='right'; ctx.fillStyle='#888'; ctx.font='9px IBM Plex Mono'; ctx.textBaseline='middle';
+    ctx.fillText(h+':00', LABEL_W-5, y+CELL_H/2);
+    DH_DOW.forEach((dow,ci)=>{
+      const x        = LABEL_W + ci*(CELL_W+CELL_GAP);
+      const load     = matrix[String(dow)]?.[String(h)];   // null if off-shift
+      const inSched  = scheduled.has(dow+','+h);
+      let fillStyle;
+      if(inSched){
+        const t = (load||0)/maxVal;
+        fillStyle = `rgb(${Math.round(13+(ar-13)*t)},${Math.round(30+(ag-30)*t)},${Math.round(50+(ab-50)*t)})`;
+      } else {
+        fillStyle = '#111';
+      }
+      ctx.fillStyle = fillStyle;
+      ctx.beginPath(); ctx.roundRect(x,y,CELL_W,CELL_H,RADIUS); ctx.fill();
+      if(inSched && load!=null && load>0){
+        const t = load/maxVal;
+        ctx.save();
+        ctx.fillStyle = t>0.45 ? 'rgba(0,0,0,0.75)' : 'rgba(255,255,255,0.65)';
+        ctx.font='bold 9px IBM Plex Mono'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(load.toFixed(2), x+CELL_W/2, y+CELL_H/2);
+        ctx.restore();
+      }
+    });
+  }
+
+  // Legend
+  const LY=H-LEGEND_H+6, LW=160, LX=(W-LW)/2;
+  const grad=ctx.createLinearGradient(LX,0,LX+LW,0);
+  grad.addColorStop(0,'rgb(13,30,50)'); grad.addColorStop(1,accent);
+  ctx.fillStyle=grad; ctx.fillRect(LX,LY,LW,8);
+  ctx.font='10px IBM Plex Sans'; ctx.fillStyle='#888';
+  ctx.textAlign='left';  ctx.fillText('0',LX,LY+20);
+  ctx.textAlign='center';ctx.fillText('Ops-adj tickets / agent / slot · shaded = scheduled',LX+LW/2,LY+20);
+  ctx.textAlign='right'; ctx.fillText(maxVal.toFixed(2),LX+LW,LY+20);
+
+  // Tooltip
+  const tooltip  = document.getElementById('dh-tooltip');
+  const dowNames = {1:'Mon',2:'Tue',3:'Wed',4:'Thu',5:'Fri',6:'Sat',7:'Sun'};
+  canvas.onmousemove = function(e){
+    const rect=canvas.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(canvas.width/rect.width);
+    const my=(e.clientY-rect.top)*(canvas.height/rect.height);
+    if(mx<LABEL_W){tooltip.style.display='none';return;}
+    const ci=Math.floor((mx-LABEL_W)/(CELL_W+CELL_GAP));
+    const ri=Math.floor((my-TOP_PAD)/(CELL_H+CELL_GAP));
+    if(ci<0||ci>=7||ri<0||ri>=24){tooltip.style.display='none';return;}
+    const dow=DH_DOW[ci], h=ri;
+    const load    = matrix[String(dow)]?.[String(h)];
+    const raw     = rawMatrix[String(dow)]?.[String(h)]||0;
+    const nAgents = agtMatrix[String(dow)]?.[String(h)]||0;
+    const inSched = scheduled.has(dow+','+h);
+    let html = `<strong>${dowNames[dow]} ${h}:00–${h+1}:00</strong><br>`;
+    html += `Avg arrivals (ops-adj): <strong>${raw.toFixed(2)}</strong><br>`;
+    if(inSched){
+      const names=getAgentsOnShift(team,dow,h);
+      html += `Agents on shift: <strong>${nAgents}</strong><br>`;
+      if(names.length){html+=`<span style="color:#aaa;font-size:11px">${names.join(' · ')}</span><br>`;}
+      html += `Load per agent: <strong style="color:${accent}">${load!=null?load.toFixed(2):'0.00'}</strong><br>`;
+      html += `<span style="color:#4caf7d">✓ Scheduled</span>`;
+    } else {
+      html += `<span style="color:#888">— No agents scheduled</span>`;
+    }
+    tooltip.innerHTML=html;
+    tooltip.style.display='block';
+    tooltip.style.left=(e.clientX+14)+'px';
+    tooltip.style.top=(e.clientY-10)+'px';
+  };
+  canvas.onmouseleave=()=>{tooltip.style.display='none';};
+}
+
+// ═══════════════════════════════════ CAPACITY EXPLAINER ═══════════════════════════════════
+function toggleCapExplainer(){
+  const body  = document.getElementById('cap-explainer-body');
+  const arrow = document.getElementById('cap-explainer-arrow');
+  if(!body) return;
+  const open = body.style.display === 'block';
+  body.style.display  = open ? 'none' : 'block';
+  arrow.style.transform = open ? '' : 'rotate(180deg)';
+}
+
+function toggleDHReadme(){
+  const b=document.getElementById('dh-readme-body');
+  const a=document.getElementById('dh-readme-arrow');
+  if(!b)return;
+  const open=b.style.display==='block';
+  b.style.display=open?'none':'block';
+  if(a)a.style.transform=open?'':'rotate(180deg)';
+}
+
+function toggleSchedRef(){
+  const b=document.getElementById('sched-ref-body');
+  const a=document.getElementById('sched-ref-arrow');
+  if(!b)return;
+  const open=b.style.display==='block';
+  b.style.display=open?'none':'block';
+  if(a)a.style.transform=open?'':'rotate(180deg)';
+}
+
+function buildSchedRef(){
+  const cont=document.getElementById('sched-ref-content');
+  if(!cont)return;
+  const teams=[
+    {id:'CS',label:'Customer Support',color:'#4f9cf9'},
+    {id:'TS',label:'Technical Support',color:'#f97058'},
+    {id:'IM',label:'Implementation',color:'#7c5cfc'}
+  ];
+  const schColors={A:'#f97058',B:'#4f9cf9',C:'#7c5cfc'};
+  const schLabels={A:'4d/wk · 11h',B:'5d/wk · 9h',C:'Mon–Fri · 9h'};
+  let html='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">';
+  teams.forEach(tm=>{
+    const agents=CAP.agents.filter(a=>a.group===tm.id);
+    html+=`<div style="background:#1a1a1a;border-radius:8px;padding:14px">`;
+    html+=`<div style="font-size:12px;font-weight:700;color:${tm.color};margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">${tm.id} — ${tm.label}</div>`;
+    html+=`<table style="width:100%;border-collapse:collapse">`;
+    html+=`<thead><tr style="color:#555;font-size:10px;text-transform:uppercase;letter-spacing:0.4px">`;
+    html+=`<th style="text-align:left;padding-bottom:6px;font-weight:600">Agent</th>`;
+    html+=`<th style="text-align:left;padding-bottom:6px;font-weight:600;padding-left:6px">Hours</th>`;
+    html+=`<th style="text-align:left;padding-bottom:6px;font-weight:600;padding-left:6px">Days</th>`;
+    html+=`</tr></thead><tbody>`;
+    agents.forEach(a=>{
+      const sh=CAP.agent_shifts[a.name];
+      const sc=a.schedule, dot=schColors[sc]||'#888';
+      html+=`<tr style="border-top:1px solid #242424">`;
+      html+=`<td style="padding:5px 0 5px 0;font-size:11.5px;color:var(--text1);white-space:nowrap">`;
+      html+=`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${dot};margin-right:5px;vertical-align:middle;flex-shrink:0"></span>${a.name}`;
+      html+=`</td>`;
+      if(sh){
+        html+=`<td style="padding:5px 0 5px 6px;font-size:11px;color:#4caf7d;font-family:'IBM Plex Mono',monospace;white-space:nowrap">${sh.shift}</td>`;
+        html+=`<td style="padding:5px 0 5px 6px;font-size:11px;color:var(--text2);white-space:nowrap">${sh.days}</td>`;
+      } else {
+        html+=`<td colspan="2" style="padding:5px 0 5px 6px;font-size:11px;color:#444">Standard</td>`;
+      }
+      html+=`</tr>`;
+    });
+    html+=`</tbody></table>`;
+    // mini schedule group legend at bottom
+    const usedGroups=[...new Set(agents.map(a=>a.schedule))].sort();
+    html+=`<div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap">`;
+    usedGroups.forEach(sc=>{
+      html+=`<span style="font-size:10px;color:${schColors[sc]||'#888'}">`;
+      html+=`<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:${schColors[sc]||'#888'};margin-right:3px;vertical-align:middle"></span>`;
+      html+=`${schLabels[sc]||sc}</span>`;
+    });
+    html+=`</div>`;
+    html+=`</div>`;
+  });
+  html+='</div>';
+  cont.innerHTML=html;
+}
+
+function updateCapExplainer(cap){
+  if(!cap) cap = capCache || computeCapacity();
+  const set = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+  const sw = cap.schedWork;
+
+  // ── Period title ──
+  const from = document.getElementById('date-from').value;
+  const to   = document.getElementById('date-to').value;
+  const fmtD = d => { const p=d.split('-'); return p[1]+'/'+p[2]; };
+  set('cap-period-note', fmtD(from)+' – '+fmtD(to)+' ('+cap.calDays+'d) · adjusted for new + reopen volume · per-agent schedules');
+
+  // ── How to Read section ──
+  set('cap-ex-new',         cap.opsNew.toLocaleString());
+  set('cap-ex-reopen',      cap.opsReopen.toLocaleString());
+  set('cap-ex-total',       cap.opsTotal.toLocaleString());
+  set('cap-ex-ratio1',      cap.opsRatio.toFixed(2) + '\u00d7');
+  set('cap-ex-ratio2',      cap.opsRatio.toFixed(2) + '\u00d7');
+  set('cap-ex-days-header', cap.calDays + '-day period');
+  set('cap-ex-days-a',      sw.A.days + ' work days \u00b7 ' + sw.A.hours + ' hrs');
+  set('cap-ex-days-b',      sw.B.days + ' work days \u00b7 ' + sw.B.hours + ' hrs');
+  set('cap-ex-days-c',      sw.C.days + ' work days \u00b7 ' + sw.C.hours + ' hrs');
+
+  // ── Matrix readme ──
+  set('dh-rm-ratio',  cap.opsRatio.toFixed(2) + '\u00d7');
+  set('dh-rm-period', cap.calDays + '-day period');
+  const weeksLabel = cap.weeks < 1 ? (cap.calDays + ' days') : (cap.weeks.toFixed(1) + ' weeks');
+  set('dh-rm-weeks', weeksLabel);
+}
+
+// ═══════════════════════════════════ INIT ═══════════════════════════════════
+// Set date input max to yesterday (always current, regardless of data range)
+(function(){
+  const y = new Date(); y.setDate(y.getDate()-1);
+  const yesterday = y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0');
+  document.getElementById('date-from').max = yesterday;
+  document.getElementById('date-to').max   = yesterday;
+})();
+const M0=computeMetrics(filteredTickets);
+updateKPIs(M0);
+updateTeamCompare();
+setVolumeTrend('daily');
+setVolumeTrend2('daily');
+setCatGroupFilter('ALL');
+setTeamFilter('ALL');
+// ── Capacity init (dynamic) ──
+const cap0 = computeCapacity();
+renderCapTeamSummary(cap0);
+renderCapMethodNote(cap0);
+initCapacityCharts(cap0);
+updateCapExplainer(cap0);
+buildSchedRef();
+setOpsTrend('daily');
+setOpsHeatmap('all');
+buildChannelTable(M0.channelPerf,M0.total);
+initCharts();
+</script>
+</body>
+</html>
