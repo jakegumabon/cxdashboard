@@ -1,4 +1,4 @@
-name: Build & Deploy CX Dashboard
+name: Build CX Dashboard
 
 on:
   # Trigger when data/latest.zip is updated (by Google Apps Script)
@@ -12,14 +12,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-# Only allow one deployment at a time
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
+  contents: write
 
 jobs:
   build:
@@ -56,22 +49,13 @@ jobs:
             exit 1
           fi
           echo "Dashboard size: $(du -h docs/index.html | cut -f1)"
-          # Quick sanity check: file should contain ticket data
           grep -q "RAW_TICKETS" docs/index.html && echo "✓ RAW_TICKETS found"
           grep -q "ASSIGNEE_GROUP" docs/index.html && echo "✓ ASSIGNEE_GROUP found"
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Commit built dashboard back to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/index.html
+          git diff --staged --quiet || git commit -m "build: update dashboard $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push
