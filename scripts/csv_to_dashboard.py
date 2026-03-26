@@ -465,6 +465,13 @@ def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_
         print("  ✓ All agents mapped to a team")
     html = html.replace("/*{{UNMAPPED_NOTICE}}*/", notice_html)
 
+    # Inject pipeline run timestamp (HKT = UTC+8)
+    from datetime import timezone, timedelta
+    hkt = timezone(timedelta(hours=8))
+    generated_at = datetime.now(hkt).strftime("%b %d, %Y · %H:%M HKT")
+    html = html.replace("{{GENERATED_AT}}", generated_at)
+    print(f"  Generated at: {generated_at}")
+
     os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html)
