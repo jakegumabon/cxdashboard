@@ -35,6 +35,13 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
 .kpi-blue .kpi-value{color:var(--blue)}
 .kpi-green .kpi-value{color:var(--green)}
 .kpi-amber .kpi-value{color:var(--amber)}
+.kpi-target{font-size:10px;color:var(--text3);margin-top:6px;font-family:'IBM Plex Mono',monospace;letter-spacing:.3px}
+.kpi-on-target{border-color:#1a4a2e!important;background:#0a1f14!important}
+.kpi-on-target .kpi-value{color:var(--green)!important}
+.kpi-on-target .kpi-target{color:#4caf7d99}
+.kpi-off-target{border-color:var(--coral-dim)!important;background:var(--coral-faint)!important}
+.kpi-off-target .kpi-value{color:var(--coral)!important}
+.kpi-off-target .kpi-target{color:#f9705899}
 /* Charts */
 .chart-row{display:grid;gap:16px;margin-bottom:24px}
 .chart-row-2{grid-template-columns:1fr 1fr}
@@ -175,10 +182,10 @@ tr:hover td{background:var(--surface2)}
   <div class="kpi-grid" id="overview-kpis">
     <div class="kpi" data-kpi="total" onclick="openDrilldown('total',this)"><div class="kpi-label">Total Tickets</div><div class="kpi-value mono" id="kpi-total">681</div><div class="kpi-sub" id="kpi-period">Mar 1–16, 2026</div></div>
     <div class="kpi kpi-coral"><div class="kpi-label">Reopen Rate</div><div class="kpi-value mono" id="kpi-reopen-rate">—</div><div class="kpi-sub" id="kpi-reopen-sub">—</div></div>
-    <div class="kpi kpi-coral" data-kpi="escrate" onclick="openDrilldown('escrate',this)"><div class="kpi-label">Escalation Rate</div><div class="kpi-value mono" id="kpi-escrate">28.8%</div><div class="kpi-sub" id="kpi-esc-sub">196 of 681 escalated</div></div>
-    <div class="kpi kpi-amber" data-kpi="csat" onclick="openDrilldown('csat',this)"><div class="kpi-label">CSAT Score</div><div class="kpi-value mono" id="kpi-csat">100%</div><div class="kpi-sub" id="kpi-csat-sub">n=7 rated</div><div class="kpi-flag" id="kpi-csat-flag">⚠ Unreliable — n&lt;30</div></div>
-    <div class="kpi kpi-blue" data-kpi="median" onclick="openDrilldown('median',this)"><div class="kpi-label">Avg Resolution</div><div class="kpi-value mono" id="kpi-median">68.5h</div><div class="kpi-sub">Resolved tickets only</div></div>
-    <div class="kpi" data-kpi="rw" onclick="openDrilldown('rw',this)"><div class="kpi-label">Avg Customer Wait</div><div class="kpi-value mono" id="kpi-rw">23.4h</div><div class="kpi-sub">Customer waiting on CX · <span style="opacity:0.7">solved tickets</span></div></div>
+    <div class="kpi kpi-coral" id="kpi-card-escrate" data-kpi="escrate" onclick="openDrilldown('escrate',this)"><div class="kpi-label">Escalation Rate</div><div class="kpi-value mono" id="kpi-escrate">28.8%</div><div class="kpi-sub" id="kpi-esc-sub">196 of 681 escalated</div><div class="kpi-target" id="kpi-target-escrate">Target: ≤15%</div></div>
+    <div class="kpi kpi-amber" id="kpi-card-csat" data-kpi="csat" onclick="openDrilldown('csat',this)"><div class="kpi-label">CSAT Score</div><div class="kpi-value mono" id="kpi-csat">100%</div><div class="kpi-sub" id="kpi-csat-sub">n=7 rated</div><div class="kpi-flag" id="kpi-csat-flag">⚠ Unreliable — n&lt;30</div><div class="kpi-target" id="kpi-target-csat">Target: ≥75%</div></div>
+    <div class="kpi kpi-blue" id="kpi-card-median" data-kpi="median" onclick="openDrilldown('median',this)"><div class="kpi-label">Avg Resolution</div><div class="kpi-value mono" id="kpi-median">68.5h</div><div class="kpi-sub">Resolved tickets only</div><div class="kpi-target" id="kpi-target-median">Target: ≤48h</div></div>
+    <div class="kpi" id="kpi-card-rw" data-kpi="rw" onclick="openDrilldown('rw',this)"><div class="kpi-label">Avg Customer Wait</div><div class="kpi-value mono" id="kpi-rw">23.4h</div><div class="kpi-sub">Customer waiting on CX · <span style="opacity:0.7">solved tickets</span></div><div class="kpi-target" id="kpi-target-rw">Target: ≤24h</div></div>
     <div class="kpi" data-kpi="aw" onclick="openDrilldown('aw',this)"><div class="kpi-label">Avg Agent Wait</div><div class="kpi-value mono" id="kpi-aw">42.5h</div><div class="kpi-sub">Agent waiting on customer · <span style="opacity:0.7">solved tickets</span></div></div>
     <div class="kpi" data-kpi="srr" onclick="openDrilldown('srr',this)"><div class="kpi-label">Survey Response Rate</div><div class="kpi-value mono" id="kpi-srr">2.1%</div><div class="kpi-sub" id="kpi-srr-sub">7 of 328 surveyed responded</div></div>
   </div>
@@ -845,6 +852,18 @@ function updateKPIs(M){
   const wallPct=M.total>0?(wallN/M.total*100).toFixed(1):'0.0';
   document.getElementById('res-kpi-wall').textContent=wallN;
   document.getElementById('res-kpi-wall-sub').textContent=wallPct+'% of total — auto-close';
+  // Target-based color coding
+  function applyTarget(cardId, value, target, lowerIsBetter){
+    const card=document.getElementById(cardId);
+    if(!card||value==null) return;
+    card.className=card.className.replace(/\bkpi-on-target\b|\bkpi-off-target\b/g,'').trim();
+    const onTarget=lowerIsBetter?(value<=target):(value>=target);
+    card.className+=(onTarget?' kpi-on-target':' kpi-off-target');
+  }
+  applyTarget('kpi-card-escrate', M.esc_rate, 15, true);
+  applyTarget('kpi-card-csat', M.csat_score, 75, false);
+  applyTarget('kpi-card-median', M.mean_res, 48, true);
+  applyTarget('kpi-card-rw', M.avg_rw, 24, true);
 }
 
 // ═══════════════════════════════════ PER-TEAM KPI COMPARISON ═══════════════════════════════════
