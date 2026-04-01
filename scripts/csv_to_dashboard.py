@@ -22,16 +22,22 @@ from datetime import datetime
 # ── Config ──────────────────────────────────────────────────────────────────
 
 # Patterns to match CSV filenames inside the zip (case-insensitive partial match)
-SR_PATTERN  = "support_requests"
-PI_PATTERN  = "product_issue"
+SR_PATTERN      = "support_requests"
+TR_PATTERN      = "technical_request"   # replaces product_issue from Apr 1 2026
+PI_PATTERN      = "product_issue"       # kept for backward-compat with old zips
 OPS_NEW_PATTERN = "new_tickets"
 OPS_REO_PATTERN = "reopened_tickets"
 
 # Fallback exact filenames (for manually placed CSVs)
 SR_CSV  = "BI Customer Contacts - Support Requests plus Question  Guidance.csv"
-PI_CSV  = "BI Customer Contacts - Product Issue.csv"
+TR_CSV  = "BI Customer Contacts - Technical Request.csv"
+PI_CSV  = "BI Customer Contacts - Product Issue.csv"       # legacy fallback
 OPS_NEW = "BI Operational Volume - New tickets.csv"
 OPS_REO = "BI Operational Volume - Reopened tickets.csv"
+
+# Cutover date: on/after this date SR uses Escalation Type field for escalation;
+# before this date SR uses on-hold proxy (preserves March baseline for trend)
+SR_ESC_CUTOVER = "2026-04-01"
 
 # Sub-columns in the SR/QG CSV whose non-empty value gives Cat Lv 2
 SR_SUB_COLUMNS = [
@@ -44,7 +50,21 @@ SR_SUB_COLUMNS = [
     "Settlement, Repayment & Fees",
 ]
 
-# Sub-columns in the PI CSV whose non-empty value gives Cat Lv 2
+# Sub-columns in the TR CSV whose non-empty value gives Cat Lv 2 (from Apr 1 2026)
+TR_SUB_COLUMNS = [
+    "3DS", "API", "ATM", "Cards (CaaS)", "Crypto", "Files", "KYC",
+    "Security", "Transactions", "Wallets", "Webhooks",
+    "Accounts", "Cards (Direct)", "Dashboard", "Payments",
+]
+
+# Technical Category values whose display name differs from the sub-column header
+TR_CAT_TO_SUBCOL = {
+    "Accounts (Direct)":  "Accounts",
+    "Dashboard (Direct)": "Dashboard",
+    "Payments (Direct)":  "Payments",
+}
+
+# Sub-columns in the PI CSV whose non-empty value gives Cat Lv 2 (legacy)
 PI_SUB_COLUMNS = [
     "Authentication & Security Issues",
     "Card Functionality Issues",
@@ -156,24 +176,32 @@ def identify_csv(filenames, pattern, fallback_name):
 
 
 def extract_zip(zip_path, extract_dir):
-    """Extract zip and return paths to the 4 CSVs."""
+    """Extract zip and return paths to the CSVs.
+
+    Returns a dict with keys: sr, tr (or pi as fallback), ops_new, ops_reo.
+    'tr_mode' key is True if a Technical Request file was found, False if
+    falling back to legacy Product Issue.
+    """
     with zipfile.ZipFile(zip_path, 'r') as zf:
         zf.extractall(extract_dir)
         filenames = zf.namelist()
 
-    sr = identify_csv(filenames, SR_PATTERN, SR_CSV)
-    pi = identify_csv(filenames, PI_PATTERN, PI_CSV)
+    sr      = identify_csv(filenames, SR_PATTERN,      SR_CSV)
+    tr      = identify_csv(filenames, TR_PATTERN,      TR_CSV)
+    pi      = identify_csv(filenames, PI_PATTERN,      PI_CSV)   # legacy fallback
     ops_new = identify_csv(filenames, OPS_NEW_PATTERN, OPS_NEW)
     ops_reo = identify_csv(filenames, OPS_REO_PATTERN, OPS_REO)
 
-    # If pattern matching fails, try matching by content keywords in filename
-    if not sr or not pi or not ops_new or not ops_reo:
+    # Keyword fallback scan
+    if not sr or not (tr or pi) or not ops_new or not ops_reo:
         for fn in filenames:
             bn = os.path.basename(fn).lower()
             if not bn.endswith(".csv"):
                 continue
             if not sr and ("support_request" in bn or "question" in bn or "guidance" in bn):
                 sr = fn
+            elif not tr and "technical_request" in bn:
+                tr = fn
             elif not pi and "product_issue" in bn:
                 pi = fn
             elif not ops_new and "new_ticket" in bn:
@@ -181,28 +209,35 @@ def extract_zip(zip_path, extract_dir):
             elif not ops_reo and ("reopened" in bn or "reopen" in bn):
                 ops_reo = fn
 
-    # Last resort: match by order / common Zendesk naming
-    if not sr or not pi or not ops_new or not ops_reo:
+    # Last resort: match by Zendesk Explore tab names
+    if not sr or not (tr or pi) or not ops_new or not ops_reo:
         csv_files = [fn for fn in filenames if fn.lower().endswith(".csv")]
         print(f"  Available CSVs in zip: {csv_files}", file=sys.stderr)
-        # Try matching by Zendesk Explore tab names
         for fn in csv_files:
             bn = os.path.basename(fn).lower()
-            if not sr and ("customer_contacts" in bn and "product" not in bn):
+            if not sr and "customer_contacts" in bn and "product" not in bn and "technical" not in bn:
                 sr = fn
-            elif not pi and ("customer_contacts" in bn and "product" in bn):
+            elif not tr and "customer_contacts" in bn and "technical" in bn:
+                tr = fn
+            elif not pi and "customer_contacts" in bn and "product" in bn:
                 pi = fn
             elif not ops_new and "operational" in bn and "new" in bn:
                 ops_new = fn
             elif not ops_reo and "operational" in bn and "reopen" in bn:
                 ops_reo = fn
 
+    # Decide: use TR if found, otherwise fall back to legacy PI
+    tr_mode = tr is not None
+    second_file = tr if tr_mode else pi
+    second_label = "Technical Request" if tr_mode else "Product Issue (legacy)"
+    second_key   = "tr"
+
     paths = {}
     for key, val, label, required in [
-        ("sr",      sr,      "Support Requests + Q&G",  True),
-        ("pi",      pi,      "Product Issue",            True),
-        ("ops_new", ops_new, "Ops New Tickets",          False),
-        ("ops_reo", ops_reo, "Ops Reopened Tickets",     False),
+        ("sr",        sr,          "Support Requests + Q&G", True),
+        (second_key,  second_file, second_label,             True),
+        ("ops_new",   ops_new,     "Ops New Tickets",        False),
+        ("ops_reo",   ops_reo,     "Ops Reopened Tickets",   False),
     ]:
         if val is None:
             if required:
@@ -215,6 +250,7 @@ def extract_zip(zip_path, extract_dir):
             paths[key] = os.path.join(extract_dir, val)
             print(f"  {label}: {val}")
 
+    paths["tr_mode"] = tr_mode
     return paths
 
 
@@ -231,8 +267,15 @@ def parse_sr(csv_path):
             cat1 = row.get("Support Category", "").strip()
             cat2 = find_cat2(row, SR_SUB_COLUMNS, primary_category=cat1, cat_to_subcol=SR_CAT_TO_SUBCOL)
             cat1 = CAT1_NORMALIZE.get(cat1, cat1)
-            on_hold = safe_float(row.get("On-hold time (hrs)"))
-            within_cx = "Yes" if on_hold == 0.0 else "No"
+            date_str = row.get("Ticket created - Date", "").strip()
+            esc_type = row.get("Escalation Type", "").strip()
+            if date_str >= SR_ESC_CUTOVER and esc_type:
+                # Apr 1 2026+ : use explicit Escalation Type field
+                within_cx = "Yes" if esc_type == "No Escalation" else "No"
+            else:
+                # Pre-Apr 1 (or missing field): use on-hold proxy to preserve March baseline
+                on_hold = safe_float(row.get("On-hold time (hrs)"))
+                within_cx = "Yes" if on_hold == 0.0 else "No"
             oc = row.get("Other Category", "").strip()
             ticket = {
                 "id": safe_int(ticket_id),
@@ -286,6 +329,49 @@ def parse_pi(csv_path):
                 "cat1": cat1,
                 "cat2": cat2,
                 "req_type": "Product Issue",
+                "within_cx": within_cx,
+                "clean": safe_int(row.get("Tickets not merged and not dispute", 1)),
+                "res": round(safe_float(row.get("Full resolution time (hrs)")), 2),
+                "rw": round(safe_float(row.get("Requester wait time (hrs)")), 2),
+                "aw": round(safe_float(row.get("Agent wait time (hrs)")), 2),
+                "surveyed": safe_int(row.get("Surveyed satisfaction tickets")),
+                "good": safe_int(row.get("Good satisfaction tickets")),
+                "bad": safe_int(row.get("Bad satisfaction tickets")),
+                "dow": get_dow(row.get("Ticket created - Date", "").strip()),
+            }
+            if oc and oc != " ":
+                ticket["oc"] = oc
+            tickets.append(ticket)
+    return tickets
+
+
+# ── Parse Technical Request (replaces Product Issue from Apr 1 2026) ────────
+
+def parse_tr(csv_path):
+    tickets = []
+    with open(csv_path, newline="", encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            ticket_id = row.get("Ticket ID", "").strip()
+            if not ticket_id:
+                continue
+            cat1_raw = row.get("Technical Category", "").strip()
+            cat2 = find_cat2(row, TR_SUB_COLUMNS, primary_category=cat1_raw, cat_to_subcol=TR_CAT_TO_SUBCOL)
+            # Normalize display name (strip "(Direct)" suffix variants)
+            cat1 = TR_CAT_TO_SUBCOL.get(cat1_raw, cat1_raw)
+            esc_type = row.get("Escalation Type", "").strip()
+            within_cx = "Yes" if esc_type == "No Escalation" else "No"
+            oc = row.get("Other Category", "").strip()
+            ticket = {
+                "id": safe_int(ticket_id),
+                "date": row.get("Ticket created - Date", "").strip(),
+                "hour": safe_int(row.get("Ticket created - Hour")),
+                "status": row.get("Ticket status", "").strip(),
+                "channel": row.get("Ticket Channel v2", "").strip(),
+                "assignee": row.get("Assignee name", "").strip(),
+                "cat1": cat1,
+                "cat2": cat2,
+                "req_type": "Technical Request",
                 "within_cx": within_cx,
                 "clean": safe_int(row.get("Tickets not merged and not dispute", 1)),
                 "res": round(safe_float(row.get("Full resolution time (hrs)")), 2),
@@ -500,12 +586,16 @@ def main():
         paths = extract_zip(args.zip_file, extract_dir)
     else:
         csv_dir = args.csv_dir
-        paths = {}
+        # For --csv-dir: prefer TR file if present, fall back to PI
+        tr_path = os.path.join(csv_dir, TR_CSV)
+        pi_path = os.path.join(csv_dir, PI_CSV)
+        tr_mode = os.path.exists(tr_path)
+        paths = {"tr_mode": tr_mode}
         for key, fname, required in [
-            ("sr",      SR_CSV,  True),
-            ("pi",      PI_CSV,  True),
-            ("ops_new", OPS_NEW, False),
-            ("ops_reo", OPS_REO, False),
+            ("sr",  SR_CSV,               True),
+            ("tr",  TR_CSV if tr_mode else PI_CSV, True),
+            ("ops_new", OPS_NEW,          False),
+            ("ops_reo", OPS_REO,          False),
         ]:
             p = os.path.join(csv_dir, fname)
             if os.path.exists(p):
@@ -521,11 +611,17 @@ def main():
     sr_tickets = parse_sr(paths["sr"])
     print(f"  → {len(sr_tickets)} tickets")
 
-    print("Parsing Product Issue...")
-    pi_tickets = parse_pi(paths["pi"])
-    print(f"  → {len(pi_tickets)} tickets")
+    if paths.get("tr_mode"):
+        print("Parsing Technical Request...")
+        second_tickets = parse_tr(paths["tr"])
+        second_label = "Technical Request"
+    else:
+        print("Parsing Product Issue (legacy)...")
+        second_tickets = parse_pi(paths["tr"])
+        second_label = "Product Issue"
+    print(f"  → {len(second_tickets)} tickets")
 
-    all_tickets = sr_tickets + pi_tickets
+    all_tickets = sr_tickets + second_tickets
     all_tickets.sort(key=lambda t: (t["date"], t["hour"], t["id"]))
     print(f"  → {len(all_tickets)} total tickets")
 
@@ -549,7 +645,8 @@ def main():
     inject_into_template(args.template, args.output, all_tickets, ops, ASSIGNEE_GROUP)
 
     # Summary
-    print(f"\n── Summary ──")
+    mode_str = "TR mode" if paths.get("tr_mode") else "PI mode (legacy)"
+    print(f"\n── Summary ({mode_str}) ──")
     print(f"Tickets: {len(all_tickets)}")
     print(f"Date range: {all_tickets[0]['date']} to {all_tickets[-1]['date']}")
     print(f"Ops: {ops['summary']['total_new']} new + {ops['summary']['total_reopen']} reopen")
