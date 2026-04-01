@@ -246,10 +246,10 @@ tr:hover td{background:var(--surface2)}
 <!-- ═══════════════════════════════════ RESOLUTION TAB ═══════════════════════════════════ -->
 <div id="tab-resolution" class="tab-panel">
   <div class="kpi-grid-4">
-    <div class="kpi kpi-blue"><div class="kpi-label">Avg Res</div><div class="kpi-value mono">68.5h</div><div class="kpi-sub">Mean of resolved</div></div>
-    <div class="kpi"><div class="kpi-label">Median Res</div><div class="kpi-value mono">73.0h</div><div class="kpi-sub">~3 days</div></div>
-    <div class="kpi kpi-coral"><div class="kpi-label">P90 Res</div><div class="kpi-value mono">124.5h</div><div class="kpi-sub">90th percentile</div></div>
-    <div class="kpi kpi-amber"><div class="kpi-label">~73h Wall</div><div class="kpi-value mono">211</div><div class="kpi-sub">31.8% of resolved — auto-close</div></div>
+    <div class="kpi kpi-blue"><div class="kpi-label">Avg Res</div><div class="kpi-value mono" id="res-kpi-mean">—</div><div class="kpi-sub">Mean of resolved</div></div>
+    <div class="kpi"><div class="kpi-label">Median Res</div><div class="kpi-value mono" id="res-kpi-median">—</div><div class="kpi-sub" id="res-kpi-median-sub">—</div></div>
+    <div class="kpi kpi-coral"><div class="kpi-label">P90 Res</div><div class="kpi-value mono" id="res-kpi-p90">—</div><div class="kpi-sub">90th percentile</div></div>
+    <div class="kpi kpi-amber"><div class="kpi-label">~73h Wall</div><div class="kpi-value mono" id="res-kpi-wall">—</div><div class="kpi-sub" id="res-kpi-wall-sub">auto-close</div></div>
   </div>
 
   <div class="chart-card" style="margin-bottom:24px">
@@ -835,6 +835,16 @@ function updateKPIs(M){
   document.getElementById('kpi-aw').textContent=M.avg_aw!=null?M.avg_aw.toFixed(1)+'h':'—';
   document.getElementById('kpi-srr').textContent=M.csat_rr+'%';
   document.getElementById('kpi-srr-sub').textContent=`${M.csat_n} of ${M.surveyed} surveyed responded`;
+  // Resolution tab KPIs
+  document.getElementById('res-kpi-mean').textContent=M.mean_res!=null?M.mean_res.toFixed(1)+'h':'—';
+  document.getElementById('res-kpi-median').textContent=M.med_res!=null?M.med_res.toFixed(1)+'h':'—';
+  document.getElementById('res-kpi-median-sub').textContent=M.med_res!=null?'~'+Math.round(M.med_res/24)+'d':'—';
+  document.getElementById('res-kpi-p90').textContent=M.p90_res!=null?M.p90_res.toFixed(1)+'h':'—';
+  const wallIdx=M.buckets.labels.indexOf('~73h');
+  const wallN=wallIdx>=0?M.buckets.counts[wallIdx]:0;
+  const wallPct=M.total>0?(wallN/M.total*100).toFixed(1):'0.0';
+  document.getElementById('res-kpi-wall').textContent=wallN;
+  document.getElementById('res-kpi-wall-sub').textContent=wallPct+'% of total — auto-close';
 }
 
 // ═══════════════════════════════════ PER-TEAM KPI COMPARISON ═══════════════════════════════════
