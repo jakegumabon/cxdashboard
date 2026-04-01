@@ -1633,7 +1633,7 @@ function updateCharts(M){
 
   // OKR Resolution Share donut
   destroyChart('resShareDonut');
-  const resArr = filteredTickets.filter(t=>t.res!=null&&t.res>0).map(t=>t.res);
+  const resArr = filteredTickets.filter(t=>(t.status==='Solved'||t.status==='Closed')&&t.res!=null&&t.res>0).map(t=>t.res);
   const u24 = resArr.filter(r=>r<24).length;
   const u48 = resArr.filter(r=>r>=24&&r<48).length;
   const p48 = resArr.filter(r=>r>=48).length;
