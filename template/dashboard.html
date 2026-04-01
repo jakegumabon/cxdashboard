@@ -165,6 +165,7 @@ tr:hover td{background:var(--surface2)}
   <button class="filter-apply" onclick="applyDateFilter()">Apply</button>
   <button class="filter-reset" onclick="resetDateFilter()">Reset</button>
   <span id="filter-status">All 21 days · 906 tickets</span>
+  <button class="filter-reset" onclick="downloadCSV()" style="margin-left:12px;color:var(--text2);border-color:var(--border)" title="Download filtered tickets as CSV">⬇ Export CSV</button>
 </div>
 
 <div class="content">
@@ -2739,6 +2740,48 @@ setOpsHeatmap('all');
 updateOpsKPIs();
 buildChannelTable(M0.channelPerf,M0.total);
 initCharts();
+
+// ═══════════════════════════════════ CSV EXPORT ═══════════════════════════════════
+function downloadCSV(){
+  const cols = [
+    {key:'id',       label:'Ticket ID'},
+    {key:'date',     label:'Date'},
+    {key:'status',   label:'Status'},
+    {key:'channel',  label:'Channel'},
+    {key:'assignee', label:'Assignee'},
+    {key:'cat1',     label:'Category'},
+    {key:'cat2',     label:'Sub-Category'},
+    {key:'within_cx',label:'Escalated',  fmt:v=>v==='No'?'Yes':'No'},
+    {key:'res',      label:'Resolution Time (hrs)'},
+    {key:'rw',       label:'Customer Wait Time (hrs)'},
+    {key:'aw',       label:'Agent Wait Time (hrs)'},
+    {key:'good',     label:'CSAT Good'},
+    {key:'bad',      label:'CSAT Bad'},
+    {key:'surveyed', label:'Surveyed'},
+  ];
+
+  const esc = v => {
+    if(v==null) return '';
+    const s = String(v);
+    return s.includes(',')||s.includes('"')||s.includes('\n') ? '"'+s.replace(/"/g,'""')+'"' : s;
+  };
+
+  const header = cols.map(c=>c.label).join(',');
+  const rows = filteredTickets.map(t =>
+    cols.map(c => esc(c.fmt ? c.fmt(t[c.key]) : t[c.key])).join(',')
+  );
+
+  const csv = [header, ...rows].join('\n');
+  const from = document.getElementById('date-from').value;
+  const to   = document.getElementById('date-to').value;
+  const filename = `cx_tickets_${from}_${to}.csv`;
+
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
 </script>
 </body>
 </html>
