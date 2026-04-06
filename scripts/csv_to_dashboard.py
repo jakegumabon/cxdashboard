@@ -54,15 +54,12 @@ SR_SUB_COLUMNS = [
 TR_SUB_COLUMNS = [
     "3DS", "API", "ATM", "Cards (CaaS)", "Crypto", "Files", "KYC",
     "Security", "Transactions", "Wallets", "Webhooks",
-    "Accounts", "Cards (Direct)", "Dashboard", "Payments",
+    "Accounts (Direct)", "Cards (Direct)", "Dashboard (Direct)", "Payments (Direct)",
 ]
 
 # Technical Category values whose display name differs from the sub-column header
-TR_CAT_TO_SUBCOL = {
-    "Accounts (Direct)":  "Accounts",
-    "Dashboard (Direct)": "Dashboard",
-    "Payments (Direct)":  "Payments",
-}
+# (columns now match category names directly — no remaps needed)
+TR_CAT_TO_SUBCOL = {}
 
 # Sub-columns in the PI CSV whose non-empty value gives Cat Lv 2 (legacy)
 PI_SUB_COLUMNS = [
