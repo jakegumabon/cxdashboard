@@ -695,7 +695,8 @@ function computeMetrics(tickets){
   const allDates=[...new Set(RAW_TICKETS.map(t=>t.date).filter(Boolean))].sort();
   const fromDate=tickets.length?tickets.map(t=>t.date).filter(Boolean).sort()[0]:allDates[0];
   const toDate=tickets.length?tickets.map(t=>t.date).filter(Boolean).sort().reverse()[0]:allDates[allDates.length-1];
-  const rangeStr = fromDate&&toDate ? `Mar ${+fromDate.slice(8)}–${+toDate.slice(8)}, 2026` : 'Mar 2026';
+  const fmtDate=d=>{if(!d)return'';const [y,m,day]=d.split('-');const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][+m-1];return `${mn} ${+day}, ${y}`;};
+  const rangeStr = fromDate&&toDate ? (fromDate===toDate?fmtDate(fromDate):`${fmtDate(fromDate)} – ${fmtDate(toDate)}`) : 'All data';
 
   // Fill dates in range
   const dailyLabels=[],dailyCounts=[];
