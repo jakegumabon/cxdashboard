@@ -26,6 +26,7 @@ body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--tex
 /* KPI Cards */
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
 .kpi-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.kpi-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px}
 .kpi-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
 .kpi-value{font-size:26px;font-weight:600;line-height:1;margin-bottom:4px}
@@ -152,7 +153,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 15, 2026 · 15:58 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 15, 2026 · 15:59 HKT</div>
 </div>
 
 <div class="tabs">
@@ -418,7 +419,7 @@ tr:hover td{background:var(--surface2)}
 
 <!-- ═══════════════════════════════════ OPERATIONS TAB ═══════════════════════════════════ -->
 <div id="tab-ops" class="tab-panel">
-  <div class="kpi-grid-4">
+  <div class="kpi-grid-3">
     <div class="kpi kpi-blue"><div class="kpi-label">Total New</div><div class="kpi-value mono" id="ops-kpi-new">—</div><div class="kpi-sub">New tickets opened</div></div>
     <div class="kpi kpi-coral"><div class="kpi-label">Total Reopens</div><div class="kpi-value mono" id="ops-kpi-reopen">—</div><div class="kpi-sub">Previously solved, reopened</div></div>
     <div class="kpi"><div class="kpi-label">Combined Volume</div><div class="kpi-value mono" id="ops-kpi-total">—</div><div class="kpi-sub" id="ops-kpi-sub-total">—</div></div>
