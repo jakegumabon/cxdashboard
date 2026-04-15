@@ -829,9 +829,6 @@ function resetDateFilter(){
 function updateKPIs(M){
   document.getElementById('kpi-total').textContent=M.total;
   document.getElementById('kpi-period').textContent=M.rangeStr;
-  // Reopen rate — static from OPS data, set once
-  document.getElementById('kpi-reopen-rate').textContent=OPS.summary.reopen_rate+'%';
-  document.getElementById('kpi-reopen-sub').textContent=`${OPS.summary.total_reopen.toLocaleString()} reopens of ${OPS.summary.total.toLocaleString()} total`;
   document.getElementById('kpi-escrate').textContent=M.esc_rate+'%';
   document.getElementById('kpi-esc-sub').textContent=`${M.escalated} of ${M.total} escalated`;
   document.getElementById('kpi-csat').textContent=M.csat_score!=null?M.csat_score+'%':'—';
@@ -1963,7 +1960,6 @@ function updateOpsKPIs(){
   set('ops-kpi-new',       newT.toLocaleString());
   set('ops-kpi-reopen',    reT.toLocaleString());
   set('ops-kpi-total',     total.toLocaleString());
-  set('ops-kpi-rate',      rate+'%');
   set('ops-kpi-sub-total', 'Over '+days+' days');
 }
 

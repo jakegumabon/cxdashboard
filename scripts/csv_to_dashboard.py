@@ -458,7 +458,6 @@ def parse_ops(new_csv_path, reopen_csv_path):
         "summary": {
             "total_new": total_new, "total_reopen": total_reopen, "total": total,
             "n_days": n_days,
-            "reopen_rate": round(total_reopen / total * 100, 1) if total else 0,
             "period_from": all_dates[0] if all_dates else "",
             "period_to": all_dates[-1] if all_dates else "",
         },
@@ -632,7 +631,7 @@ def main():
         print("     to your Zendesk Explore 'For Claude' scheduled delivery to enable this tab.")
         ops = {
             "summary": {"total_new": 0, "total_reopen": 0, "total": 0, "n_days": 0,
-                        "reopen_rate": 0, "period_from": "", "period_to": ""},
+                        "period_from": "", "period_to": ""},
             "daily": {"labels": [], "new": [], "reopen": []},
             "heatmap_new": {}, "heatmap_reopen": {}, "heatmap_all": {},
         }
