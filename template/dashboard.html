@@ -218,7 +218,14 @@ tr:hover td{background:var(--surface2)}
           <div style="position:relative;height:145px;"><canvas id="escTypeChart"></canvas></div>
         </div>
         <div style="position:relative;">
-          <div style="font-size:10px;color:var(--text3);margin-bottom:6px;">Destination Team / Partner</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <div style="font-size:10px;color:var(--text3);">Destination Team / Partner</div>
+            <div style="display:flex;gap:4px;">
+              <button class="granularity-btn active" id="esc-dest-all" onclick="setEscDestFilter('all',this)">All</button>
+              <button class="granularity-btn" id="esc-dest-internal" onclick="setEscDestFilter('internal',this)">Internal</button>
+              <button class="granularity-btn" id="esc-dest-external" onclick="setEscDestFilter('external',this)">External</button>
+            </div>
+          </div>
           <div style="position:relative;height:145px;"><canvas id="escDestChart"></canvas></div>
         </div>
       </div>
@@ -976,7 +983,7 @@ function updateTeamCompare(){
 }
 
 // ═══════════════════════════════════ KPI DRILL-DOWN ═══════════════════════════════════
-let activeKpi=null, activeGranularity='weekly';
+let activeKpi=null, activeGranularity='weekly', activeEscDestFilter='all';
 
 const KPI_META={
   total:  {label:'Total Tickets',     color:'#4f9cf9', unit:'',  type:'count'},
@@ -1083,6 +1090,9 @@ function closeDrilldown(){
   destroyChart('escDestChart');
   const escRow=document.getElementById('esc-breakdown-row');
   if(escRow) escRow.style.display='none';
+  // Reset dest filter state
+  activeEscDestFilter='all';
+  document.querySelectorAll('#esc-dest-all,#esc-dest-internal,#esc-dest-external').forEach((b,i)=>{b.classList.toggle('active',i===0);});
 }
 
 function setGranularity(g, btn){
@@ -1132,6 +1142,13 @@ function renderDrilldownChart(){
   });
 }
 
+function setEscDestFilter(filter, btn){
+  activeEscDestFilter=filter;
+  document.querySelectorAll('#esc-dest-all,#esc-dest-internal,#esc-dest-external').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderEscBreakdownCharts();
+}
+
 function renderEscBreakdownCharts(){
   destroyChart('escTypeChart');
   destroyChart('escDestChart');
@@ -1163,6 +1180,15 @@ function renderEscBreakdownCharts(){
     }
   }
 
+  // Apply dest filter
+  const filteredDestCounts={};
+  for(const [k,v] of Object.entries(destCounts)){
+    const isInternal=['Engineering Team','Operations Team','Risk Team','Compliance Team'].includes(k);
+    if(activeEscDestFilter==='all') filteredDestCounts[k]=v;
+    else if(activeEscDestFilter==='internal' && isInternal) filteredDestCounts[k]=v;
+    else if(activeEscDestFilter==='external' && !isInternal) filteredDestCounts[k]=v;
+  }
+
   // Chart 1 — Internal vs External donut
   const typeLabels=['Internal','External'];
   const typeData=[internalCount,externalCount];
@@ -1183,7 +1209,7 @@ function renderEscBreakdownCharts(){
   });
 
   // Chart 2 — Destination team / partner horizontal bar
-  const destEntries=Object.entries(destCounts).sort((a,b)=>b[1]-a[1]);
+  const destEntries=Object.entries(filteredDestCounts).sort((a,b)=>b[1]-a[1]);
   const destLabels=destEntries.map(e=>e[0]);
   const destData=destEntries.map(e=>e[1]);
   const DEST_COLORS={
