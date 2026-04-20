@@ -209,6 +209,20 @@ tr:hover td{background:var(--surface2)}
       </div>
     </div>
     <div id="drilldown-wrap"><canvas id="drilldownChart"></canvas></div>
+    <!-- Escalation breakdown — only visible when escrate KPI is active -->
+    <div id="esc-breakdown-row" style="display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:16px;">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Escalation Breakdown <span id="esc-breakdown-note" style="font-weight:400;color:var(--text3);font-size:10px;text-transform:none;letter-spacing:0;">(Apr 1+ only — destination field not tracked before)</span></div>
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;height:170px;">
+        <div style="position:relative;">
+          <div style="font-size:10px;color:var(--text3);margin-bottom:6px;">Internal vs External</div>
+          <div style="position:relative;height:145px;"><canvas id="escTypeChart"></canvas></div>
+        </div>
+        <div style="position:relative;">
+          <div style="font-size:10px;color:var(--text3);margin-bottom:6px;">Destination Team / Partner</div>
+          <div style="position:relative;height:145px;"><canvas id="escDestChart"></canvas></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div class="chart-row chart-row-3">
@@ -1053,7 +1067,11 @@ function openDrilldown(kpiKey, el){
   el.classList.add('active');
   document.getElementById('kpi-drilldown-title').textContent=KPI_META[kpiKey].label+' — Trend';
   document.getElementById('kpi-drilldown').classList.add('visible');
+  // Show escalation breakdown panel only for escrate
+  const escRow=document.getElementById('esc-breakdown-row');
+  if(escRow) escRow.style.display=kpiKey==='escrate'?'block':'none';
   renderDrilldownChart();
+  if(kpiKey==='escrate') renderEscBreakdownCharts();
 }
 
 function closeDrilldown(){
@@ -1061,6 +1079,10 @@ function closeDrilldown(){
   document.querySelectorAll('.kpi').forEach(k=>k.classList.remove('active'));
   document.getElementById('kpi-drilldown').classList.remove('visible');
   destroyChart('drilldownChart');
+  destroyChart('escTypeChart');
+  destroyChart('escDestChart');
+  const escRow=document.getElementById('esc-breakdown-row');
+  if(escRow) escRow.style.display='none';
 }
 
 function setGranularity(g, btn){
@@ -1110,6 +1132,95 @@ function renderDrilldownChart(){
   });
 }
 
+function renderEscBreakdownCharts(){
+  destroyChart('escTypeChart');
+  destroyChart('escDestChart');
+
+  // Only April+ tickets have destination field data
+  const ESC_CUTOVER='2026-04-01';
+  const escalated=filteredTickets.filter(t=>t.within_cx==='No');
+  const aprilEsc=escalated.filter(t=>t.date>=ESC_CUTOVER);
+
+  // Update note visibility
+  const hasPreCutover=escalated.some(t=>t.date<ESC_CUTOVER);
+  const note=document.getElementById('esc-breakdown-note');
+  if(note) note.style.display=hasPreCutover?'inline':'none';
+
+  // Tally internal / external
+  let internalCount=0, externalCount=0, unclassified=0;
+  const destCounts={};
+  for(const t of aprilEsc){
+    const ei=(t.esc_int||'').trim();
+    const ee=(t.esc_ext||'').trim();
+    if(ei){
+      internalCount++;
+      destCounts[ei]=(destCounts[ei]||0)+1;
+    } else if(ee){
+      externalCount++;
+      destCounts[ee]=(destCounts[ee]||0)+1;
+    } else {
+      unclassified++;
+    }
+  }
+
+  // Chart 1 — Internal vs External donut
+  const typeLabels=['Internal','External'];
+  const typeData=[internalCount,externalCount];
+  const typeColors=['#f97058','#5b9cf6'];
+  if(unclassified>0){typeLabels.push('Unclassified');typeData.push(unclassified);typeColors.push('#555');}
+
+  chartInstances['escTypeChart']=new Chart(document.getElementById('escTypeChart'),{
+    type:'doughnut',
+    data:{labels:typeLabels,datasets:[{data:typeData,backgroundColor:typeColors,borderWidth:0,hoverOffset:4}]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      cutout:'60%',
+      plugins:{
+        legend:{position:'right',labels:{color:textColor,font:{size:11},boxWidth:12,padding:8}},
+        tooltip:{...tooltipDefaults,callbacks:{label:(ctx)=>`${ctx.label}: ${ctx.raw}`}}
+      }
+    }
+  });
+
+  // Chart 2 — Destination team / partner horizontal bar
+  const destEntries=Object.entries(destCounts).sort((a,b)=>b[1]-a[1]);
+  const destLabels=destEntries.map(e=>e[0]);
+  const destData=destEntries.map(e=>e[1]);
+  const DEST_COLORS={
+    'Engineering Team':'#5b9cf6',
+    'Operations Team':'#f97058',
+    'Risk Team':'#fbbf24',
+    'Compliance Team':'#a78bfa',
+  };
+  const destColors=destLabels.map(l=>DEST_COLORS[l]||'#4caf7d');
+
+  if(destEntries.length===0){
+    // Nothing to show — draw empty state
+    const ctx=document.getElementById('escDestChart').getContext('2d');
+    ctx.fillStyle=textColor;
+    ctx.font='12px IBM Plex Sans,sans-serif';
+    ctx.fillText('No destination data for current filter',10,70);
+    return;
+  }
+
+  chartInstances['escDestChart']=new Chart(document.getElementById('escDestChart'),{
+    type:'bar',
+    data:{labels:destLabels,datasets:[{data:destData,backgroundColor:destColors,borderRadius:4,borderWidth:0}]},
+    options:{
+      indexAxis:'y',
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{...tooltipDefaults,callbacks:{label:(ctx)=>`${ctx.raw} tickets`}}
+      },
+      scales:{
+        x:{ticks:{color:textColor,font:{size:10},stepSize:1},grid:{color:gridColor},beginAtZero:true},
+        y:{ticks:{color:textColor,font:{size:11}},grid:{display:false}}
+      }
+    }
+  });
+}
+
 // patch refreshAll to re-render drilldown if open
 function refreshAll(){
   const M=computeMetrics(filteredTickets);
@@ -1121,6 +1232,7 @@ function refreshAll(){
   buildChannelTable(M.channelPerf,M.total);
   if(document.getElementById('tab-volume').classList.contains('active'))drawHeatmap();
   if(activeKpi) renderDrilldownChart();
+  if(activeKpi==='escrate') renderEscBreakdownCharts();
   // ── Ops tab dynamic updates ──
   updateOpsKPIs();
   renderOpsTrendChart();

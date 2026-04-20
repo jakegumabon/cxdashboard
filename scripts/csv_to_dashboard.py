@@ -274,6 +274,8 @@ def parse_sr(csv_path):
                 on_hold = safe_float(row.get("On-hold time (hrs)"))
                 within_cx = "Yes" if on_hold == 0.0 else "No"
             oc = row.get("Other Category", "").strip()
+            esc_int = row.get("Internal Escalation", "").strip()
+            esc_ext = row.get("External Escalation", "").strip()
             ticket = {
                 "id": safe_int(ticket_id),
                 "date": row.get("Ticket created - Date", "").strip(),
@@ -285,6 +287,8 @@ def parse_sr(csv_path):
                 "cat2": cat2,
                 "req_type": row.get("Request Type", "").strip(),
                 "within_cx": within_cx,
+                "esc_int": esc_int,
+                "esc_ext": esc_ext,
                 "clean": safe_int(row.get("Tickets not merged and not dispute", 1)),
                 "res": round(safe_float(row.get("Full resolution time (hrs)")), 2),
                 "rw": round(safe_float(row.get("Requester wait time (hrs)")), 2),
