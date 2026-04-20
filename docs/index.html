@@ -153,7 +153,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 20, 2026 · 14:19 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 20, 2026 · 14:22 HKT</div>
 </div>
 
 <div class="tabs">
@@ -210,6 +210,13 @@ tr:hover td{background:var(--surface2)}
       </div>
     </div>
     <div id="drilldown-wrap"><canvas id="drilldownChart"></canvas></div>
+    <!-- Chronic reopens list — only visible when reopen KPI is active -->
+    <div id="reopen-flagged-row" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">
+        Tickets Reopened 4× or More <span id="reopen-flagged-count" style="font-weight:400;color:var(--text3);"></span>
+      </div>
+      <div id="reopen-flagged-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+    </div>
     <!-- Escalation breakdown — only visible when escrate KPI is active -->
     <div id="esc-breakdown-row" style="display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:16px;">
       <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Escalation Breakdown <span id="esc-breakdown-note" style="font-weight:400;color:var(--text3);font-size:10px;text-transform:none;letter-spacing:0;">(Apr 1+ only — destination field not tracked before)</span></div>
@@ -1161,6 +1168,9 @@ function openDrilldown(kpiKey, el){
   // Show escalation breakdown panel only for escrate
   const escRow=document.getElementById('esc-breakdown-row');
   if(escRow) escRow.style.display=kpiKey==='escrate'?'block':'none';
+  // Reopen flagged row visibility handled inside renderReopenDistChart
+  const reopenRow=document.getElementById('reopen-flagged-row');
+  if(reopenRow&&kpiKey!=='reopen') reopenRow.style.display='none';
   renderDrilldownChart();
   if(kpiKey==='escrate') renderEscBreakdownCharts();
 }
@@ -1175,6 +1185,8 @@ function closeDrilldown(){
   destroyChart('escDestChart');
   const escRow=document.getElementById('esc-breakdown-row');
   if(escRow) escRow.style.display='none';
+  const reopenRow=document.getElementById('reopen-flagged-row');
+  if(reopenRow) reopenRow.style.display='none';
   // Reset dest filter state
   activeEscDestFilter='all';
   document.querySelectorAll('#esc-dest-all,#esc-dest-internal,#esc-dest-external').forEach((b,i)=>{b.classList.toggle('active',i===0);});
@@ -1261,6 +1273,24 @@ function renderReopenDistChart(){
   // Color: 0 = green, rest gradient toward coral
   const colors=values.map((_,i)=>i===0?'#4caf7d99':i<=1?'#fbbf2499':'#f9705899');
   const borders=values.map((_,i)=>i===0?'#4caf7d':i<=1?'#fbbf24':'#f97058');
+
+  // Chronic reopens callout — tickets with 4+ reopens
+  const flagged=filteredTickets
+    .filter(t=>(t.status==='Solved'||t.status==='Closed')&&(t.reopens||0)>=4)
+    .sort((a,b)=>b.reopens-a.reopens);
+  const flagRow=document.getElementById('reopen-flagged-row');
+  const flagList=document.getElementById('reopen-flagged-list');
+  const flagCount=document.getElementById('reopen-flagged-count');
+  if(flagRow){
+    flagRow.style.display=flagged.length?'block':'none';
+    if(flagCount) flagCount.textContent=`— ${flagged.length} ticket${flagged.length>1?'s':''}`;
+    if(flagList) flagList.innerHTML=flagged.map(t=>`
+      <div style="background:var(--surface2);border:1px solid #f9705844;border-radius:6px;padding:8px 12px;font-size:12px;min-width:160px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:#f97058;">#${t.id} &nbsp;<span style="font-size:11px;background:#f9705822;padding:2px 6px;border-radius:4px;">${t.reopens}×</span></div>
+        <div style="color:var(--text2);margin-top:4px;font-size:11px;">${t.cat1||'—'}</div>
+        <div style="color:var(--text3);font-size:10px;margin-top:2px;">${t.assignee||'Unassigned'}</div>
+      </div>`).join('');
+  }
 
   // Inline plugin — draws value labels above each bar
   const dataLabelsPlugin={
