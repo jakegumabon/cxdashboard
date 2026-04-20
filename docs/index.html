@@ -153,7 +153,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 20, 2026 · 14:16 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 20, 2026 · 14:19 HKT</div>
 </div>
 
 <div class="tabs">
@@ -1262,8 +1262,30 @@ function renderReopenDistChart(){
   const colors=values.map((_,i)=>i===0?'#4caf7d99':i<=1?'#fbbf2499':'#f9705899');
   const borders=values.map((_,i)=>i===0?'#4caf7d':i<=1?'#fbbf24':'#f97058');
 
+  // Inline plugin — draws value labels above each bar
+  const dataLabelsPlugin={
+    id:'reopenDataLabels',
+    afterDatasetsDraw(chart){
+      const ctx=chart.ctx;
+      chart.data.datasets.forEach((dataset,i)=>{
+        chart.getDatasetMeta(i).data.forEach((bar,idx)=>{
+          const val=dataset.data[idx];
+          if(!val) return;
+          ctx.save();
+          ctx.fillStyle='rgba(255,255,255,0.85)';
+          ctx.font='bold 11px "IBM Plex Mono",monospace';
+          ctx.textAlign='center';
+          ctx.textBaseline='bottom';
+          ctx.fillText(val.toLocaleString(), bar.x, bar.y-4);
+          ctx.restore();
+        });
+      });
+    }
+  };
+
   chartInstances['drilldownChart']=new Chart(document.getElementById('drilldownChart'),{
     type:'bar',
+    plugins:[dataLabelsPlugin],
     data:{labels,datasets:[{
       data:values,
       backgroundColor:colors,
@@ -1273,6 +1295,7 @@ function renderReopenDistChart(){
     }]},
     options:{
       responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:20}},
       plugins:{
         legend:{display:false},
         tooltip:{...tooltipDefaults,callbacks:{
