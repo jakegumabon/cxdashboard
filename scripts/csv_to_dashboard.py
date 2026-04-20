@@ -553,10 +553,28 @@ def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_
     all_assignees = set(t["assignee"] for t in raw_tickets if t.get("assignee"))
     mapped_names  = set(assignee_group.keys())
     unmapped = sorted(all_assignees - mapped_names)
+
+    # Build non-CX group notices (CG, Admin, Card Ops)
+    NON_CX_GROUPS = ["CG", "Admin", "Card Ops"]
+    non_cx_notices = []
+    for group in NON_CX_GROUPS:
+        members = sorted(name for name, grp in assignee_group.items() if grp == group)
+        count = sum(1 for t in raw_tickets if t.get("assignee") in members)
+        if members and count > 0:
+            names_str = ", ".join(members)
+            non_cx_notices.append(
+                f'<div style="margin:8px 0;padding:10px 14px;background:#12202a;border:1px solid #4a9ebb;'
+                f'border-radius:6px;color:#7ec8e3;font-size:12px;">'
+                f'&#8505;&nbsp; <strong>{group}</strong> is not a CX team — '
+                f'{count} ticket{"s" if count>1 else ""} assigned to: {names_str}. '
+                f'These are included in overall totals but excluded from CX team comparisons.'
+                f'</div>'
+            )
+
     if unmapped:
         names_str = ", ".join(unmapped)
-        notice_html = (
-            f'<div style="margin:12px 0;padding:10px 14px;background:#2a1f0a;border:1px solid #f5a623;'
+        unmapped_html = (
+            f'<div style="margin:8px 0;padding:10px 14px;background:#2a1f0a;border:1px solid #f5a623;'
             f'border-radius:6px;color:#f5a623;font-size:12px;">'
             f'&#9888;&nbsp; <strong>{len(unmapped)} agent{"s" if len(unmapped)>1 else ""} with no team assigned:</strong>'
             f'&nbsp;{names_str}&nbsp;—&nbsp;their tickets are excluded from team comparisons.'
@@ -564,8 +582,10 @@ def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_
         )
         print(f"  ⚠ {len(unmapped)} unmapped agent(s): {names_str}")
     else:
-        notice_html = ""
+        unmapped_html = ""
         print("  ✓ All agents mapped to a team")
+
+    notice_html = "\n".join(non_cx_notices) + ("\n" if non_cx_notices and unmapped_html else "") + unmapped_html
     html = html.replace("/*{{UNMAPPED_NOTICE}}*/", notice_html)
 
     # Inject pipeline run timestamp (HKT = UTC+8)
