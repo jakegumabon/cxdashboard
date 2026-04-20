@@ -153,7 +153,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 20, 2026 · 12:29 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 20, 2026 · 12:40 HKT</div>
 </div>
 
 <div class="tabs">
@@ -603,71 +603,50 @@ tr:hover td{background:var(--surface2)}
 <!-- ═══════════════════════════════════ PRODUCT LINES TAB ═══════════════════════════════════ -->
 <div id="tab-product" class="tab-panel">
 
-  <div class="section-title">Product Lines <span class="section-note" id="pl-period-note"></span></div>
+  <div class="section-title">Product Lines <span class="section-note"><span id="pl-untagged-note" style="font-style:italic;"></span></span></div>
 
-  <!-- Product selector -->
-  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
-    <button class="granularity-btn active" id="pl-btn-all"     onclick="setPLProduct('all',this)">All</button>
-    <button class="granularity-btn"        id="pl-btn-direct"  onclick="setPLProduct('direct',this)">Direct</button>
-    <button class="granularity-btn"        id="pl-btn-caas"    onclick="setPLProduct('caas',this)">CaaS</button>
-    <button class="granularity-btn"        id="pl-btn-connect" onclick="setPLProduct('connect',this)">Connect</button>
-    <span id="pl-untagged-note" style="font-size:11px;font-style:italic;color:var(--text3);margin-left:4px;"></span>
+  <!-- Scoreboard — one card per product line -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;" id="pl-scoreboard">
+    <!-- Direct -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;">
+      <div style="font-size:12px;font-weight:700;color:#5b9cf6;text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;">Direct</div>
+      <div id="pl-direct-kpis"></div>
+    </div>
+    <!-- CaaS -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;">
+      <div style="font-size:12px;font-weight:700;color:#f97058;text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;">CaaS</div>
+      <div id="pl-caas-kpis"></div>
+    </div>
+    <!-- Connect -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;">
+      <div style="font-size:12px;font-weight:700;color:#4caf7d;text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;">Connect</div>
+      <div id="pl-connect-kpis"></div>
+    </div>
   </div>
 
-  <!-- Sub-product pills (shown only for Direct / CaaS) -->
-  <div id="pl-subproduct-row" style="display:none;margin-bottom:16px;display:flex;gap:6px;flex-wrap:wrap;">
-    <!-- populated dynamically -->
-  </div>
-
-  <!-- KPI row -->
-  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;" id="pl-kpi-row">
-    <div class="kpi"><div class="kpi-label">Volume</div><div class="kpi-value mono" id="pl-kpi-total">—</div><div class="kpi-sub" id="pl-kpi-total-sub">tickets</div></div>
-    <div class="kpi"><div class="kpi-label">Resolved</div><div class="kpi-value mono" id="pl-kpi-resolved">—</div><div class="kpi-sub">of total</div></div>
-    <div class="kpi kpi-coral"><div class="kpi-label">Escalation Rate</div><div class="kpi-value mono" id="pl-kpi-esc">—</div><div class="kpi-sub" id="pl-kpi-esc-sub">escalated</div></div>
-    <div class="kpi kpi-blue"><div class="kpi-label">Avg Resolution</div><div class="kpi-value mono" id="pl-kpi-res">—</div><div class="kpi-sub">resolved tickets</div></div>
-    <div class="kpi kpi-amber"><div class="kpi-label">CSAT</div><div class="kpi-value mono" id="pl-kpi-csat">—</div><div class="kpi-sub" id="pl-kpi-csat-sub">responses</div></div>
-  </div>
-
-  <!-- Chart row -->
-  <div class="chart-row chart-row-3" style="margin-bottom:24px;">
-    <!-- Volume trend -->
-    <div class="chart-card">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div class="chart-title" style="margin-bottom:0;">Volume Trend</div>
-        <div style="display:flex;gap:4px;">
-          <button class="granularity-btn active" id="pl-trd-daily"   onclick="setPLTrend('daily',this)">Daily</button>
-          <button class="granularity-btn"        id="pl-trd-weekly"  onclick="setPLTrend('weekly',this)">Weekly</button>
-          <button class="granularity-btn"        id="pl-trd-monthly" onclick="setPLTrend('monthly',this)">Monthly</button>
-        </div>
+  <!-- Volume Trend — grouped bar, one series per product -->
+  <div class="chart-card" style="margin-bottom:24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="chart-title" style="margin-bottom:0;">Volume Trend</div>
+      <div style="display:flex;gap:4px;">
+        <button class="granularity-btn active" id="pl-trd-daily"   onclick="setPLTrend('daily',this)">Daily</button>
+        <button class="granularity-btn"        id="pl-trd-weekly"  onclick="setPLTrend('weekly',this)">Weekly</button>
+        <button class="granularity-btn"        id="pl-trd-monthly" onclick="setPLTrend('monthly',this)">Monthly</button>
       </div>
-      <div style="height:180px;position:relative;"><canvas id="plTrendChart"></canvas></div>
     </div>
-    <!-- Channel mix -->
-    <div class="chart-card">
-      <div class="chart-title">Channel Mix</div>
-      <div style="height:180px;position:relative;"><canvas id="plChannelChart"></canvas></div>
-    </div>
-    <!-- Top categories -->
-    <div class="chart-card">
-      <div class="chart-title">Top Categories</div>
-      <div style="height:180px;position:relative;"><canvas id="plCatChart"></canvas></div>
-    </div>
+    <div style="height:220px;position:relative;"><canvas id="plTrendChart"></canvas></div>
   </div>
 
-  <!-- Agent performance table -->
-  <div class="table-card">
-    <div class="table-card-title">Agent Performance</div>
-    <table id="pl-agent-table">
-      <thead><tr>
-        <th onclick="sortTable('pl-agent-table',0)">Agent</th>
-        <th onclick="sortTable('pl-agent-table',1)">Tickets</th>
-        <th onclick="sortTable('pl-agent-table',2)">Open</th>
-        <th onclick="sortTable('pl-agent-table',3)">Esc Rate</th>
-        <th onclick="sortTable('pl-agent-table',4)">Avg Res (h)</th>
-        <th onclick="sortTable('pl-agent-table',5)">CSAT</th>
-      </tr></thead>
-      <tbody id="pl-agent-tbody"></tbody>
-    </table>
+  <!-- Channel Mix + Top Categories side by side -->
+  <div class="chart-row chart-row-2">
+    <div class="chart-card">
+      <div class="chart-title">Channel Mix by Product</div>
+      <div style="height:220px;position:relative;"><canvas id="plChannelChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Top Categories by Product</div>
+      <div style="height:220px;position:relative;"><canvas id="plCatChart"></canvas></div>
+    </div>
   </div>
 
 </div>
@@ -1410,185 +1389,172 @@ function switchTab(id){
 
 // ═══════════════════════════════════ PRODUCT LINES ═══════════════════════════════════
 
-const PL_SUB = {
-  direct:  [{key:'Reap Card',label:'Reap Card'},{key:'Reap Pay',label:'Reap Pay'},{key:'General',label:'General (catch-all)'}],
-  caas:    [{key:'Card Issuance API',label:'Card Issuance API'},{key:'KYCaaS',label:'KYCaaS'}],
-  connect: [],
-  all:     []
-};
+const PL_PRODUCTS=[
+  {key:'direct',  label:'Direct',  color:'#5b9cf6', field:'product', match:'Direct'},
+  {key:'caas',    label:'CaaS',    color:'#f97058', field:'product', match:'CaaS'},
+  {key:'connect', label:'Connect', color:'#4caf7d', field:'product', match:'Connect'},
+];
+const PL_CHANNELS=['Live Chat','Slack','Email','Telegram','WhatsApp'];
+const PL_CHANNEL_COLORS={'Live Chat':'#5b9cf6','Slack':'#f97058','Email':'#4caf7d','Telegram':'#fbbf24','WhatsApp':'#a78bfa'};
+let plTrendGranularity='daily';
 
-let plProduct='all', plSubProduct=null, plTrendGranularity='daily';
-
-function getProductTickets(){
-  return filteredTickets.filter(t=>{
-    if(plProduct==='all') return true;
-    if(plProduct==='direct')  return (t.product||'').toLowerCase()==='direct';
-    if(plProduct==='caas')    return (t.product||'').toLowerCase()==='caas';
-    if(plProduct==='connect') return (t.product||'').toLowerCase()==='connect';
-    return false;
-  }).filter(t=>{
-    if(!plSubProduct) return true;
-    if(plProduct==='direct')  return (t.direct_product||'')===plSubProduct;
-    if(plProduct==='caas')    return (t.caas_product||'')===plSubProduct;
-    return true;
-  });
+function getPLTickets(prodKey){
+  const p=PL_PRODUCTS.find(p=>p.key===prodKey);
+  return filteredTickets.filter(t=>t.clean===1&&(t.product||'')===(p?p.match:''));
 }
 
-function setPLProduct(prod, btn){
-  plProduct=prod;
-  plSubProduct=null;
-  document.querySelectorAll('#pl-btn-all,#pl-btn-direct,#pl-btn-caas,#pl-btn-connect').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderPLSubproductRow();
-  renderProductTab();
-}
-
-function setPLSubProduct(sub, btn){
-  plSubProduct=(plSubProduct===sub)?null:sub;
-  document.querySelectorAll('.pl-sub-btn').forEach(b=>b.classList.remove('active'));
-  if(plSubProduct) btn.classList.add('active');
-  renderProductTab();
+function plKpiSummary(tix){
+  const RESOLVED=new Set(['Solved','Closed']);
+  const total=tix.length;
+  const resolved=tix.filter(t=>RESOLVED.has(t.status));
+  const esc=tix.filter(t=>t.within_cx==='No');
+  const resTimes=resolved.map(t=>t.res).filter(v=>v&&v>0);
+  const avgRes=resTimes.length?+(resTimes.reduce((a,b)=>a+b,0)/resTimes.length).toFixed(1):null;
+  const good=tix.reduce((s,t)=>s+(t.good||0),0);
+  const bad=tix.reduce((s,t)=>s+(t.bad||0),0);
+  const csatN=good+bad;
+  return{total,resolved:resolved.length,esc:esc.length,avgRes,
+    resolvedPct:total?Math.round(resolved.length/total*100):0,
+    escRate:total?+(esc.length/total*100).toFixed(1):0,
+    csatScore:csatN?Math.round(good/csatN*100):null,csatN};
 }
 
 function setPLTrend(g, btn){
   plTrendGranularity=g;
   document.querySelectorAll('#pl-trd-daily,#pl-trd-weekly,#pl-trd-monthly').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
-  renderPLTrendChart(getProductTickets());
-}
-
-function renderPLSubproductRow(){
-  const row=document.getElementById('pl-subproduct-row');
-  const subs=PL_SUB[plProduct]||[];
-  if(subs.length===0){row.style.display='none';return;}
-  row.style.display='flex';
-  row.innerHTML=subs.map(s=>
-    `<button class="granularity-btn pl-sub-btn" onclick="setPLSubProduct('${s.key}',this)">${s.label}</button>`
-  ).join('');
+  renderPLTrendChart();
 }
 
 function renderProductTab(){
-  const tix=getProductTickets();
-  const clean=tix.filter(t=>t.clean===1);
-
   // Untagged note
-  const untagged=filteredTickets.filter(t=>!t.product).length;
+  const untagged=filteredTickets.filter(t=>t.clean===1&&!t.product).length;
   const note=document.getElementById('pl-untagged-note');
-  if(note) note.textContent=untagged>0?`${untagged} ticket${untagged>1?'s':''} have no product tag — included in All only`:'';
+  if(note) note.textContent=untagged>0?`${untagged} ticket${untagged>1?'s':''} have no product tag — not shown in this view`:'';
 
-  // KPIs
-  const total=clean.length;
-  const RESOLVED_ST=new Set(['Solved','Closed']);
-  const resolved=clean.filter(t=>RESOLVED_ST.has(t.status));
-  const open=clean.filter(t=>!RESOLVED_ST.has(t.status));
-  const esc=clean.filter(t=>t.within_cx==='No');
-  const resTimes=resolved.map(t=>t.res).filter(v=>v&&v>0);
-  const avgRes=resTimes.length?+(resTimes.reduce((a,b)=>a+b,0)/resTimes.length).toFixed(1):null;
-  const good=clean.reduce((s,t)=>s+(t.good||0),0);
-  const bad=clean.reduce((s,t)=>s+(t.bad||0),0);
-  const csatN=good+bad;
-  const csatScore=csatN>0?Math.round(good/csatN*100):null;
+  // Scoreboard KPI cards
+  const totalAll=filteredTickets.filter(t=>t.clean===1).length;
+  PL_PRODUCTS.forEach(p=>{
+    const tix=getPLTickets(p.key);
+    const s=plKpiSummary(tix);
+    const sharePct=totalAll?Math.round(s.total/totalAll*100):0;
+    const el=document.getElementById(`pl-${p.key}-kpis`);
+    if(!el) return;
+    el.innerHTML=`
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">Volume</div>
+          <div style="font-size:22px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--text)">${s.total.toLocaleString()}</div>
+          <div style="font-size:10px;color:var(--text3);">${sharePct}% of total</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">Resolved</div>
+          <div style="font-size:22px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--text)">${s.total?s.resolvedPct+'%':'—'}</div>
+          <div style="font-size:10px;color:var(--text3);">${s.resolved} tickets</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">Escalation Rate</div>
+          <div style="font-size:22px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${s.escRate>30?'#f97058':s.escRate>15?'#fbbf24':'#4caf7d'}">${s.total?s.escRate+'%':'—'}</div>
+          <div style="font-size:10px;color:var(--text3);">${s.esc} escalated</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">Avg Resolution</div>
+          <div style="font-size:22px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--text)">${s.avgRes!=null?s.avgRes+'h':'—'}</div>
+          <div style="font-size:10px;color:var(--text3);">resolved only</div>
+        </div>
+        <div style="grid-column:1/-1;">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:2px;">CSAT</div>
+          <div style="font-size:22px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--text)">${s.csatScore!=null?s.csatScore+'%':'—'}</div>
+          <div style="font-size:10px;color:var(--text3);">${s.csatN?'n='+s.csatN+' responses':'no responses'}</div>
+        </div>
+      </div>`;
+  });
 
-  document.getElementById('pl-kpi-total').textContent=total.toLocaleString();
-  document.getElementById('pl-kpi-total-sub').textContent='tickets';
-  document.getElementById('pl-kpi-resolved').textContent=total?Math.round(resolved.length/total*100)+'%':'—';
-  document.getElementById('pl-kpi-esc').textContent=total?+(esc.length/total*100).toFixed(1)+'%':'—';
-  document.getElementById('pl-kpi-esc-sub').textContent=`${esc.length} of ${total} escalated`;
-  document.getElementById('pl-kpi-res').textContent=avgRes!=null?avgRes+'h':'—';
-  document.getElementById('pl-kpi-csat').textContent=csatScore!=null?csatScore+'%':'—';
-  document.getElementById('pl-kpi-csat-sub').textContent=csatN?`n=${csatN} responses`:'no responses';
-
-  // Charts
-  renderPLTrendChart(clean);
-  renderPLChannelChart(clean);
-  renderPLCatChart(clean);
-  renderPLAgentTable(clean);
+  renderPLTrendChart();
+  renderPLChannelChart();
+  renderPLCatChart();
 }
 
-function renderPLTrendChart(clean){
+function renderPLTrendChart(){
   destroyChart('plTrendChart');
-  const buckets={};
-  for(const t of clean){
-    const key=plTrendGranularity==='daily'?t.date
-      :plTrendGranularity==='weekly'?getWeekLabel(t.date)
-      :t.date.slice(0,7);
-    buckets[key]=(buckets[key]||0)+1;
-  }
-  const labels=Object.keys(buckets).sort();
-  const values=labels.map(l=>buckets[l]);
+  const datasets=PL_PRODUCTS.map(p=>{
+    const tix=getPLTickets(p.key);
+    const buckets={};
+    for(const t of tix){
+      const key=plTrendGranularity==='daily'?t.date
+        :plTrendGranularity==='weekly'?getWeekLabel(t.date)
+        :t.date.slice(0,7);
+      buckets[key]=(buckets[key]||0)+1;
+    }
+    return{label:p.label,buckets,color:p.color};
+  });
+  // Union of all labels
+  const allKeys=new Set();
+  datasets.forEach(d=>Object.keys(d.buckets).forEach(k=>allKeys.add(k)));
+  const labels=[...allKeys].sort();
   chartInstances['plTrendChart']=new Chart(document.getElementById('plTrendChart'),{
     type:'bar',
-    data:{labels,datasets:[{data:values,backgroundColor:'#5b9cf699',borderColor:'#5b9cf6',borderWidth:0,borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tooltipDefaults}},
-      scales:{x:{ticks:{color:textColor,font:{size:9},maxRotation:45},grid:{display:false}},
-              y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true}}}
+    data:{labels,datasets:datasets.map(d=>({
+      label:d.label,
+      data:labels.map(l=>d.buckets[l]||0),
+      backgroundColor:d.color+'bb',
+      borderRadius:3,borderWidth:0,
+    }))},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:textColor,font:{size:11},boxWidth:12}},tooltip:{...tooltipDefaults,mode:'index',intersect:false}},
+      scales:{
+        x:{ticks:{color:textColor,font:{size:9},maxRotation:45},grid:{display:false},stacked:false},
+        y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true,stacked:false}
+      }}
   });
 }
 
-function renderPLChannelChart(clean){
+function renderPLChannelChart(){
   destroyChart('plChannelChart');
-  const chCounts={};
-  for(const t of clean) chCounts[t.channel||'Unknown']=(chCounts[t.channel||'Unknown']||0)+1;
-  const entries=Object.entries(chCounts).sort((a,b)=>b[1]-a[1]);
-  const CHANNEL_COLORS={'Live Chat':'#5b9cf6','Slack':'#f97058','Email':'#4caf7d','Telegram':'#fbbf24','WhatsApp':'#a78bfa'};
+  // Channels on X-axis, one dataset per product
+  const channels=PL_CHANNELS;
+  const datasets=PL_PRODUCTS.map(p=>{
+    const tix=getPLTickets(p.key);
+    const counts={};
+    for(const t of tix) counts[t.channel||'Other']=(counts[t.channel||'Other']||0)+1;
+    return{label:p.label,data:channels.map(ch=>counts[ch]||0),backgroundColor:p.color+'bb',borderRadius:3,borderWidth:0};
+  });
   chartInstances['plChannelChart']=new Chart(document.getElementById('plChannelChart'),{
-    type:'doughnut',
-    data:{labels:entries.map(e=>e[0]),datasets:[{data:entries.map(e=>e[1]),
-      backgroundColor:entries.map(e=>CHANNEL_COLORS[e[0]]||'#888'),borderWidth:0,hoverOffset:4}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
-      plugins:{legend:{position:'right',labels:{color:textColor,font:{size:11},boxWidth:12,padding:6}},
-               tooltip:{...tooltipDefaults,callbacks:{label:(ctx)=>`${ctx.label}: ${ctx.raw}`}}}}
+    type:'bar',
+    data:{labels:channels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:textColor,font:{size:11},boxWidth:12}},tooltip:{...tooltipDefaults,mode:'index',intersect:false}},
+      scales:{
+        x:{ticks:{color:textColor,font:{size:10}},grid:{display:false}},
+        y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true}
+      }}
   });
 }
 
-function renderPLCatChart(clean){
+function renderPLCatChart(){
   destroyChart('plCatChart');
-  const catCounts={};
-  for(const t of clean) catCounts[t.cat1||'Unknown']=(catCounts[t.cat1||'Unknown']||0)+1;
-  const top=Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  // Gather top categories across all products
+  const catTotals={};
+  PL_PRODUCTS.forEach(p=>{
+    getPLTickets(p.key).forEach(t=>{const c=t.cat1||'Unknown';catTotals[c]=(catTotals[c]||0)+1;});
+  });
+  const topCats=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,6).map(e=>e[0]);
+  const datasets=PL_PRODUCTS.map(p=>{
+    const tix=getPLTickets(p.key);
+    const counts={};
+    for(const t of tix) counts[t.cat1||'Unknown']=(counts[t.cat1||'Unknown']||0)+1;
+    return{label:p.label,data:topCats.map(c=>counts[c]||0),backgroundColor:p.color+'bb',borderRadius:3,borderWidth:0};
+  });
   chartInstances['plCatChart']=new Chart(document.getElementById('plCatChart'),{
     type:'bar',
-    data:{labels:top.map(e=>e[0]),datasets:[{data:top.map(e=>e[1]),backgroundColor:'#f9705888',borderColor:'#f97058',borderWidth:0,borderRadius:4}]},
+    data:{labels:topCats,datasets},
     options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{...tooltipDefaults,callbacks:{label:(ctx)=>`${ctx.raw} tickets`}}},
-      scales:{x:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true},
-              y:{ticks:{color:textColor,font:{size:10}},grid:{display:false}}}}
+      plugins:{legend:{labels:{color:textColor,font:{size:11},boxWidth:12}},tooltip:{...tooltipDefaults,mode:'index',intersect:false}},
+      scales:{
+        x:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true},
+        y:{ticks:{color:textColor,font:{size:10}},grid:{display:false}}
+      }}
   });
-}
-
-function renderPLAgentTable(clean){
-  const RESOLVED_ST=new Set(['Solved','Closed']);
-  const agMap={};
-  for(const t of clean){
-    const a=t.assignee||'(Unassigned)';
-    if(!agMap[a]) agMap[a]={total:0,open:0,esc:0,res:[],good:0,bad:0};
-    agMap[a].total++;
-    if(!RESOLVED_ST.has(t.status)) agMap[a].open++;
-    if(t.within_cx==='No') agMap[a].esc++;
-    if(t.res&&t.res>0&&RESOLVED_ST.has(t.status)) agMap[a].res.push(t.res);
-    agMap[a].good+=(t.good||0);
-    agMap[a].bad+=(t.bad||0);
-  }
-  const rows=Object.entries(agMap)
-    .filter(([,v])=>v.total>=3)
-    .sort((a,b)=>b[1].total-a[1].total);
-
-  const tbody=document.getElementById('pl-agent-tbody');
-  if(!rows.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;">No data for current selection</td></tr>';return;}
-  tbody.innerHTML=rows.map(([name,v])=>{
-    const escR=+(v.esc/v.total*100).toFixed(1);
-    const avgR=v.res.length?+(v.res.reduce((a,b)=>a+b,0)/v.res.length).toFixed(1):null;
-    const csatN=v.good+v.bad;
-    const csat=csatN?Math.round(v.good/csatN*100)+'%':'—';
-    return `<tr>
-      <td>${name}</td>
-      <td>${v.total}</td>
-      <td>${v.open} <span style="color:var(--text3);font-size:10px">(${Math.round(v.open/v.total*100)}%)</span></td>
-      <td>${escBadge(escR)}</td>
-      <td>${avgR!=null?avgR+'h':'—'}</td>
-      <td>${csat}${csatN?` <span style="color:var(--text3);font-size:10px">n=${csatN}</span>`:''}</td>
-    </tr>`;
-  }).join('');
 }
 
 // ═══════════════════════════════════ TABLES ═══════════════════════════════════
