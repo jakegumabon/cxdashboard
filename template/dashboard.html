@@ -637,15 +637,25 @@ tr:hover td{background:var(--surface2)}
     <div style="height:220px;position:relative;"><canvas id="plTrendChart"></canvas></div>
   </div>
 
-  <!-- Channel Mix + Top Categories side by side -->
-  <div class="chart-row chart-row-2">
+  <!-- Channel Mix -->
+  <div class="chart-card" style="margin-bottom:24px;">
+    <div class="chart-title">Channel Mix by Product</div>
+    <div style="height:200px;position:relative;"><canvas id="plChannelChart"></canvas></div>
+  </div>
+
+  <!-- Top Categories — one chart per product -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
     <div class="chart-card">
-      <div class="chart-title">Channel Mix by Product</div>
-      <div style="height:220px;position:relative;"><canvas id="plChannelChart"></canvas></div>
+      <div style="font-size:11px;font-weight:700;color:#5b9cf6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Direct — Top Categories</div>
+      <div style="height:200px;position:relative;"><canvas id="plCatChart-direct"></canvas></div>
     </div>
     <div class="chart-card">
-      <div class="chart-title">Top Categories by Product</div>
-      <div style="height:220px;position:relative;"><canvas id="plCatChart"></canvas></div>
+      <div style="font-size:11px;font-weight:700;color:#f97058;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">CaaS — Top Categories</div>
+      <div style="height:200px;position:relative;"><canvas id="plCatChart-caas"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div style="font-size:11px;font-weight:700;color:#4caf7d;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Connect — Top Categories</div>
+      <div style="height:200px;position:relative;"><canvas id="plCatChart-connect"></canvas></div>
     </div>
   </div>
 
@@ -1473,29 +1483,33 @@ function renderPLTrendChart(){
     const buckets={};
     for(const t of tix){
       const key=plTrendGranularity==='daily'?t.date
-        :plTrendGranularity==='weekly'?getWeekLabel(t.date)
+        :plTrendGranularity==='weekly'?getWeekStart(t.date)
         :t.date.slice(0,7);
       buckets[key]=(buckets[key]||0)+1;
     }
     return{label:p.label,buckets,color:p.color};
   });
-  // Union of all labels
   const allKeys=new Set();
   datasets.forEach(d=>Object.keys(d.buckets).forEach(k=>allKeys.add(k)));
   const labels=[...allKeys].sort();
   chartInstances['plTrendChart']=new Chart(document.getElementById('plTrendChart'),{
-    type:'bar',
+    type:'line',
     data:{labels,datasets:datasets.map(d=>({
       label:d.label,
       data:labels.map(l=>d.buckets[l]||0),
-      backgroundColor:d.color+'bb',
-      borderRadius:3,borderWidth:0,
+      borderColor:d.color,
+      backgroundColor:d.color+'22',
+      borderWidth:2,
+      pointBackgroundColor:d.color,
+      pointRadius:3,
+      tension:0.35,
+      fill:false,
     }))},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{labels:{color:textColor,font:{size:11},boxWidth:12}},tooltip:{...tooltipDefaults,mode:'index',intersect:false}},
       scales:{
-        x:{ticks:{color:textColor,font:{size:9},maxRotation:45},grid:{display:false},stacked:false},
-        y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true,stacked:false}
+        x:{ticks:{color:textColor,font:{size:9},maxRotation:45},grid:{display:false}},
+        y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true}
       }}
   });
 }
@@ -1523,28 +1537,27 @@ function renderPLChannelChart(){
 }
 
 function renderPLCatChart(){
-  destroyChart('plCatChart');
-  // Gather top categories across all products
-  const catTotals={};
   PL_PRODUCTS.forEach(p=>{
-    getPLTickets(p.key).forEach(t=>{const c=t.cat1||'Unknown';catTotals[c]=(catTotals[c]||0)+1;});
-  });
-  const topCats=Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,6).map(e=>e[0]);
-  const datasets=PL_PRODUCTS.map(p=>{
+    const chartId=`plCatChart-${p.key}`;
+    destroyChart(chartId);
     const tix=getPLTickets(p.key);
     const counts={};
     for(const t of tix) counts[t.cat1||'Unknown']=(counts[t.cat1||'Unknown']||0)+1;
-    return{label:p.label,data:topCats.map(c=>counts[c]||0),backgroundColor:p.color+'bb',borderRadius:3,borderWidth:0};
-  });
-  chartInstances['plCatChart']=new Chart(document.getElementById('plCatChart'),{
-    type:'bar',
-    data:{labels:topCats,datasets},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{labels:{color:textColor,font:{size:11},boxWidth:12}},tooltip:{...tooltipDefaults,mode:'index',intersect:false}},
-      scales:{
-        x:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true},
-        y:{ticks:{color:textColor,font:{size:10}},grid:{display:false}}
-      }}
+    const top=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    if(!top.length) return;
+    chartInstances[chartId]=new Chart(document.getElementById(chartId),{
+      type:'bar',
+      data:{
+        labels:top.map(e=>e[0]),
+        datasets:[{data:top.map(e=>e[1]),backgroundColor:p.color+'bb',borderRadius:3,borderWidth:0}]
+      },
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{...tooltipDefaults,callbacks:{label:(ctx)=>`${ctx.raw} tickets`}}},
+        scales:{
+          x:{ticks:{color:textColor,font:{size:9}},grid:{color:gridColor},beginAtZero:true},
+          y:{ticks:{color:textColor,font:{size:9}},grid:{display:false}}
+        }}
+    });
   });
 }
 
