@@ -163,6 +163,7 @@ tr:hover td{background:var(--surface2)}
   <div class="tab" onclick="switchTab('team')">Team</div>
     <div class="tab" onclick="switchTab('ops')">Operational Volume</div>
     <div class="tab" onclick="switchTab('capacity')">Capacity</div>
+    <div class="tab" onclick="switchTab('product')">Product Lines</div>
 </div>
 
 <div id="date-filter-bar">
@@ -596,6 +597,78 @@ tr:hover td{background:var(--surface2)}
         <div id="sched-ref-content"></div>
       </div>
     </div>
+
+</div>
+
+<!-- ═══════════════════════════════════ PRODUCT LINES TAB ═══════════════════════════════════ -->
+<div id="tab-product" class="tab-panel">
+
+  <div class="section-title">Product Lines <span class="section-note" id="pl-period-note"></span></div>
+
+  <!-- Product selector -->
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+    <button class="granularity-btn active" id="pl-btn-all"     onclick="setPLProduct('all',this)">All</button>
+    <button class="granularity-btn"        id="pl-btn-direct"  onclick="setPLProduct('direct',this)">Direct</button>
+    <button class="granularity-btn"        id="pl-btn-caas"    onclick="setPLProduct('caas',this)">CaaS</button>
+    <button class="granularity-btn"        id="pl-btn-connect" onclick="setPLProduct('connect',this)">Connect</button>
+    <span id="pl-untagged-note" style="font-size:11px;font-style:italic;color:var(--text3);margin-left:4px;"></span>
+  </div>
+
+  <!-- Sub-product pills (shown only for Direct / CaaS) -->
+  <div id="pl-subproduct-row" style="display:none;margin-bottom:16px;display:flex;gap:6px;flex-wrap:wrap;">
+    <!-- populated dynamically -->
+  </div>
+
+  <!-- KPI row -->
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px;" id="pl-kpi-row">
+    <div class="kpi"><div class="kpi-label">Volume</div><div class="kpi-value mono" id="pl-kpi-total">—</div><div class="kpi-sub" id="pl-kpi-total-sub">tickets</div></div>
+    <div class="kpi"><div class="kpi-label">Resolved</div><div class="kpi-value mono" id="pl-kpi-resolved">—</div><div class="kpi-sub">of total</div></div>
+    <div class="kpi kpi-coral"><div class="kpi-label">Escalation Rate</div><div class="kpi-value mono" id="pl-kpi-esc">—</div><div class="kpi-sub" id="pl-kpi-esc-sub">escalated</div></div>
+    <div class="kpi kpi-blue"><div class="kpi-label">Avg Resolution</div><div class="kpi-value mono" id="pl-kpi-res">—</div><div class="kpi-sub">resolved tickets</div></div>
+    <div class="kpi kpi-amber"><div class="kpi-label">CSAT</div><div class="kpi-value mono" id="pl-kpi-csat">—</div><div class="kpi-sub" id="pl-kpi-csat-sub">responses</div></div>
+  </div>
+
+  <!-- Chart row -->
+  <div class="chart-row chart-row-3" style="margin-bottom:24px;">
+    <!-- Volume trend -->
+    <div class="chart-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div class="chart-title" style="margin-bottom:0;">Volume Trend</div>
+        <div style="display:flex;gap:4px;">
+          <button class="granularity-btn active" id="pl-trd-daily"   onclick="setPLTrend('daily',this)">Daily</button>
+          <button class="granularity-btn"        id="pl-trd-weekly"  onclick="setPLTrend('weekly',this)">Weekly</button>
+          <button class="granularity-btn"        id="pl-trd-monthly" onclick="setPLTrend('monthly',this)">Monthly</button>
+        </div>
+      </div>
+      <div style="height:180px;position:relative;"><canvas id="plTrendChart"></canvas></div>
+    </div>
+    <!-- Channel mix -->
+    <div class="chart-card">
+      <div class="chart-title">Channel Mix</div>
+      <div style="height:180px;position:relative;"><canvas id="plChannelChart"></canvas></div>
+    </div>
+    <!-- Top categories -->
+    <div class="chart-card">
+      <div class="chart-title">Top Categories</div>
+      <div style="height:180px;position:relative;"><canvas id="plCatChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Agent performance table -->
+  <div class="table-card">
+    <div class="table-card-title">Agent Performance</div>
+    <table id="pl-agent-table">
+      <thead><tr>
+        <th onclick="sortTable('pl-agent-table',0)">Agent</th>
+        <th onclick="sortTable('pl-agent-table',1)">Tickets</th>
+        <th onclick="sortTable('pl-agent-table',2)">Open</th>
+        <th onclick="sortTable('pl-agent-table',3)">Esc Rate</th>
+        <th onclick="sortTable('pl-agent-table',4)">Avg Res (h)</th>
+        <th onclick="sortTable('pl-agent-table',5)">CSAT</th>
+      </tr></thead>
+      <tbody id="pl-agent-tbody"></tbody>
+    </table>
+  </div>
 
 </div>
 
@@ -1274,6 +1347,10 @@ function refreshAll(){
   if(document.getElementById('tab-capacity').classList.contains('active')){
     drawDayHourMatrix(dhTeam);
   }
+  // ── Product Lines tab dynamic updates ──
+  if(document.getElementById('tab-product').classList.contains('active')){
+    renderProductTab();
+  }
 }
 
 function updateGroupKPIs(){
@@ -1310,7 +1387,7 @@ function fmt(v,d=1){return v==null?'—':v.toFixed(d);}
 // ═══════════════════════════════════ TABS ═══════════════════════════════════
 function switchTab(id){
   document.querySelectorAll('.tab').forEach((t,i)=>{
-    const ids=['overview','resolution','volume','team','ops','capacity'];
+    const ids=['overview','resolution','volume','team','ops','capacity','product'];
     t.classList.toggle('active',ids[i]===id);
   });
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
@@ -1319,6 +1396,190 @@ function switchTab(id){
   if(id==='ops'){setTimeout(()=>{drawOpsHeatmap(opsHeatmapMode||'all');},50);}
   if(id==='team'){setTimeout(()=>{},50);}
   if(id==='capacity'){setTimeout(()=>{const c=capCache||computeCapacity();initCapacityCharts(c);drawDayHourMatrix(dhTeam);},50);}
+  if(id==='product'){setTimeout(renderProductTab,50);}
+}
+
+// ═══════════════════════════════════ PRODUCT LINES ═══════════════════════════════════
+
+const PL_SUB = {
+  direct:  [{key:'Reap Card',label:'Reap Card'},{key:'Reap Pay',label:'Reap Pay'},{key:'General',label:'General (catch-all)'}],
+  caas:    [{key:'Card Issuance API',label:'Card Issuance API'},{key:'KYCaaS',label:'KYCaaS'}],
+  connect: [],
+  all:     []
+};
+
+let plProduct='all', plSubProduct=null, plTrendGranularity='daily';
+
+function getProductTickets(){
+  return filteredTickets.filter(t=>{
+    if(plProduct==='all') return true;
+    if(plProduct==='direct')  return (t.product||'').toLowerCase()==='direct';
+    if(plProduct==='caas')    return (t.product||'').toLowerCase()==='caas';
+    if(plProduct==='connect') return (t.product||'').toLowerCase()==='connect';
+    return false;
+  }).filter(t=>{
+    if(!plSubProduct) return true;
+    if(plProduct==='direct')  return (t.direct_product||'')===plSubProduct;
+    if(plProduct==='caas')    return (t.caas_product||'')===plSubProduct;
+    return true;
+  });
+}
+
+function setPLProduct(prod, btn){
+  plProduct=prod;
+  plSubProduct=null;
+  document.querySelectorAll('#pl-btn-all,#pl-btn-direct,#pl-btn-caas,#pl-btn-connect').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPLSubproductRow();
+  renderProductTab();
+}
+
+function setPLSubProduct(sub, btn){
+  plSubProduct=(plSubProduct===sub)?null:sub;
+  document.querySelectorAll('.pl-sub-btn').forEach(b=>b.classList.remove('active'));
+  if(plSubProduct) btn.classList.add('active');
+  renderProductTab();
+}
+
+function setPLTrend(g, btn){
+  plTrendGranularity=g;
+  document.querySelectorAll('#pl-trd-daily,#pl-trd-weekly,#pl-trd-monthly').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPLTrendChart(getProductTickets());
+}
+
+function renderPLSubproductRow(){
+  const row=document.getElementById('pl-subproduct-row');
+  const subs=PL_SUB[plProduct]||[];
+  if(subs.length===0){row.style.display='none';return;}
+  row.style.display='flex';
+  row.innerHTML=subs.map(s=>
+    `<button class="granularity-btn pl-sub-btn" onclick="setPLSubProduct('${s.key}',this)">${s.label}</button>`
+  ).join('');
+}
+
+function renderProductTab(){
+  const tix=getProductTickets();
+  const clean=tix.filter(t=>t.clean===1);
+
+  // Untagged note
+  const untagged=filteredTickets.filter(t=>!t.product).length;
+  const note=document.getElementById('pl-untagged-note');
+  if(note) note.textContent=untagged>0?`${untagged} ticket${untagged>1?'s':''} have no product tag — included in All only`:'';
+
+  // KPIs
+  const total=clean.length;
+  const RESOLVED_ST=new Set(['Solved','Closed']);
+  const resolved=clean.filter(t=>RESOLVED_ST.has(t.status));
+  const open=clean.filter(t=>!RESOLVED_ST.has(t.status));
+  const esc=clean.filter(t=>t.within_cx==='No');
+  const resTimes=resolved.map(t=>t.res).filter(v=>v&&v>0);
+  const avgRes=resTimes.length?+(resTimes.reduce((a,b)=>a+b,0)/resTimes.length).toFixed(1):null;
+  const good=clean.reduce((s,t)=>s+(t.good||0),0);
+  const bad=clean.reduce((s,t)=>s+(t.bad||0),0);
+  const csatN=good+bad;
+  const csatScore=csatN>0?Math.round(good/csatN*100):null;
+
+  document.getElementById('pl-kpi-total').textContent=total.toLocaleString();
+  document.getElementById('pl-kpi-total-sub').textContent='tickets';
+  document.getElementById('pl-kpi-resolved').textContent=total?Math.round(resolved.length/total*100)+'%':'—';
+  document.getElementById('pl-kpi-esc').textContent=total?+(esc.length/total*100).toFixed(1)+'%':'—';
+  document.getElementById('pl-kpi-esc-sub').textContent=`${esc.length} of ${total} escalated`;
+  document.getElementById('pl-kpi-res').textContent=avgRes!=null?avgRes+'h':'—';
+  document.getElementById('pl-kpi-csat').textContent=csatScore!=null?csatScore+'%':'—';
+  document.getElementById('pl-kpi-csat-sub').textContent=csatN?`n=${csatN} responses`:'no responses';
+
+  // Charts
+  renderPLTrendChart(clean);
+  renderPLChannelChart(clean);
+  renderPLCatChart(clean);
+  renderPLAgentTable(clean);
+}
+
+function renderPLTrendChart(clean){
+  destroyChart('plTrendChart');
+  const buckets={};
+  for(const t of clean){
+    const key=plTrendGranularity==='daily'?t.date
+      :plTrendGranularity==='weekly'?getWeekLabel(t.date)
+      :t.date.slice(0,7);
+    buckets[key]=(buckets[key]||0)+1;
+  }
+  const labels=Object.keys(buckets).sort();
+  const values=labels.map(l=>buckets[l]);
+  chartInstances['plTrendChart']=new Chart(document.getElementById('plTrendChart'),{
+    type:'bar',
+    data:{labels,datasets:[{data:values,backgroundColor:'#5b9cf699',borderColor:'#5b9cf6',borderWidth:0,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...tooltipDefaults}},
+      scales:{x:{ticks:{color:textColor,font:{size:9},maxRotation:45},grid:{display:false}},
+              y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true}}}
+  });
+}
+
+function renderPLChannelChart(clean){
+  destroyChart('plChannelChart');
+  const chCounts={};
+  for(const t of clean) chCounts[t.channel||'Unknown']=(chCounts[t.channel||'Unknown']||0)+1;
+  const entries=Object.entries(chCounts).sort((a,b)=>b[1]-a[1]);
+  const CHANNEL_COLORS={'Live Chat':'#5b9cf6','Slack':'#f97058','Email':'#4caf7d','Telegram':'#fbbf24','WhatsApp':'#a78bfa'};
+  chartInstances['plChannelChart']=new Chart(document.getElementById('plChannelChart'),{
+    type:'doughnut',
+    data:{labels:entries.map(e=>e[0]),datasets:[{data:entries.map(e=>e[1]),
+      backgroundColor:entries.map(e=>CHANNEL_COLORS[e[0]]||'#888'),borderWidth:0,hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
+      plugins:{legend:{position:'right',labels:{color:textColor,font:{size:11},boxWidth:12,padding:6}},
+               tooltip:{...tooltipDefaults,callbacks:{label:(ctx)=>`${ctx.label}: ${ctx.raw}`}}}}
+  });
+}
+
+function renderPLCatChart(clean){
+  destroyChart('plCatChart');
+  const catCounts={};
+  for(const t of clean) catCounts[t.cat1||'Unknown']=(catCounts[t.cat1||'Unknown']||0)+1;
+  const top=Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  chartInstances['plCatChart']=new Chart(document.getElementById('plCatChart'),{
+    type:'bar',
+    data:{labels:top.map(e=>e[0]),datasets:[{data:top.map(e=>e[1]),backgroundColor:'#f9705888',borderColor:'#f97058',borderWidth:0,borderRadius:4}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{...tooltipDefaults,callbacks:{label:(ctx)=>`${ctx.raw} tickets`}}},
+      scales:{x:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true},
+              y:{ticks:{color:textColor,font:{size:10}},grid:{display:false}}}}
+  });
+}
+
+function renderPLAgentTable(clean){
+  const RESOLVED_ST=new Set(['Solved','Closed']);
+  const agMap={};
+  for(const t of clean){
+    const a=t.assignee||'(Unassigned)';
+    if(!agMap[a]) agMap[a]={total:0,open:0,esc:0,res:[],good:0,bad:0};
+    agMap[a].total++;
+    if(!RESOLVED_ST.has(t.status)) agMap[a].open++;
+    if(t.within_cx==='No') agMap[a].esc++;
+    if(t.res&&t.res>0&&RESOLVED_ST.has(t.status)) agMap[a].res.push(t.res);
+    agMap[a].good+=(t.good||0);
+    agMap[a].bad+=(t.bad||0);
+  }
+  const rows=Object.entries(agMap)
+    .filter(([,v])=>v.total>=3)
+    .sort((a,b)=>b[1].total-a[1].total);
+
+  const tbody=document.getElementById('pl-agent-tbody');
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px;">No data for current selection</td></tr>';return;}
+  tbody.innerHTML=rows.map(([name,v])=>{
+    const escR=+(v.esc/v.total*100).toFixed(1);
+    const avgR=v.res.length?+(v.res.reduce((a,b)=>a+b,0)/v.res.length).toFixed(1):null;
+    const csatN=v.good+v.bad;
+    const csat=csatN?Math.round(v.good/csatN*100)+'%':'—';
+    return `<tr>
+      <td>${name}</td>
+      <td>${v.total}</td>
+      <td>${v.open} <span style="color:var(--text3);font-size:10px">(${Math.round(v.open/v.total*100)}%)</span></td>
+      <td>${escBadge(escR)}</td>
+      <td>${avgR!=null?avgR+'h':'—'}</td>
+      <td>${csat}${csatN?` <span style="color:var(--text3);font-size:10px">n=${csatN}</span>`:''}</td>
+    </tr>`;
+  }).join('');
 }
 
 // ═══════════════════════════════════ TABLES ═══════════════════════════════════
