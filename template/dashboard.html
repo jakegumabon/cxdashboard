@@ -91,6 +91,9 @@ tr:hover td{background:var(--surface2)}
 #kpi-drilldown-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
 #kpi-drilldown-title{font-size:13px;font-weight:600;color:var(--text)}
 .drilldown-controls{display:flex;align-items:center;gap:6px}
+#cg-kpi-drilldown{display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:24px;overflow:hidden}
+#cg-kpi-drilldown.visible{display:block}
+#cg-drilldown-wrap{height:180px;position:relative}
 .granularity-btn{padding:4px 12px;font-size:11px;font-weight:600;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .15s}
 .granularity-btn:hover{color:var(--text2);border-color:var(--text3)}
 .granularity-btn.active{background:var(--coral);border-color:var(--coral);color:#fff}
@@ -174,6 +177,7 @@ tr:hover td{background:var(--surface2)}
     <div class="tab" onclick="switchTab('ops')">Operational Volume</div>
     <div class="tab" onclick="switchTab('capacity')">Capacity</div>
     <div class="tab" onclick="switchTab('product')">Product Lines</div>
+    <div class="tab" onclick="switchTab('cg')">CG Team</div>
 </div>
 
 <div id="date-filter-bar">
@@ -678,6 +682,100 @@ tr:hover td{background:var(--surface2)}
 
 </div>
 
+<!-- ═══════════════════════════════════ CG TEAM TAB ═══════════════════════════════════ -->
+<div id="tab-cg" class="tab-panel">
+
+  <!-- KPI Row -->
+  <div class="kpi-grid" id="cg-kpis">
+    <div class="kpi" data-kpi="total" onclick="openCGDrilldown('total',this)"><div class="kpi-label">Total Tickets</div><div class="kpi-value mono" id="cg-kpi-total">—</div><div class="kpi-sub" id="cg-kpi-period">—</div></div>
+    <div class="kpi kpi-coral" id="cg-kpi-card-reopen" data-kpi="reopen" onclick="openCGDrilldown('reopen',this)"><div class="kpi-label">Reopen Rate</div><div class="kpi-value mono" id="cg-kpi-reopen-rate">—</div><div class="kpi-sub" id="cg-kpi-reopen-sub">—</div></div>
+    <div class="kpi kpi-coral" id="cg-kpi-card-escrate" data-kpi="escrate" onclick="openCGDrilldown('escrate',this)"><div class="kpi-label">Escalation Rate</div><div class="kpi-value mono" id="cg-kpi-escrate">—</div><div class="kpi-sub" id="cg-kpi-esc-sub">—</div><div class="kpi-target">Target: ≤15%</div></div>
+    <div class="kpi kpi-amber" id="cg-kpi-card-csat" data-kpi="csat" onclick="openCGDrilldown('csat',this)"><div class="kpi-label">CSAT Score</div><div class="kpi-value mono" id="cg-kpi-csat">—</div><div class="kpi-sub" id="cg-kpi-csat-sub">—</div><div class="kpi-flag" id="cg-kpi-csat-flag" style="display:none">⚠ Unreliable — n&lt;30</div><div class="kpi-target">Target: ≥75%</div></div>
+    <div class="kpi kpi-blue" id="cg-kpi-card-median" data-kpi="median" onclick="openCGDrilldown('median',this)"><div class="kpi-label">Avg Resolution</div><div class="kpi-value mono" id="cg-kpi-median">—</div><div class="kpi-sub">Resolved tickets only</div><div class="kpi-target">Target: ≤48h</div></div>
+    <div class="kpi" id="cg-kpi-card-rw" data-kpi="rw" onclick="openCGDrilldown('rw',this)"><div class="kpi-label">Avg Customer Wait</div><div class="kpi-value mono" id="cg-kpi-rw">—</div><div class="kpi-sub">Customer waiting on CX · <span style="opacity:0.7">solved tickets</span></div><div class="kpi-target">Target: ≤24h</div></div>
+    <div class="kpi" data-kpi="aw" onclick="openCGDrilldown('aw',this)"><div class="kpi-label">Avg Agent Wait</div><div class="kpi-value mono" id="cg-kpi-aw">—</div><div class="kpi-sub">Agent waiting on customer · <span style="opacity:0.7">solved tickets</span></div></div>
+    <div class="kpi" data-kpi="srr" onclick="openCGDrilldown('srr',this)"><div class="kpi-label">Survey Response Rate</div><div class="kpi-value mono" id="cg-kpi-srr">—</div><div class="kpi-sub" id="cg-kpi-srr-sub">—</div></div>
+  </div>
+
+  <!-- KPI Drilldown Panel -->
+  <div id="cg-kpi-drilldown" class="kpi-drilldown-panel">
+    <div id="cg-kpi-drilldown-header" class="kpi-drilldown-header" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);">
+      <span id="cg-kpi-drilldown-title" style="font-size:13px;font-weight:600;color:var(--text);">Trend</span>
+      <div style="display:flex;align-items:center;gap:12px">
+        <div class="drilldown-controls">
+          <button class="granularity-btn" onclick="setCGGranularity('daily',this)">Daily</button>
+          <button class="granularity-btn active" onclick="setCGGranularity('weekly',this)">Weekly</button>
+          <button class="granularity-btn" onclick="setCGGranularity('monthly',this)">Monthly</button>
+        </div>
+        <button id="cg-kpi-drilldown-close" onclick="closeCGDrilldown()" style="background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:0 4px;">✕</button>
+      </div>
+    </div>
+    <div id="cg-drilldown-wrap" style="padding:16px;"><canvas id="cgDrilldownChart"></canvas></div>
+    <!-- CG Chronic reopens -->
+    <div id="cg-reopen-flagged-row" style="display:none;margin:0 16px 16px;border-top:1px solid var(--border);padding-top:14px;">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">
+        Tickets Reopened 4× or More <span id="cg-reopen-flagged-count" style="font-weight:400;color:var(--text3);"></span>
+      </div>
+      <div id="cg-reopen-flagged-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+    </div>
+    <!-- CG Escalation breakdown -->
+    <div id="cg-esc-breakdown-row" style="display:none;margin:0 16px 16px;border-top:1px solid var(--border);padding-top:16px;">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;">Escalation Breakdown</div>
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;height:170px;">
+        <div style="position:relative;">
+          <div style="font-size:10px;color:var(--text3);margin-bottom:6px;">Internal vs External</div>
+          <div style="position:relative;height:145px;"><canvas id="cgEscTypeChart"></canvas></div>
+        </div>
+        <div style="position:relative;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <div style="font-size:10px;color:var(--text3);">Destination Team / Partner</div>
+            <div style="display:flex;gap:4px;">
+              <button class="granularity-btn active" onclick="setCGEscDestFilter('all',this)">All</button>
+              <button class="granularity-btn" onclick="setCGEscDestFilter('internal',this)">Internal</button>
+              <button class="granularity-btn" onclick="setCGEscDestFilter('external',this)">External</button>
+            </div>
+          </div>
+          <div style="position:relative;height:145px;"><canvas id="cgEscDestChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts row -->
+  <div class="chart-row chart-row-3" style="margin-top:16px;">
+    <div class="chart-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="chart-title" style="margin-bottom:0">Volume Trend</div>
+        <div style="display:flex;gap:4px">
+          <button class="granularity-btn active" id="cg-voltrd-daily" onclick="setCGVolumeTrend('daily')">Daily</button>
+          <button class="granularity-btn" id="cg-voltrd-weekly" onclick="setCGVolumeTrend('weekly')">Weekly</button>
+          <button class="granularity-btn" id="cg-voltrd-monthly" onclick="setCGVolumeTrend('monthly')">Monthly</button>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:160px"><canvas id="cgSparklineChart"></canvas></div>
+    </div>
+    <div class="chart-card"><div class="chart-title">Channels</div><div class="chart-wrap" style="height:160px"><canvas id="cgChannelChart"></canvas></div></div>
+  </div>
+
+  <!-- Category table -->
+  <div class="table-card">
+    <div class="table-card-title">Category Breakdown</div>
+    <table id="cg-cat-table">
+      <thead><tr>
+        <th onclick="sortTable('cg-cat-table',0)">Category</th>
+        <th onclick="sortTable('cg-cat-table',1)">Tickets</th>
+        <th onclick="sortTable('cg-cat-table',2)">Esc Rate</th>
+        <th onclick="sortTable('cg-cat-table',3)">Avg Res (h)</th>
+        <th onclick="sortTable('cg-cat-table',4)">Cust Wait (h)</th>
+        <th onclick="sortTable('cg-cat-table',5)">Agent Wait (h)</th>
+        <th onclick="sortTable('cg-cat-table',6)">Delay Source</th>
+      </tr></thead>
+      <tbody id="cg-cat-tbody"></tbody>
+    </table>
+  </div>
+
+</div>
+
 </div><!-- end .content -->
 
 <!-- AI Panel -->
@@ -1094,8 +1192,8 @@ function getMondayWeekKey(dateStr){
 
 function getMonthKey(dateStr){return dateStr.slice(0,7);}
 
-function buildDrilldownData(kpiKey, granularity){
-  const tickets=filteredTickets;
+function buildDrilldownData(kpiKey, granularity, tickets){
+  if(!tickets) tickets=filteredTickets;
   const meta=KPI_META[kpiKey];
   // Group tickets by period
   const groups={};
@@ -1480,6 +1578,10 @@ function refreshAll(){
   if(document.getElementById('tab-product').classList.contains('active')){
     renderProductTab();
   }
+  // ── CG Team tab dynamic updates ──
+  if(document.getElementById('tab-cg').classList.contains('active')){
+    renderCGTab();
+  }
 }
 
 function updateGroupKPIs(){
@@ -1516,7 +1618,7 @@ function fmt(v,d=1){return v==null?'—':v.toFixed(d);}
 // ═══════════════════════════════════ TABS ═══════════════════════════════════
 function switchTab(id){
   document.querySelectorAll('.tab').forEach((t,i)=>{
-    const ids=['overview','resolution','volume','team','ops','capacity','product'];
+    const ids=['overview','resolution','volume','team','ops','capacity','product','cg'];
     t.classList.toggle('active',ids[i]===id);
   });
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
@@ -1526,6 +1628,7 @@ function switchTab(id){
   if(id==='team'){setTimeout(()=>{},50);}
   if(id==='capacity'){setTimeout(()=>{const c=capCache||computeCapacity();initCapacityCharts(c);drawDayHourMatrix(dhTeam);},50);}
   if(id==='product'){setTimeout(renderProductTab,50);}
+  if(id==='cg'){setTimeout(renderCGTab,50);}
 }
 
 // ═══════════════════════════════════ PRODUCT LINES ═══════════════════════════════════
@@ -3325,6 +3428,244 @@ function downloadCSV(){
   const a    = document.createElement('a');
   a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════ CG TEAM TAB ═══════════════════════════════════
+
+// CG_AGENTS injected by pipeline
+const CG_AGENTS=/*{{CG_AGENTS_JS}}*/[];
+
+function getCGTickets(){
+  return filteredTickets.filter(t=>t.assignee&&CG_AGENTS.includes(t.assignee));
+}
+
+let activeCGKpi=null, activeCGGranularity='weekly', activeCGEscDestFilter='all', cgVolumeTrend='daily';
+
+function updateCGKPIs(M){
+  document.getElementById('cg-kpi-total').textContent=M.total;
+  document.getElementById('cg-kpi-period').textContent=M.rangeStr;
+  // Reopen
+  document.getElementById('cg-kpi-reopen-rate').textContent=M.reopen_rate+'%';
+  document.getElementById('cg-kpi-reopen-sub').textContent=`${M.total_reopens} reopens · ${M.total_resolved} solved/closed`;
+  // Escalation
+  const escPct=M.total?+(M.escalated/M.total*100).toFixed(1):0;
+  document.getElementById('cg-kpi-escrate').textContent=escPct+'%';
+  document.getElementById('cg-kpi-esc-sub').textContent=`${M.escalated} of ${M.total} escalated`;
+  const escCard=document.getElementById('cg-kpi-card-escrate');
+  if(escCard){escCard.className='kpi'+(escPct>15?' kpi-coral':'');}
+  // CSAT
+  const csatPct=M.surveyed>=1?+(M.good/M.surveyed*100).toFixed(1):null;
+  document.getElementById('cg-kpi-csat').textContent=csatPct!==null?csatPct+'%':'—';
+  document.getElementById('cg-kpi-csat-sub').textContent=`n=${M.surveyed} rated`;
+  const csatFlag=document.getElementById('cg-kpi-csat-flag');
+  if(csatFlag) csatFlag.style.display=M.surveyed>0&&M.surveyed<30?'block':'none';
+  // Avg resolution
+  document.getElementById('cg-kpi-median').textContent=M.avgRes!==null?M.avgRes+'h':'—';
+  // Customer wait
+  document.getElementById('cg-kpi-rw').textContent=M.avgRw!==null?M.avgRw+'h':'—';
+  // Agent wait
+  document.getElementById('cg-kpi-aw').textContent=M.avgAw!==null?M.avgAw+'h':'—';
+  // Survey response rate
+  const srrPct=M.total_surveyed_sent>0?+(M.surveyed/M.total_surveyed_sent*100).toFixed(1):0;
+  document.getElementById('cg-kpi-srr').textContent=srrPct+'%';
+  document.getElementById('cg-kpi-srr-sub').textContent=`${M.surveyed} of ${M.total_surveyed_sent} surveyed responded`;
+}
+
+function openCGDrilldown(kpiKey, el){
+  if(activeCGKpi===kpiKey){closeCGDrilldown();return;}
+  activeCGKpi=kpiKey;
+  document.querySelectorAll('#tab-cg .kpi').forEach(k=>k.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const panel=document.getElementById('cg-kpi-drilldown');
+  panel.classList.add('visible');
+  const meta=KPI_META[kpiKey];
+  document.getElementById('cg-kpi-drilldown-title').textContent=(meta?meta.label:'Trend')+' — CG Team';
+  renderCGDrilldownChart();
+}
+
+function closeCGDrilldown(){
+  activeCGKpi=null;
+  document.querySelectorAll('#tab-cg .kpi').forEach(k=>k.classList.remove('active'));
+  document.getElementById('cg-kpi-drilldown').classList.remove('visible');
+  document.getElementById('cg-esc-breakdown-row').style.display='none';
+  document.getElementById('cg-reopen-flagged-row').style.display='none';
+  destroyChart('cgDrilldownChart');
+  destroyChart('cgEscTypeChart');
+  destroyChart('cgEscDestChart');
+}
+
+function setCGGranularity(g, btn){
+  activeCGGranularity=g;
+  document.querySelectorAll('#cg-kpi-drilldown .granularity-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(activeCGKpi) renderCGDrilldownChart();
+}
+
+function renderCGDrilldownChart(){
+  if(!activeCGKpi) return;
+  const cgTickets=getCGTickets();
+  destroyChart('cgDrilldownChart');
+  document.getElementById('cg-esc-breakdown-row').style.display='none';
+  document.getElementById('cg-reopen-flagged-row').style.display='none';
+
+  if(activeCGKpi==='reopen'){renderCGReopenDistChart(cgTickets);return;}
+
+  const meta=KPI_META[activeCGKpi];
+  const{labels,values}=buildDrilldownData(activeCGKpi,activeCGGranularity,cgTickets);
+  const isRate=['escrate','csat','srr'].includes(activeCGKpi);
+  chartInstances['cgDrilldownChart']=new Chart(document.getElementById('cgDrilldownChart'),{
+    type:'bar',
+    data:{labels,datasets:[{label:meta.label,data:values,backgroundColor:meta.color+'99',borderColor:meta.color,borderWidth:1,borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>isRate?ctx.parsed.y+meta.unit:(ctx.parsed.y+(meta.unit||''))}}},scales:{x:{ticks:{color:'var(--text3)',font:{size:10}}},y:{ticks:{color:'var(--text3)',font:{size:10}},grid:{color:'var(--border)'},beginAtZero:true}}}
+  });
+
+  if(activeCGKpi==='escrate'){
+    document.getElementById('cg-esc-breakdown-row').style.display='block';
+    renderCGEscBreakdownCharts(cgTickets);
+  }
+}
+
+function renderCGReopenDistChart(cgTickets){
+  const resolved=cgTickets.filter(t=>t.status==='Solved'||t.status==='Closed');
+  const buckets=[0,0,0,0,0,0,0];
+  resolved.forEach(t=>{const r=t.reopens||0;buckets[Math.min(r,6)]++;});
+  const labels=['0×','1×','2×','3×','4×','5×','6×+'];
+  const colors=['#4caf7d','#5b9cf6','#fbbf24','#f97058','#ef4444','#dc2626','#b91c1c'];
+  const dataLabelsPlugin={id:'cgReopenDataLabels',afterDatasetsDraw(chart){const ctx=chart.ctx;chart.data.datasets.forEach((ds,i)=>{chart.getDatasetMeta(i).data.forEach((bar,idx)=>{const val=ds.data[idx];if(!val)return;ctx.save();ctx.fillStyle='rgba(255,255,255,0.85)';ctx.font='bold 11px "IBM Plex Mono",monospace';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(val.toLocaleString(),bar.x,bar.y-4);ctx.restore();});});} };
+  destroyChart('cgDrilldownChart');
+  chartInstances['cgDrilldownChart']=new Chart(document.getElementById('cgDrilldownChart'),{
+    type:'bar',plugins:[dataLabelsPlugin],
+    data:{labels,datasets:[{label:'Tickets',data:buckets,backgroundColor:colors.map(c=>c+'cc'),borderColor:colors,borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y} tickets`}}},scales:{x:{ticks:{color:'var(--text3)',font:{size:11}}},y:{ticks:{color:'var(--text3)',font:{size:10}},grid:{color:'var(--border)'},beginAtZero:true}}}
+  });
+  // Flagged tickets (4x+)
+  const flagged=cgTickets.filter(t=>(t.status==='Solved'||t.status==='Closed')&&(t.reopens||0)>=4).sort((a,b)=>b.reopens-a.reopens);
+  const flagRow=document.getElementById('cg-reopen-flagged-row');
+  const flagList=document.getElementById('cg-reopen-flagged-list');
+  const flagCount=document.getElementById('cg-reopen-flagged-count');
+  if(flagRow){
+    flagRow.style.display=flagged.length?'block':'none';
+    if(flagCount) flagCount.textContent=`— ${flagged.length} ticket${flagged.length>1?'s':''}`;
+    if(flagList) flagList.innerHTML=flagged.map(t=>`
+      <div style="background:var(--surface2);border:1px solid #f9705844;border-radius:6px;padding:8px 12px;font-size:12px;min-width:160px;">
+        <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:#f97058;"><a href="https://reap.zendesk.com/agent/tickets/${t.id}" target="_blank" style="color:#f97058;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">#${t.id}</a> &nbsp;<span style="font-size:11px;background:#f9705822;padding:2px 6px;border-radius:4px;">${t.reopens}×</span></div>
+        <div style="color:var(--text2);margin-top:4px;font-size:11px;">${t.cat1||'—'}</div>
+        <div style="color:var(--text3);font-size:10px;margin-top:2px;">${t.assignee||'Unassigned'}</div>
+      </div>`).join('');
+  }
+}
+
+function renderCGEscBreakdownCharts(cgTickets){
+  destroyChart('cgEscTypeChart');
+  destroyChart('cgEscDestChart');
+  const esced=cgTickets.filter(t=>t.within_cx==='No');
+  const intCount=esced.filter(t=>t.esc_int).length;
+  const extCount=esced.filter(t=>t.esc_ext).length;
+  if(intCount+extCount>0){
+    chartInstances['cgEscTypeChart']=new Chart(document.getElementById('cgEscTypeChart'),{
+      type:'doughnut',
+      data:{labels:['Internal','External'],datasets:[{data:[intCount,extCount],backgroundColor:['#5b9cf6cc','#f97058cc'],borderColor:['#5b9cf6','#f97058'],borderWidth:1}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'var(--text2)',font:{size:10},boxWidth:10}}}}
+    });
+  }
+  const destMap={};
+  esced.forEach(t=>{
+    const filterPass=activeCGEscDestFilter==='all'||(activeCGEscDestFilter==='internal'&&t.esc_int)||(activeCGEscDestFilter==='external'&&t.esc_ext);
+    if(!filterPass)return;
+    const dest=(activeCGEscDestFilter==='external'?t.esc_ext:t.esc_int)||'Unknown';
+    dest.split(',').map(d=>d.trim()).filter(Boolean).forEach(d=>{destMap[d]=(destMap[d]||0)+1;});
+  });
+  const sorted=Object.entries(destMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if(sorted.length){
+    chartInstances['cgEscDestChart']=new Chart(document.getElementById('cgEscDestChart'),{
+      type:'bar',
+      data:{labels:sorted.map(e=>e[0]),datasets:[{data:sorted.map(e=>e[1]),backgroundColor:'#5b9cf699',borderColor:'#5b9cf6',borderWidth:1,borderRadius:3}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'var(--text3)',font:{size:10}},grid:{color:'var(--border)'},beginAtZero:true},y:{ticks:{color:'var(--text2)',font:{size:10}}}}}
+    });
+  }
+}
+
+function setCGEscDestFilter(f, btn){
+  activeCGEscDestFilter=f;
+  document.querySelectorAll('#cg-esc-breakdown-row .granularity-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  renderCGEscBreakdownCharts(getCGTickets());
+}
+
+function setCGVolumeTrend(g){
+  cgVolumeTrend=g;
+  ['daily','weekly','monthly'].forEach(k=>{
+    const b=document.getElementById('cg-voltrd-'+k);
+    if(b) b.classList.toggle('active',k===g);
+  });
+  renderCGSparkline();
+}
+
+function renderCGSparkline(){
+  destroyChart('cgSparklineChart');
+  const cgTickets=getCGTickets();
+  const groups={};
+  cgTickets.forEach(t=>{
+    if(!t.date)return;
+    const key=cgVolumeTrend==='daily'?t.date:cgVolumeTrend==='weekly'?getWeekStart(t.date):t.date.slice(0,7);
+    groups[key]=(groups[key]||0)+1;
+  });
+  const labels=Object.keys(groups).sort();
+  const counts=labels.map(k=>groups[k]);
+  chartInstances['cgSparklineChart']=new Chart(document.getElementById('cgSparklineChart'),{
+    type:'bar',
+    data:{labels,datasets:[{data:counts,backgroundColor:'#5b9cf699',borderColor:'#5b9cf6',borderWidth:1,borderRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'var(--text3)',font:{size:10},maxRotation:45}},y:{ticks:{color:'var(--text3)',font:{size:10}},grid:{color:'var(--border)'},beginAtZero:true}}}
+  });
+}
+
+function renderCGChannelChart(){
+  destroyChart('cgChannelChart');
+  const cgTickets=getCGTickets();
+  const chMap={};
+  cgTickets.forEach(t=>{if(t.channel)chMap[t.channel]=(chMap[t.channel]||0)+1;});
+  const sorted=Object.entries(chMap).sort((a,b)=>b[1]-a[1]);
+  const CHANNEL_COLORS={'Live Chat':'#5b9cf6','Slack':'#f97058','Email':'#4caf7d','Telegram':'#fbbf24','WhatsApp':'#a78bfa'};
+  chartInstances['cgChannelChart']=new Chart(document.getElementById('cgChannelChart'),{
+    type:'bar',
+    data:{labels:sorted.map(e=>e[0]),datasets:[{data:sorted.map(e=>e[1]),backgroundColor:sorted.map(e=>(CHANNEL_COLORS[e[0]]||'#888')+'cc'),borderColor:sorted.map(e=>CHANNEL_COLORS[e[0]]||'#888'),borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'var(--text3)',font:{size:10}}},y:{ticks:{color:'var(--text3)',font:{size:10}},grid:{color:'var(--border)'},beginAtZero:true}}}
+  });
+}
+
+function renderCGCatTable(){
+  const cgTickets=getCGTickets();
+  const cats={};
+  cgTickets.forEach(t=>{
+    const c=t.cat1||'Uncategorized';
+    if(!cats[c]) cats[c]={count:0,esc:0,res:[],rw:[],aw:[]};
+    cats[c].count++;
+    if(t.within_cx==='No') cats[c].esc++;
+    if(t.res!=null&&t.res>0) cats[c].res.push(t.res);
+    if(t.rw!=null&&t.rw>0) cats[c].rw.push(t.rw);
+    if(t.aw!=null&&t.aw>0) cats[c].aw.push(t.aw);
+  });
+  const rows=Object.entries(cats).sort((a,b)=>b[1].count-a[1].count);
+  const tbody=document.getElementById('cg-cat-tbody');
+  if(!tbody) return;
+  tbody.innerHTML=rows.map(([cat,d])=>{
+    const escR=d.count?+(d.esc/d.count*100).toFixed(1):0;
+    const avgRes=d.res.length?+(d.res.reduce((a,b)=>a+b,0)/d.res.length).toFixed(1):null;
+    const avgRw=d.rw.length?+(d.rw.reduce((a,b)=>a+b,0)/d.rw.length).toFixed(1):null;
+    const avgAw=d.aw.length?+(d.aw.reduce((a,b)=>a+b,0)/d.aw.length).toFixed(1):null;
+    const delay=avgRw!==null&&avgAw!==null?(avgRw>avgAw?'Customer':'Agent'):'—';
+    return`<tr><td>${cat}</td><td>${d.count}</td><td>${escR}%</td><td>${avgRes!==null?avgRes:'—'}</td><td>${avgRw!==null?avgRw:'—'}</td><td>${avgAw!==null?avgAw:'—'}</td><td>${delay}</td></tr>`;
+  }).join('');
+}
+
+function renderCGTab(){
+  const cgTickets=getCGTickets();
+  const M=computeMetrics(cgTickets);
+  updateCGKPIs(M);
+  renderCGSparkline();
+  renderCGChannelChart();
+  renderCGCatTable();
+  if(activeCGKpi) renderCGDrilldownChart();
 }
 </script>
 </body>

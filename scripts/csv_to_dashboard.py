@@ -506,6 +506,11 @@ def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_
             ag_lines.append("  " + ",".join(entries) + ",")
     ag_js = "{\n" + "\n".join(ag_lines) + "\n}"
 
+    # Build CG_AGENTS JS array
+    cg_agents = sorted(name for name, grp in assignee_group.items() if grp == "CG")
+    cg_agents_js = "[" + ",".join(f"'{n}'" for n in cg_agents) + "]"
+    html = html.replace("/*{{CG_AGENTS_JS}}*/[]", cg_agents_js)
+
     # Replace placeholders
     html = re.sub(
         r'const ASSIGNEE_GROUP\s*=\s*/\*\{\{ASSIGNEE_GROUP\}\}\*/\s*\{[^}]*\}\s*;',
