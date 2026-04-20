@@ -1277,7 +1277,7 @@ function renderReopenDistChart(){
     if(flagCount) flagCount.textContent=`— ${flagged.length} ticket${flagged.length>1?'s':''}`;
     if(flagList) flagList.innerHTML=flagged.map(t=>`
       <div style="background:var(--surface2);border:1px solid #f9705844;border-radius:6px;padding:8px 12px;font-size:12px;min-width:160px;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:#f97058;">#${t.id} &nbsp;<span style="font-size:11px;background:#f9705822;padding:2px 6px;border-radius:4px;">${t.reopens}×</span></div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:#f97058;"><a href="https://reap.zendesk.com/agent/tickets/${t.id}" target="_blank" style="color:#f97058;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">#${t.id}</a> &nbsp;<span style="font-size:11px;background:#f9705822;padding:2px 6px;border-radius:4px;">${t.reopens}×</span></div>
         <div style="color:var(--text2);margin-top:4px;font-size:11px;">${t.cat1||'—'}</div>
         <div style="color:var(--text3);font-size:10px;margin-top:2px;">${t.assignee||'Unassigned'}</div>
       </div>`).join('');
