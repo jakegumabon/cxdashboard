@@ -153,7 +153,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 20, 2026 · 14:22 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 20, 2026 · 17:03 HKT</div>
 </div>
 
 <div class="tabs">
@@ -194,7 +194,7 @@ tr:hover td{background:var(--surface2)}
 
   <!-- Per-team comparison -->
   <div id="team-compare" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:24px"></div>
-  <div style="margin:12px 0;padding:10px 14px;background:#2a1f0a;border:1px solid #f5a623;border-radius:6px;color:#f5a623;font-size:12px;">&#9888;&nbsp; <strong>12 agents with no team assigned:</strong>&nbsp;CS Apps, Clyde, Franco, Joris Thibault-Gabily, Lebin Looi, Maxwell Li, Michael Chang, Ming Ming Ooi, Robin Koh, Rollie Villaflor, Sam Lee, Weilam Thum&nbsp;—&nbsp;their tickets are excluded from team comparisons.</div>
+  <div style="margin:12px 0;padding:10px 14px;background:#2a1f0a;border:1px solid #f5a623;border-radius:6px;color:#f5a623;font-size:12px;">&#9888;&nbsp; <strong>1 agent with no team assigned:</strong>&nbsp;CS Apps&nbsp;—&nbsp;their tickets are excluded from team comparisons.</div>
 
   <!-- KPI Drill-down panel -->
   <div id="kpi-drilldown">
@@ -714,7 +714,11 @@ const ASSIGNEE_GROUP = {
   // TS
   'Chang':'TS','Jose Shardin':'TS','Jaiber Kler':'TS','Jan Rivera':'TS','Bogdan Hristovski':'TS','Gilbert Arces':'TS','John Jacinto':'TS','Raymark Cayanan':'TS','Hans Wang':'TS','Allen Reyes':'TS','Adrian Maranan':'TS',
   // CG (not CX)
-  'Chloe Wong':'CG','Angela Shih':'CG','Catherine Sun':'CG',
+  'Chloe Wong':'CG','Angela Shih':'CG','Catherine Sun':'CG','Joris Thibault-Gabily':'CG','Lebin Looi':'CG','Maxwell Li':'CG','Michael Chang':'CG','Sam Lee':'CG','Robin Koh':'CG',
+  // Admin
+  'Clyde':'Admin','Franco':'Admin','Rollie Villaflor':'Admin',
+  // Card Ops
+  'Ming Ming Ooi':'Card Ops','Weilam Thum':'Card Ops',
 };
 function getGroup(assignee){ return ASSIGNEE_GROUP[assignee] || null; }
 
@@ -1286,7 +1290,7 @@ function renderReopenDistChart(){
     if(flagCount) flagCount.textContent=`— ${flagged.length} ticket${flagged.length>1?'s':''}`;
     if(flagList) flagList.innerHTML=flagged.map(t=>`
       <div style="background:var(--surface2);border:1px solid #f9705844;border-radius:6px;padding:8px 12px;font-size:12px;min-width:160px;">
-        <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:#f97058;">#${t.id} &nbsp;<span style="font-size:11px;background:#f9705822;padding:2px 6px;border-radius:4px;">${t.reopens}×</span></div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-weight:700;color:#f97058;"><a href="https://reap.zendesk.com/agent/tickets/${t.id}" target="_blank" style="color:#f97058;text-decoration:none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">#${t.id}</a> &nbsp;<span style="font-size:11px;background:#f9705822;padding:2px 6px;border-radius:4px;">${t.reopens}×</span></div>
         <div style="color:var(--text2);margin-top:4px;font-size:11px;">${t.cat1||'—'}</div>
         <div style="color:var(--text3);font-size:10px;margin-top:2px;">${t.assignee||'Unassigned'}</div>
       </div>`).join('');

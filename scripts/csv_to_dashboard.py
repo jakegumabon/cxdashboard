@@ -108,6 +108,12 @@ ASSIGNEE_GROUP = {
     "Allen Reyes": "TS", "Adrian Maranan": "TS",
     # CG (not CX — excluded from team comparison)
     "Chloe Wong": "CG", "Angela Shih": "CG", "Catherine Sun": "CG",
+    "Joris Thibault-Gabily": "CG", "Lebin Looi": "CG", "Maxwell Li": "CG",
+    "Michael Chang": "CG", "Sam Lee": "CG", "Robin Koh": "CG",
+    # Admin
+    "Clyde": "Admin", "Franco": "Admin", "Rollie Villaflor": "Admin",
+    # Card Ops
+    "Ming Ming Ooi": "Card Ops", "Weilam Thum": "Card Ops",
 }
 
 
@@ -491,10 +497,11 @@ def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_
 
     # Build ASSIGNEE_GROUP JS object string
     ag_lines = []
-    for team in ["IM", "CS", "TS", "CG"]:
+    team_comments = {"IM": "IM", "CS": "CS", "TS": "TS", "CG": "CG (not CX)", "Admin": "Admin", "Card Ops": "Card Ops"}
+    for team in ["IM", "CS", "TS", "CG", "Admin", "Card Ops"]:
         entries = [f"'{name}':'{grp}'" for name, grp in assignee_group.items() if grp == team]
         if entries:
-            comment = {"IM": "IM", "CS": "CS", "TS": "TS", "CG": "CG (not CX)"}[team]
+            comment = team_comments.get(team, team)
             ag_lines.append(f"  // {comment}")
             ag_lines.append("  " + ",".join(entries) + ",")
     ag_js = "{\n" + "\n".join(ag_lines) + "\n}"
