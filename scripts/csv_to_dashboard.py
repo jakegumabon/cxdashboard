@@ -554,23 +554,6 @@ def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_
     mapped_names  = set(assignee_group.keys())
     unmapped = sorted(all_assignees - mapped_names)
 
-    # Build non-CX group notices (CG, Admin, Card Ops)
-    NON_CX_GROUPS = ["CG", "Admin", "Card Ops"]
-    non_cx_notices = []
-    for group in NON_CX_GROUPS:
-        members = sorted(name for name, grp in assignee_group.items() if grp == group)
-        count = sum(1 for t in raw_tickets if t.get("assignee") in members)
-        if members and count > 0:
-            names_str = ", ".join(members)
-            non_cx_notices.append(
-                f'<div style="margin:8px 0;padding:10px 14px;background:#12202a;border:1px solid #4a9ebb;'
-                f'border-radius:6px;color:#7ec8e3;font-size:12px;">'
-                f'&#8505;&nbsp; <strong>{group}</strong> is not a CX team — '
-                f'{count} ticket{"s" if count>1 else ""} assigned to: {names_str}. '
-                f'These are included in overall totals but excluded from CX team comparisons.'
-                f'</div>'
-            )
-
     if unmapped:
         names_str = ", ".join(unmapped)
         unmapped_html = (
@@ -584,9 +567,42 @@ def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_
     else:
         unmapped_html = ""
         print("  ✓ All agents mapped to a team")
+    html = html.replace("/*{{UNMAPPED_NOTICE}}*/", unmapped_html)
 
-    notice_html = "\n".join(non_cx_notices) + ("\n" if non_cx_notices and unmapped_html else "") + unmapped_html
-    html = html.replace("/*{{UNMAPPED_NOTICE}}*/", notice_html)
+    # Build non-CX tooltip (⚠ icon next to ticket count in filter bar)
+    NON_CX_GROUPS = ["CG", "Admin", "Card Ops"]
+    tooltip_rows = []
+    total_non_cx = 0
+    for group in NON_CX_GROUPS:
+        members = sorted(name for name, grp in assignee_group.items() if grp == group)
+        in_data  = sorted(name for name in members if any(t.get("assignee") == name for t in raw_tickets))
+        count    = sum(1 for t in raw_tickets if t.get("assignee") in members)
+        if in_data and count > 0:
+            total_non_cx += count
+            tooltip_rows.append(
+                f'<div class="non-cx-tip-row">'
+                f'<div class="non-cx-tip-group">{group} &mdash; {count} ticket{"s" if count>1 else ""}</div>'
+                f'<div class="non-cx-tip-members">{", ".join(in_data)}</div>'
+                f'</div>'
+            )
+
+    if tooltip_rows:
+        rows_html = "\n".join(tooltip_rows)
+        tooltip_html = (
+            f'<span class="non-cx-tip">'
+            f'<span class="non-cx-tip-icon">&#9888;</span>'
+            f'<div class="non-cx-tip-box">'
+            f'<div style="font-weight:700;color:#f5a623;margin-bottom:10px;font-size:11.5px;">'
+            f'{total_non_cx} tickets from non-CX teams</div>'
+            f'<div style="color:var(--text3);font-size:10.5px;margin-bottom:10px;">'
+            f'Included in overall totals but excluded from CX team comparisons.</div>'
+            f'{rows_html}'
+            f'</div>'
+            f'</span>'
+        )
+    else:
+        tooltip_html = ""
+    html = html.replace("/*{{NON_CX_TOOLTIP}}*/", tooltip_html)
 
     # Inject pipeline run timestamp (HKT = UTC+8)
     from datetime import timezone, timedelta

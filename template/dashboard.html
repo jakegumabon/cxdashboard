@@ -109,6 +109,16 @@ tr:hover td{background:var(--surface2)}
 .filter-reset:hover{color:var(--text2);border-color:var(--text3)}
 #filter-status{font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace}
 #filter-status.filtered{color:var(--coral)}
+/* Non-CX tooltip */
+.non-cx-tip{position:relative;display:inline-flex;align-items:center;margin-left:6px;vertical-align:middle}
+.non-cx-tip-icon{cursor:help;font-size:13px;color:#f5a623;line-height:1;user-select:none}
+.non-cx-tip-box{display:none;position:absolute;left:50%;transform:translateX(-50%);top:calc(100% + 8px);width:320px;background:var(--surface2);border:1px solid #f5a62355;border-radius:8px;padding:12px 14px;font-size:11px;color:var(--text2);z-index:500;box-shadow:0 8px 24px rgba(0,0,0,.4);font-family:'IBM Plex Sans',sans-serif;line-height:1.5}
+.non-cx-tip:hover .non-cx-tip-box{display:block}
+.non-cx-tip-box::before{content:'';position:absolute;top:-6px;left:50%;transform:translateX(-50%);border-width:0 6px 6px;border-style:solid;border-color:transparent transparent #f5a62355}
+.non-cx-tip-row{margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.non-cx-tip-row:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.non-cx-tip-group{font-weight:700;color:#f5a623;margin-bottom:2px}
+.non-cx-tip-members{color:var(--text3);font-size:10.5px}
 /* AI Panel */
 #ai-toggle-btn{position:fixed;bottom:28px;right:28px;z-index:1000;background:var(--coral);color:#fff;border:none;padding:12px 20px;border-radius:24px;font-family:'IBM Plex Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 16px rgba(249,112,88,0.35);transition:all .2s}
 #ai-toggle-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(249,112,88,0.45)}
@@ -173,7 +183,7 @@ tr:hover td{background:var(--surface2)}
   <input type="date" id="date-to" class="date-input" value="2026-03-22" min="2026-03-01">
   <button class="filter-apply" onclick="applyDateFilter()">Apply</button>
   <button class="filter-reset" onclick="resetDateFilter()">Reset</button>
-  <span id="filter-status">All 21 days · 906 tickets</span>
+  <span id="filter-status">All 21 days · 906 tickets</span>/*{{NON_CX_TOOLTIP}}*/
   <button class="filter-reset" onclick="downloadCSV()" style="margin-left:12px;color:var(--text2);border-color:var(--border)" title="Download filtered tickets as CSV">⬇ Export CSV</button>
 </div>
 
