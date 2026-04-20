@@ -276,6 +276,7 @@ def parse_sr(csv_path):
             oc = row.get("Other Category", "").strip()
             esc_int = row.get("Internal Escalation", "").strip()
             esc_ext = row.get("External Escalation", "").strip()
+            reopens = int(float(row.get("Reopens", "0") or 0))
             product = row.get("Product", "").strip()
             direct_product = row.get("Direct Product", "").strip()
             caas_product = row.get("CaaS Product", "").strip()
@@ -292,6 +293,7 @@ def parse_sr(csv_path):
                 "within_cx": within_cx,
                 "esc_int": esc_int,
                 "esc_ext": esc_ext,
+                "reopens": reopens,
                 "product": product,
                 "direct_product": direct_product,
                 "caas_product": caas_product,
@@ -369,6 +371,7 @@ def parse_tr(csv_path):
             esc_type = row.get("Escalation Type", "").strip()
             within_cx = "Yes" if esc_type == "No Escalation" else "No"
             oc = row.get("Other Category", "").strip()
+            tr_reopens = int(float(row.get("Reopens", "0") or 0))
             ticket = {
                 "id": safe_int(ticket_id),
                 "date": row.get("Ticket created - Date", "").strip(),
@@ -380,6 +383,7 @@ def parse_tr(csv_path):
                 "cat2": cat2,
                 "req_type": "Technical Request",
                 "within_cx": within_cx,
+                "reopens": tr_reopens,
                 "clean": safe_int(row.get("Tickets not merged and not dispute", 1)),
                 "res": round(safe_float(row.get("Full resolution time (hrs)")), 2),
                 "rw": round(safe_float(row.get("Requester wait time (hrs)")), 2),

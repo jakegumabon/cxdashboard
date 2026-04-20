@@ -183,7 +183,7 @@ tr:hover td{background:var(--surface2)}
 <div id="tab-overview" class="tab-panel active">
   <div class="kpi-grid" id="overview-kpis">
     <div class="kpi" data-kpi="total" onclick="openDrilldown('total',this)"><div class="kpi-label">Total Tickets</div><div class="kpi-value mono" id="kpi-total">681</div><div class="kpi-sub" id="kpi-period">Mar 1–16, 2026</div></div>
-    <div class="kpi kpi-coral"><div class="kpi-label">Reopen Rate</div><div class="kpi-value mono" id="kpi-reopen-rate">—</div><div class="kpi-sub" id="kpi-reopen-sub">—</div></div>
+    <div class="kpi kpi-coral" id="kpi-card-reopen" data-kpi="reopen" onclick="openDrilldown('reopen',this)"><div class="kpi-label">Reopen Rate</div><div class="kpi-value mono" id="kpi-reopen-rate">—</div><div class="kpi-sub" id="kpi-reopen-sub">—</div></div>
     <div class="kpi kpi-coral" id="kpi-card-escrate" data-kpi="escrate" onclick="openDrilldown('escrate',this)"><div class="kpi-label">Escalation Rate</div><div class="kpi-value mono" id="kpi-escrate">28.8%</div><div class="kpi-sub" id="kpi-esc-sub">196 of 681 escalated</div><div class="kpi-target" id="kpi-target-escrate">Target: ≤15%</div></div>
     <div class="kpi kpi-amber" id="kpi-card-csat" data-kpi="csat" onclick="openDrilldown('csat',this)"><div class="kpi-label">CSAT Score</div><div class="kpi-value mono" id="kpi-csat">100%</div><div class="kpi-sub" id="kpi-csat-sub">n=7 rated</div><div class="kpi-flag" id="kpi-csat-flag">⚠ Unreliable — n&lt;30</div><div class="kpi-target" id="kpi-target-csat">Target: ≥75%</div></div>
     <div class="kpi kpi-blue" id="kpi-card-median" data-kpi="median" onclick="openDrilldown('median',this)"><div class="kpi-label">Avg Resolution</div><div class="kpi-value mono" id="kpi-median">68.5h</div><div class="kpi-sub">Resolved tickets only</div><div class="kpi-target" id="kpi-target-median">Target: ≤48h</div></div>
@@ -871,8 +871,15 @@ function computeMetrics(tickets){
     csat_score:v.rated>0 ? +((v.good/v.rated)*100).toFixed(0) : null,
   }));
 
+  // Reopen Rate — sum of reopens / count of Solved+Closed tickets
+  const resolvedTix=tickets.filter(t=>t.status==='Solved'||t.status==='Closed');
+  const total_resolved=resolvedTix.length;
+  const total_reopens=resolvedTix.reduce((s,t)=>s+(t.reopens||0),0);
+  const reopen_rate=total_resolved?+(total_reopens/total_resolved*100).toFixed(1):0;
+
   return{total,solved,closed,escalated,esc_rate,csat_score,csat_n,csat_rr,surveyed,
     med_res,mean_res,p90_res,avg_rw,avg_aw,rangeStr,fromDate,toDate,
+    total_reopens,total_resolved,reopen_rate,
     daily:{labels:dailyLabels,counts:dailyCounts},
     dow:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],counts:dowCounts},
     channels:chMap,channelPerf,
@@ -923,6 +930,8 @@ function updateKPIs(M){
   document.getElementById('kpi-aw').textContent=M.avg_aw!=null?M.avg_aw.toFixed(1)+'h':'—';
   document.getElementById('kpi-srr').textContent=M.csat_rr+'%';
   document.getElementById('kpi-srr-sub').textContent=`${M.csat_n} of ${M.surveyed} surveyed responded`;
+  document.getElementById('kpi-reopen-rate').textContent=M.reopen_rate+'%';
+  document.getElementById('kpi-reopen-sub').textContent=`${M.total_reopens} reopens · ${M.total_resolved} solved/closed`;
   // Resolution tab KPIs
   document.getElementById('res-kpi-mean').textContent=M.mean_res!=null?M.mean_res.toFixed(1)+'h':'—';
   document.getElementById('res-kpi-median').textContent=M.med_res!=null?M.med_res.toFixed(1)+'h':'—';
@@ -1048,6 +1057,7 @@ function updateTeamCompare(){
 let activeKpi=null, activeGranularity='weekly', activeEscDestFilter='all';
 
 const KPI_META={
+  reopen:{label:'Reopen Rate', color:'#f97058', unit:'%', type:'dist'},
   total:  {label:'Total Tickets',     color:'#4f9cf9', unit:'',  type:'count'},
   escrate:{label:'Escalation Rate',   color:'#f97058', unit:'%', type:'rate'},
   csat:   {label:'CSAT Score',        color:'#f5a623', unit:'%', type:'csat'},
@@ -1134,7 +1144,10 @@ function openDrilldown(kpiKey, el){
   // Clear active state from all cards
   document.querySelectorAll('.kpi').forEach(k=>k.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('kpi-drilldown-title').textContent=KPI_META[kpiKey].label+' — Trend';
+  const isDist=KPI_META[kpiKey].type==='dist';
+  document.getElementById('kpi-drilldown-title').textContent=KPI_META[kpiKey].label+(isDist?' — Distribution':' — Trend');
+  // Hide granularity buttons for distribution charts
+  document.querySelector('.drilldown-controls').style.display=isDist?'none':'flex';
   document.getElementById('kpi-drilldown').classList.add('visible');
   // Show escalation breakdown panel only for escrate
   const escRow=document.getElementById('esc-breakdown-row');
@@ -1147,6 +1160,7 @@ function closeDrilldown(){
   activeKpi=null;
   document.querySelectorAll('.kpi').forEach(k=>k.classList.remove('active'));
   document.getElementById('kpi-drilldown').classList.remove('visible');
+  document.querySelector('.drilldown-controls').style.display='flex';
   destroyChart('drilldownChart');
   destroyChart('escTypeChart');
   destroyChart('escDestChart');
@@ -1167,10 +1181,16 @@ function setGranularity(g, btn){
 function renderDrilldownChart(){
   if(!activeKpi) return;
   destroyChart('drilldownChart');
+
+  // Reopen: show distribution histogram instead of trend
+  if(activeKpi==='reopen'){
+    renderReopenDistChart();
+    return;
+  }
+
   const meta=KPI_META[activeKpi];
   const {labels,values}=buildDrilldownData(activeKpi,activeGranularity);
   const isRate=['escrate','csat','srr'].includes(activeKpi);
-  const hasNull=values.some(v=>v===null);
 
   chartInstances['drilldownChart']=new Chart(document.getElementById('drilldownChart'),{
     type: isRate?'line':'bar',
@@ -1199,6 +1219,63 @@ function renderDrilldownChart(){
           grid:{color:gridColor},
           beginAtZero:true,
         }
+      }
+    }
+  });
+}
+
+function renderReopenDistChart(){
+  // Distribution of reopen counts across Solved+Closed tickets
+  const resolved=filteredTickets.filter(t=>t.status==='Solved'||t.status==='Closed');
+  const dist={};
+  let maxVal=0;
+  for(const t of resolved){
+    const n=t.reopens||0;
+    dist[n]=(dist[n]||0)+1;
+    if(n>maxVal) maxVal=n;
+  }
+  // Build labels 0 → maxVal (cap at 6+)
+  const CAP=6;
+  const labels=[];
+  const values=[];
+  for(let i=0;i<=Math.min(maxVal,CAP-1);i++){
+    labels.push(i===0?'0 (never)':i===1?'1x':i+'x');
+    values.push(dist[i]||0);
+  }
+  if(maxVal>=CAP){
+    // Bucket everything ≥ CAP together
+    let sum=0;
+    for(let i=CAP;i<=maxVal;i++) sum+=(dist[i]||0);
+    labels.push(CAP+'+');
+    values.push(sum);
+  }
+  // Color: 0 = green, rest gradient toward coral
+  const colors=values.map((_,i)=>i===0?'#4caf7d99':i<=1?'#fbbf2499':'#f9705899');
+  const borders=values.map((_,i)=>i===0?'#4caf7d':i<=1?'#fbbf24':'#f97058');
+
+  chartInstances['drilldownChart']=new Chart(document.getElementById('drilldownChart'),{
+    type:'bar',
+    data:{labels,datasets:[{
+      data:values,
+      backgroundColor:colors,
+      borderColor:borders,
+      borderWidth:1,
+      borderRadius:4,
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{...tooltipDefaults,callbacks:{
+          title:(items)=>`Reopened ${items[0].label}`,
+          label:(ctx)=>`${ctx.raw.toLocaleString()} tickets`
+        }}
+      },
+      scales:{
+        x:{ticks:{color:textColor,font:{size:11}},grid:{display:false},
+           title:{display:true,text:'Times Reopened',color:textColor,font:{size:10}}},
+        y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true,
+           title:{display:true,text:'Tickets',color:textColor,font:{size:10}}}
       }
     }
   });
