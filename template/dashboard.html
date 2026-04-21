@@ -198,8 +198,8 @@ tr:hover td{background:var(--surface2)}
   <div class="kpi-grid" id="overview-kpis">
     <div class="kpi" data-kpi="total" onclick="openDrilldown('total',this)"><div class="kpi-label">Total Tickets</div><div class="kpi-value mono" id="kpi-total">681</div><div class="kpi-sub" id="kpi-period">Mar 1–16, 2026</div></div>
     <div class="kpi kpi-coral" id="kpi-card-reopen" data-kpi="reopen" onclick="openDrilldown('reopen',this)"><div class="kpi-label">Reopen Rate</div><div class="kpi-value mono" id="kpi-reopen-rate">—</div><div class="kpi-sub" id="kpi-reopen-sub">—</div></div>
-    <div class="kpi kpi-coral" id="kpi-card-escrate" data-kpi="escrate" onclick="openDrilldown('escrate',this)"><div class="kpi-label">Escalation Rate</div><div class="kpi-value mono" id="kpi-escrate">28.8%</div><div class="kpi-sub" id="kpi-esc-sub">196 of 681 escalated</div><div class="kpi-target" id="kpi-target-escrate">Target: ≤15%</div></div>
-    <div class="kpi kpi-amber" id="kpi-card-csat" data-kpi="csat" onclick="openDrilldown('csat',this)"><div class="kpi-label">CSAT Score</div><div class="kpi-value mono" id="kpi-csat">100%</div><div class="kpi-sub" id="kpi-csat-sub">n=7 rated</div><div class="kpi-flag" id="kpi-csat-flag">⚠ Unreliable — n&lt;30</div><div class="kpi-target" id="kpi-target-csat">Target: ≥75%</div></div>
+    <div class="kpi kpi-coral" id="kpi-card-escrate" data-kpi="escrate" onclick="openDrilldown('escrate',this)"><div class="kpi-label">Escalation Rate</div><div class="kpi-value mono" id="kpi-escrate">28.8%</div><div class="kpi-sub" id="kpi-esc-sub">196 of 681 escalated</div><div class="kpi-target" id="kpi-target-escrate">Target: ≤10%</div></div>
+    <div class="kpi kpi-amber" id="kpi-card-csat" data-kpi="csat" onclick="openDrilldown('csat',this)"><div class="kpi-label">CSAT Score</div><div class="kpi-value mono" id="kpi-csat">100%</div><div class="kpi-sub" id="kpi-csat-sub">n=7 rated</div><div class="kpi-flag" id="kpi-csat-flag">⚠ Unreliable — n&lt;30</div><div class="kpi-target" id="kpi-target-csat">Target: ≥80%</div></div>
     <div class="kpi kpi-blue" id="kpi-card-median" data-kpi="median" onclick="openDrilldown('median',this)"><div class="kpi-label">Avg Resolution</div><div class="kpi-value mono" id="kpi-median">68.5h</div><div class="kpi-sub">Resolved tickets only</div><div class="kpi-target" id="kpi-target-median">Target: ≤48h</div></div>
     <div class="kpi" id="kpi-card-rw" data-kpi="rw" onclick="openDrilldown('rw',this)"><div class="kpi-label">Avg Customer Wait</div><div class="kpi-value mono" id="kpi-rw">23.4h</div><div class="kpi-sub">Customer waiting on CX · <span style="opacity:0.7">solved tickets</span></div><div class="kpi-target" id="kpi-target-rw">Target: ≤24h</div></div>
     <div class="kpi" data-kpi="aw" onclick="openDrilldown('aw',this)"><div class="kpi-label">Avg Agent Wait</div><div class="kpi-value mono" id="kpi-aw">42.5h</div><div class="kpi-sub">Agent waiting on customer · <span style="opacity:0.7">solved tickets</span></div></div>
@@ -689,8 +689,8 @@ tr:hover td{background:var(--surface2)}
   <div class="kpi-grid" id="cg-kpis">
     <div class="kpi" data-kpi="total" onclick="openCGDrilldown('total',this)"><div class="kpi-label">Total Tickets</div><div class="kpi-value mono" id="cg-kpi-total">—</div><div class="kpi-sub" id="cg-kpi-period">—</div></div>
     <div class="kpi kpi-coral" id="cg-kpi-card-reopen" data-kpi="reopen" onclick="openCGDrilldown('reopen',this)"><div class="kpi-label">Reopen Rate</div><div class="kpi-value mono" id="cg-kpi-reopen-rate">—</div><div class="kpi-sub" id="cg-kpi-reopen-sub">—</div></div>
-    <div class="kpi kpi-coral" id="cg-kpi-card-escrate" data-kpi="escrate" onclick="openCGDrilldown('escrate',this)"><div class="kpi-label">Escalation Rate</div><div class="kpi-value mono" id="cg-kpi-escrate">—</div><div class="kpi-sub" id="cg-kpi-esc-sub">—</div><div class="kpi-target">Target: ≤15%</div></div>
-    <div class="kpi kpi-amber" id="cg-kpi-card-csat" data-kpi="csat" onclick="openCGDrilldown('csat',this)"><div class="kpi-label">CSAT Score</div><div class="kpi-value mono" id="cg-kpi-csat">—</div><div class="kpi-sub" id="cg-kpi-csat-sub">—</div><div class="kpi-flag" id="cg-kpi-csat-flag" style="display:none">⚠ Unreliable — n&lt;30</div><div class="kpi-target">Target: ≥75%</div></div>
+    <div class="kpi kpi-coral" id="cg-kpi-card-escrate" data-kpi="escrate" onclick="openCGDrilldown('escrate',this)"><div class="kpi-label">Escalation Rate</div><div class="kpi-value mono" id="cg-kpi-escrate">—</div><div class="kpi-sub" id="cg-kpi-esc-sub">—</div><div class="kpi-target">Target: ≤10%</div></div>
+    <div class="kpi kpi-amber" id="cg-kpi-card-csat" data-kpi="csat" onclick="openCGDrilldown('csat',this)"><div class="kpi-label">CSAT Score</div><div class="kpi-value mono" id="cg-kpi-csat">—</div><div class="kpi-sub" id="cg-kpi-csat-sub">—</div><div class="kpi-flag" id="cg-kpi-csat-flag" style="display:none">⚠ Unreliable — n&lt;30</div><div class="kpi-target">Target: ≥80%</div></div>
     <div class="kpi kpi-blue" id="cg-kpi-card-median" data-kpi="median" onclick="openCGDrilldown('median',this)"><div class="kpi-label">Avg Resolution</div><div class="kpi-value mono" id="cg-kpi-median">—</div><div class="kpi-sub">Resolved tickets only</div><div class="kpi-target">Target: ≤48h</div></div>
     <div class="kpi" id="cg-kpi-card-rw" data-kpi="rw" onclick="openCGDrilldown('rw',this)"><div class="kpi-label">Avg Customer Wait</div><div class="kpi-value mono" id="cg-kpi-rw">—</div><div class="kpi-sub">Customer waiting on CX · <span style="opacity:0.7">solved tickets</span></div><div class="kpi-target">Target: ≤24h</div></div>
     <div class="kpi" data-kpi="aw" onclick="openCGDrilldown('aw',this)"><div class="kpi-label">Avg Agent Wait</div><div class="kpi-value mono" id="cg-kpi-aw">—</div><div class="kpi-sub">Agent waiting on customer · <span style="opacity:0.7">solved tickets</span></div></div>
@@ -1065,8 +1065,8 @@ function updateKPIs(M){
     const onTarget=lowerIsBetter?(value<=target):(value>=target);
     card.className+=(onTarget?' kpi-on-target':' kpi-off-target');
   }
-  applyTarget('kpi-card-escrate', M.esc_rate, 15, true);
-  applyTarget('kpi-card-csat', M.csat_score, 75, false);
+  applyTarget('kpi-card-escrate', M.esc_rate, 10, true);
+  applyTarget('kpi-card-csat', M.csat_score, 80, false);
   applyTarget('kpi-card-median', M.mean_res, 48, true);
   applyTarget('kpi-card-rw', M.avg_rw, 24, true);
 }
@@ -3452,7 +3452,7 @@ function updateCGKPIs(M){
   document.getElementById('cg-kpi-escrate').textContent=escPct+'%';
   document.getElementById('cg-kpi-esc-sub').textContent=`${M.escalated} of ${M.total} escalated`;
   const escCard=document.getElementById('cg-kpi-card-escrate');
-  if(escCard){escCard.className='kpi'+(escPct>15?' kpi-coral':'');}
+  if(escCard){escCard.className='kpi'+(escPct>10?' kpi-coral':'');}
   // CSAT
   const csatPct=M.surveyed>=1?+(M.good/M.surveyed*100).toFixed(1):null;
   document.getElementById('cg-kpi-csat').textContent=csatPct!==null?csatPct+'%':'—';
