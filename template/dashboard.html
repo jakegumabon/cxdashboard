@@ -785,30 +785,34 @@ tr:hover td{background:var(--surface2)}
 <!-- ═══════════════════════════════════ IM METRICS TAB ═══════════════════════════════════ -->
 <div id="tab-im" class="tab-panel">
 
-  <!-- KPI Row -->
-  <div class="kpi-grid" id="im-kpis" style="grid-template-columns:repeat(2,1fr);max-width:560px;">
-    <div class="kpi kpi-blue">
-      <div class="kpi-label">Activation Rate</div>
-      <div class="kpi-value mono" id="im-kpi-activation">—</div>
-      <div class="kpi-sub" id="im-kpi-activation-sub">—</div>
+  <!-- Top row: KPI stack (left) + Donut (right) -->
+  <div style="display:grid;grid-template-columns:260px 1fr;gap:16px;margin-bottom:16px;align-items:stretch;">
+
+    <!-- KPI stack -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="kpi kpi-blue" style="flex:1;margin:0;">
+        <div class="kpi-label">Activation Rate</div>
+        <div class="kpi-value mono" id="im-kpi-activation">—</div>
+        <div class="kpi-sub" id="im-kpi-activation-sub">—</div>
+      </div>
+      <div class="kpi" style="flex:1;margin:0;">
+        <div class="kpi-label">Avg IM Handling Time</div>
+        <div class="kpi-value mono" id="im-kpi-handling">—</div>
+        <div class="kpi-sub" id="im-kpi-handling-sub">—</div>
+      </div>
     </div>
-    <div class="kpi">
-      <div class="kpi-label">Avg IM Handling Time</div>
-      <div class="kpi-value mono" id="im-kpi-handling">—</div>
-      <div class="kpi-sub" id="im-kpi-handling-sub">—</div>
+
+    <!-- Stage donut -->
+    <div class="chart-card" style="margin:0;">
+      <div class="chart-title">Pipeline Stage Mix</div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="imStageDonut"></canvas></div>
     </div>
   </div>
 
-  <!-- Charts row: stage donut + stage bar -->
-  <div class="chart-row chart-row-3" style="margin-top:16px;">
-    <div class="chart-card">
-      <div class="chart-title">Pipeline Stage Mix</div>
-      <div class="chart-wrap" style="height:200px;"><canvas id="imStageDonut"></canvas></div>
-    </div>
-    <div class="chart-card" style="grid-column:span 2;">
-      <div class="chart-title">Programs by Stage</div>
-      <div class="chart-wrap" style="height:200px;"><canvas id="imStageBar"></canvas></div>
-    </div>
+  <!-- Bar chart: full width -->
+  <div class="chart-card" style="margin-bottom:16px;">
+    <div class="chart-title">Programs by Stage</div>
+    <div class="chart-wrap" style="height:200px;"><canvas id="imStageBar"></canvas></div>
   </div>
 
   <!-- Program table -->
