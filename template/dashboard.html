@@ -224,6 +224,11 @@ tr:hover td{background:var(--surface2)}
       </div>
     </div>
     <div id="drilldown-wrap"><canvas id="drilldownChart"></canvas></div>
+    <!-- Reopen distribution — only visible when reopen KPI is active -->
+    <div id="reopen-dist-row" style="display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:16px;">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Reopen Distribution</div>
+      <div style="position:relative;height:180px;"><canvas id="reopenDistChart"></canvas></div>
+    </div>
     <!-- Chronic reopens list — only visible when reopen KPI is active -->
     <div id="reopen-flagged-row" style="display:none;margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
       <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">
@@ -1172,7 +1177,7 @@ function updateTeamCompare(){
 let activeKpi=null, activeGranularity='weekly', activeEscDestFilter='all';
 
 const KPI_META={
-  reopen:{label:'Reopen Rate', color:'#f97058', unit:'%', type:'dist'},
+  reopen:{label:'Reopen Rate', color:'#f97058', unit:'%', type:'reopen_rate'},
   total:  {label:'Total Tickets',     color:'#4f9cf9', unit:'',  type:'count'},
   escrate:{label:'Escalation Rate',   color:'#f97058', unit:'%', type:'rate'},
   csat:   {label:'CSAT Score',        color:'#f5a623', unit:'%', type:'csat'},
@@ -1246,6 +1251,12 @@ function buildDrilldownData(kpiKey, granularity, tickets){
       const resp=grp.filter(t=>t.good||t.bad).length;
       return surv?+(resp/surv*100).toFixed(1):0;
     }
+    if(type==='reopen_rate'){
+      const resolved=grp.filter(t=>t.status==='Solved'||t.status==='Closed');
+      if(!resolved.length) return 0;
+      const totalReopens=resolved.reduce((s,t)=>s+(t.reopens||0),0);
+      return+(totalReopens/resolved.length*100).toFixed(1);
+    }
     return null;
   });
 
@@ -1259,15 +1270,15 @@ function openDrilldown(kpiKey, el){
   // Clear active state from all cards
   document.querySelectorAll('.kpi').forEach(k=>k.classList.remove('active'));
   el.classList.add('active');
-  const isDist=KPI_META[kpiKey].type==='dist';
-  document.getElementById('kpi-drilldown-title').textContent=KPI_META[kpiKey].label+(isDist?' — Distribution':' — Trend');
-  // Hide granularity buttons for distribution charts
-  document.querySelector('.drilldown-controls').style.display=isDist?'none':'flex';
+  document.getElementById('kpi-drilldown-title').textContent=KPI_META[kpiKey].label+' — Trend';
+  document.querySelector('.drilldown-controls').style.display='flex';
   document.getElementById('kpi-drilldown').classList.add('visible');
   // Show escalation breakdown panel only for escrate
   const escRow=document.getElementById('esc-breakdown-row');
   if(escRow) escRow.style.display=kpiKey==='escrate'?'block':'none';
-  // Reopen flagged row visibility handled inside renderReopenDistChart
+  // Reopen dist + flagged rows only for reopen KPI
+  const distRow=document.getElementById('reopen-dist-row');
+  if(distRow&&kpiKey!=='reopen') distRow.style.display='none';
   const reopenRow=document.getElementById('reopen-flagged-row');
   if(reopenRow&&kpiKey!=='reopen') reopenRow.style.display='none';
   renderDrilldownChart();
@@ -1280,10 +1291,13 @@ function closeDrilldown(){
   document.getElementById('kpi-drilldown').classList.remove('visible');
   document.querySelector('.drilldown-controls').style.display='flex';
   destroyChart('drilldownChart');
+  destroyChart('reopenDistChart');
   destroyChart('escTypeChart');
   destroyChart('escDestChart');
   const escRow=document.getElementById('esc-breakdown-row');
   if(escRow) escRow.style.display='none';
+  const distRow=document.getElementById('reopen-dist-row');
+  if(distRow) distRow.style.display='none';
   const reopenRow=document.getElementById('reopen-flagged-row');
   if(reopenRow) reopenRow.style.display='none';
   // Reset dest filter state
@@ -1302,15 +1316,14 @@ function renderDrilldownChart(){
   if(!activeKpi) return;
   destroyChart('drilldownChart');
 
-  // Reopen: show distribution histogram instead of trend
-  if(activeKpi==='reopen'){
-    renderReopenDistChart();
-    return;
-  }
+  // Hide reopen-specific rows unless active
+  const distRow=document.getElementById('reopen-dist-row');
+  if(distRow) distRow.style.display='none';
+  destroyChart('reopenDistChart');
 
   const meta=KPI_META[activeKpi];
   const {labels,values}=buildDrilldownData(activeKpi,activeGranularity);
-  const isRate=['escrate','csat','srr'].includes(activeKpi);
+  const isRate=['escrate','csat','srr','reopen_rate'].includes(activeKpi);
 
   chartInstances['drilldownChart']=new Chart(document.getElementById('drilldownChart'),{
     type: isRate?'line':'bar',
@@ -1342,6 +1355,13 @@ function renderDrilldownChart(){
       }
     }
   });
+
+  // If reopen KPI, also render the distribution chart below
+  if(activeKpi==='reopen'){
+    const distRow=document.getElementById('reopen-dist-row');
+    if(distRow) distRow.style.display='block';
+    renderReopenDistChart();
+  }
 }
 
 function renderReopenDistChart(){
@@ -1412,7 +1432,8 @@ function renderReopenDistChart(){
     }
   };
 
-  chartInstances['drilldownChart']=new Chart(document.getElementById('drilldownChart'),{
+  destroyChart('reopenDistChart');
+  chartInstances['reopenDistChart']=new Chart(document.getElementById('reopenDistChart'),{
     type:'bar',
     plugins:[dataLabelsPlugin],
     data:{labels,datasets:[{
