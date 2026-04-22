@@ -166,7 +166,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 22, 2026 · 22:06 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 22, 2026 · 22:08 HKT</div>
 </div>
 
 <div class="tabs">
@@ -1340,8 +1340,29 @@ function renderDrilldownChart(){
   const {labels,values}=buildDrilldownData(activeKpi,activeGranularity);
   const isRate=['escrate','csat','srr','reopen_rate'].includes(activeKpi);
 
+  const trendDataLabels={
+    id:'trendDataLabels',
+    afterDatasetsDraw(chart){
+      const ctx=chart.ctx;
+      chart.data.datasets.forEach((ds,i)=>{
+        chart.getDatasetMeta(i).data.forEach((point,idx)=>{
+          const val=ds.data[idx];
+          if(val==null) return;
+          ctx.save();
+          ctx.fillStyle='rgba(255,255,255,0.85)';
+          ctx.font='bold 10px "IBM Plex Mono",monospace';
+          ctx.textAlign='center';
+          ctx.textBaseline='bottom';
+          ctx.fillText(val+meta.unit, point.x, point.y-6);
+          ctx.restore();
+        });
+      });
+    }
+  };
+
   chartInstances['drilldownChart']=new Chart(document.getElementById('drilldownChart'),{
     type: isRate?'line':'bar',
+    plugins:[trendDataLabels],
     data:{labels,datasets:[{
       data:values,
       backgroundColor:meta.color+'99',
@@ -1356,6 +1377,7 @@ function renderDrilldownChart(){
     }]},
     options:{
       responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:20}},
       plugins:{
         legend:{display:false},
         tooltip:{...tooltipDefaults,callbacks:{label:(ctx)=>`${ctx.parsed.y!=null?ctx.parsed.y:'—'}${meta.unit}`}}
