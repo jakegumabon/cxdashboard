@@ -166,7 +166,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 22, 2026 · 22:08 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 22, 2026 · 22:12 HKT</div>
 </div>
 
 <div class="tabs">
@@ -3512,21 +3512,20 @@ function updateCGKPIs(M){
   const escCard=document.getElementById('cg-kpi-card-escrate');
   if(escCard){escCard.className='kpi'+(escPct>10?' kpi-coral':'');}
   // CSAT
-  const csatPct=M.surveyed>=1?+(M.good/M.surveyed*100).toFixed(1):null;
-  document.getElementById('cg-kpi-csat').textContent=csatPct!==null?csatPct+'%':'—';
-  document.getElementById('cg-kpi-csat-sub').textContent=`n=${M.surveyed} rated`;
+  document.getElementById('cg-kpi-csat').textContent=M.csat_score!==null?M.csat_score+'%':'—';
+  document.getElementById('cg-kpi-csat-sub').textContent=`n=${M.csat_n} rated`;
   const csatFlag=document.getElementById('cg-kpi-csat-flag');
-  if(csatFlag) csatFlag.style.display=M.surveyed>0&&M.surveyed<30?'block':'none';
+  if(csatFlag) csatFlag.style.display=M.csat_n>0&&M.csat_n<30?'block':'none';
   // Avg resolution
-  document.getElementById('cg-kpi-median').textContent=M.avgRes!==null?M.avgRes+'h':'—';
+  document.getElementById('cg-kpi-median').textContent=M.mean_res!==null?+(M.mean_res).toFixed(1)+'h':'—';
   // Customer wait
-  document.getElementById('cg-kpi-rw').textContent=M.avgRw!==null?M.avgRw+'h':'—';
+  document.getElementById('cg-kpi-rw').textContent=M.avg_rw!==null?+(M.avg_rw).toFixed(1)+'h':'—';
   // Agent wait
-  document.getElementById('cg-kpi-aw').textContent=M.avgAw!==null?M.avgAw+'h':'—';
+  document.getElementById('cg-kpi-aw').textContent=M.avg_aw!==null?+(M.avg_aw).toFixed(1)+'h':'—';
   // Survey response rate
-  const srrPct=M.total_surveyed_sent>0?+(M.surveyed/M.total_surveyed_sent*100).toFixed(1):0;
+  const srrPct=M.surveyed>0?+(M.csat_n/M.surveyed*100).toFixed(1):0;
   document.getElementById('cg-kpi-srr').textContent=srrPct+'%';
-  document.getElementById('cg-kpi-srr-sub').textContent=`${M.surveyed} of ${M.total_surveyed_sent} surveyed responded`;
+  document.getElementById('cg-kpi-srr-sub').textContent=`${M.csat_n} of ${M.surveyed} surveyed responded`;
 }
 
 function openCGDrilldown(kpiKey, el){
