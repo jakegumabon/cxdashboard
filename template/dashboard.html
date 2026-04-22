@@ -1730,6 +1730,7 @@ function switchTab(id){
   });
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
+  document.getElementById('date-filter-bar').style.display = id==='im' ? 'none' : '';
   if(id==='volume'){setTimeout(drawHeatmap,50);}
   if(id==='ops'){setTimeout(()=>{drawOpsHeatmap(opsHeatmapMode||'all');},50);}
   if(id==='team'){setTimeout(()=>{},50);}
