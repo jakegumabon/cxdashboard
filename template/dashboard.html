@@ -1606,8 +1606,8 @@ const gridColor='rgba(255,255,255,0.05)',textColor='#888';
 const tooltipDefaults={backgroundColor:'#1e1e1e',borderColor:'#333',borderWidth:1,titleColor:'#eee',bodyColor:'#aaa',padding:10};
 
 function escBadge(r){
-  if(r>=50) return `<span class="badge badge-red">${r.toFixed(1)}%</span>`;
-  if(r>=30) return `<span class="badge badge-amber">${r.toFixed(1)}%</span>`;
+  if(r>=20) return `<span class="badge badge-red">${r.toFixed(1)}%</span>`;
+  if(r>=10) return `<span class="badge badge-amber">${r.toFixed(1)}%</span>`;
   return `<span class="badge badge-green">${r.toFixed(1)}%</span>`;
 }
 function delayPill(req,agent){

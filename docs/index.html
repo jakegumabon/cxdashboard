@@ -166,7 +166,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 21, 2026 · 17:08 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 22, 2026 · 22:01 HKT</div>
 </div>
 
 <div class="tabs">
@@ -1621,8 +1621,8 @@ const gridColor='rgba(255,255,255,0.05)',textColor='#888';
 const tooltipDefaults={backgroundColor:'#1e1e1e',borderColor:'#333',borderWidth:1,titleColor:'#eee',bodyColor:'#aaa',padding:10};
 
 function escBadge(r){
-  if(r>=50) return `<span class="badge badge-red">${r.toFixed(1)}%</span>`;
-  if(r>=30) return `<span class="badge badge-amber">${r.toFixed(1)}%</span>`;
+  if(r>=20) return `<span class="badge badge-red">${r.toFixed(1)}%</span>`;
+  if(r>=10) return `<span class="badge badge-amber">${r.toFixed(1)}%</span>`;
   return `<span class="badge badge-green">${r.toFixed(1)}%</span>`;
 }
 function delayPill(req,agent){
