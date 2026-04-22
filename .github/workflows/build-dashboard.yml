@@ -46,7 +46,12 @@ jobs:
           echo "Zip size: $(du -h data/latest.zip | cut -f1)"
           unzip -l data/latest.zip
 
+      - name: Install dependencies
+        run: pip install gspread google-auth
+
       - name: Build dashboard
+        env:
+          GOOGLE_SHEETS_KEY: ${{ secrets.GOOGLE_SHEETS_KEY }}
         run: |
           python scripts/csv_to_dashboard.py data/latest.zip \
             --template template/dashboard.html \

@@ -490,7 +490,7 @@ def parse_ops(new_csv_path, reopen_csv_path):
 
 # ── Inject into template ───────────────────────────────────────────────────
 
-def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_group):
+def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_group, im_data=None):
     """Replace placeholders in template HTML with actual JSON data."""
     with open(template_path, "r", encoding="utf-8") as f:
         html = f.read()
@@ -609,6 +609,14 @@ def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_
         tooltip_html = ""
     html = html.replace("/*{{NON_CX_TOOLTIP}}*/", tooltip_html)
 
+    # Inject IM Metrics data
+    if im_data:
+        import json as _json
+        im_js = _json.dumps(im_data, ensure_ascii=False)
+        html = html.replace("/*{{IM_DATA}}*/null", im_js)
+    else:
+        html = html.replace("/*{{IM_DATA}}*/null", "null")
+
     # Inject pipeline run timestamp (HKT = UTC+8)
     from datetime import timezone, timedelta
     hkt = timezone(timedelta(hours=8))
@@ -620,6 +628,113 @@ def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html)
     print(f"✓ Dashboard written to {output_path} ({len(html) // 1024} KB)")
+
+
+# ── Google Sheets — IM Metrics ───────────────────────────────────────────────
+
+SHEET_ID      = "1Lek6f3gJLTifx691eQ-xr_8FUNTuRWy49VERNHbbM2Y"
+SHEET_GID     = 981869513   # "pipeline stage" tab
+HANDOFF_STAGE = "Handoff"
+
+def fetch_im_data():
+    """
+    Fetch card program pipeline data from Google Sheets using the service
+    account key stored in the GOOGLE_SHEETS_KEY environment variable.
+
+    Returns a dict with:
+      programs          – list of all program dicts
+      total             – total program count
+      handoff_count     – programs in Handoff stage
+      activation_rate   – handoff_count / total * 100  (1 dp)
+      avg_handling_h    – avg handling time in hours    (1 dp, None if no data)
+      stage_counts      – {stage: count} for the donut chart
+      last_updated      – ISO timestamp of fetch
+    """
+    key_json = os.environ.get("GOOGLE_SHEETS_KEY", "")
+    if not key_json:
+        print("  ⚠ GOOGLE_SHEETS_KEY not set — IM Metrics tab will be empty")
+        return None
+
+    try:
+        import json as _json
+        import gspread
+        from google.oauth2.service_account import Credentials
+
+        scopes = [
+            "https://spreadsheets.google.com/feeds",
+            "https://www.googleapis.com/auth/drive",
+        ]
+        creds  = Credentials.from_service_account_info(_json.loads(key_json), scopes=scopes)
+        client = gspread.authorize(creds)
+
+        # Open by ID, then find the correct sheet by gid
+        spreadsheet = client.open_by_key(SHEET_ID)
+        sheet = next(
+            (ws for ws in spreadsheet.worksheets() if ws.id == SHEET_GID),
+            spreadsheet.worksheets()[0]
+        )
+        rows = sheet.get_all_records()
+        print(f"  → {len(rows)} card programs fetched from Google Sheets")
+    except Exception as e:
+        print(f"  ⚠ Google Sheets fetch failed: {e}")
+        return None
+
+    programs  = []
+    stage_counts = {}
+    handling_hours = []
+
+    for row in rows:
+        name      = str(row.get("Card Program Name (Commercial/Retail) (official)", "")).strip()
+        stage     = str(row.get("Card Program pipeline stage", "")).strip()
+        created   = str(row.get("Object create date/time", "")).strip()
+        handoff   = str(row.get("Handoff Start Date", "")).strip()
+        raw_time  = str(row.get("Time taken from Creation to Handoff (HH:mm:ss)", "")).strip()
+
+        if not name:
+            continue
+
+        # Parse handling time — stored as "HH:MM:SS" or empty
+        hours = None
+        if raw_time and raw_time != "0:00:00":
+            try:
+                parts  = raw_time.split(":")
+                hours  = round(int(parts[0]) + int(parts[1]) / 60 + int(parts[2]) / 3600, 1)
+                handling_hours.append(hours)
+            except Exception:
+                pass
+
+        programs.append({
+            "name":    name,
+            "stage":   stage,
+            "created": created,
+            "handoff": handoff,
+            "hours":   hours,
+        })
+
+        stage_counts[stage] = stage_counts.get(stage, 0) + 1
+
+    total          = len(programs)
+    handoff_count  = stage_counts.get(HANDOFF_STAGE, 0)
+    activation_rate = round(handoff_count / total * 100, 1) if total else 0
+    avg_handling_h  = round(sum(handling_hours) / len(handling_hours), 1) if handling_hours else None
+
+    from datetime import timezone, timedelta
+    hkt = timezone(timedelta(hours=8))
+    last_updated = datetime.now(hkt).strftime("%b %d, %Y · %H:%M HKT")
+
+    print(f"  → Total: {total} | Handoff: {handoff_count} | Activation rate: {activation_rate}%")
+    if avg_handling_h:
+        print(f"  → Avg handling time: {avg_handling_h}h ({len(handling_hours)} programs with data)")
+
+    return {
+        "programs":        programs,
+        "total":           total,
+        "handoff_count":   handoff_count,
+        "activation_rate": activation_rate,
+        "avg_handling_h":  avg_handling_h,
+        "stage_counts":    stage_counts,
+        "last_updated":    last_updated,
+    }
 
 
 # ── Main ────────────────────────────────────────────────────────────────────
@@ -698,9 +813,13 @@ def main():
             "heatmap_new": {}, "heatmap_reopen": {}, "heatmap_all": {},
         }
 
+    # Fetch IM Metrics from Google Sheets
+    print("\nFetching IM Metrics from Google Sheets...")
+    im_data = fetch_im_data()
+
     # Inject into template
     print(f"\nInjecting into template: {args.template}")
-    inject_into_template(args.template, args.output, all_tickets, ops, ASSIGNEE_GROUP)
+    inject_into_template(args.template, args.output, all_tickets, ops, ASSIGNEE_GROUP, im_data)
 
     # Summary
     mode_str = "TR mode" if paths.get("tr_mode") else "PI mode (legacy)"

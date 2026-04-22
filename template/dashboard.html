@@ -178,6 +178,7 @@ tr:hover td{background:var(--surface2)}
     <div class="tab" onclick="switchTab('capacity')">Capacity</div>
     <div class="tab" onclick="switchTab('product')">Product Lines</div>
     <div class="tab" onclick="switchTab('cg')">CG Team</div>
+    <div class="tab" onclick="switchTab('im')">IM Metrics</div>
 </div>
 
 <div id="date-filter-bar">
@@ -777,6 +778,63 @@ tr:hover td{background:var(--surface2)}
       </tr></thead>
       <tbody id="cg-cat-tbody"></tbody>
     </table>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════ IM METRICS TAB ═══════════════════════════════════ -->
+<div id="tab-im" class="tab-panel">
+
+  <!-- KPI Row -->
+  <div class="kpi-grid" id="im-kpis" style="grid-template-columns:repeat(2,1fr);max-width:560px;">
+    <div class="kpi kpi-blue">
+      <div class="kpi-label">Activation Rate</div>
+      <div class="kpi-value mono" id="im-kpi-activation">—</div>
+      <div class="kpi-sub" id="im-kpi-activation-sub">—</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Avg IM Handling Time</div>
+      <div class="kpi-value mono" id="im-kpi-handling">—</div>
+      <div class="kpi-sub" id="im-kpi-handling-sub">—</div>
+    </div>
+  </div>
+
+  <!-- Charts row: stage donut + stage bar -->
+  <div class="chart-row chart-row-3" style="margin-top:16px;">
+    <div class="chart-card">
+      <div class="chart-title">Pipeline Stage Mix</div>
+      <div class="chart-wrap" style="height:200px;"><canvas id="imStageDonut"></canvas></div>
+    </div>
+    <div class="chart-card" style="grid-column:span 2;">
+      <div class="chart-title">Programs by Stage</div>
+      <div class="chart-wrap" style="height:200px;"><canvas id="imStageBar"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Program table -->
+  <div class="table-card" style="margin-top:4px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div class="table-card-title" style="margin:0;">Card Programs</div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input id="im-search" type="text" placeholder="Search programs…"
+          oninput="renderIMTable()"
+          style="background:var(--surface2);border:1px solid var(--border2);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--text);font-family:'IBM Plex Sans',sans-serif;width:200px;outline:none;">
+        <span id="im-last-updated" style="font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;"></span>
+      </div>
+    </div>
+    <table id="im-table">
+      <thead><tr>
+        <th onclick="sortTable('im-table',0)">Card Program</th>
+        <th onclick="sortTable('im-table',1)">Stage</th>
+        <th onclick="sortTable('im-table',2)">Created</th>
+        <th onclick="sortTable('im-table',3)">Handoff Date</th>
+        <th onclick="sortTable('im-table',4)">Handling Time</th>
+      </tr></thead>
+      <tbody id="im-tbody"></tbody>
+    </table>
+    <div id="im-empty" style="display:none;padding:24px;text-align:center;color:var(--text3);font-size:13px;">
+      No data — Google Sheets connection not configured.
+    </div>
   </div>
 
 </div>
@@ -1625,6 +1683,10 @@ function refreshAll(){
   if(document.getElementById('tab-cg').classList.contains('active')){
     renderCGTab();
   }
+  // ── IM Metrics tab dynamic updates ──
+  if(document.getElementById('tab-im').classList.contains('active')){
+    renderIMTab();
+  }
 }
 
 function updateGroupKPIs(){
@@ -1661,7 +1723,7 @@ function fmt(v,d=1){return v==null?'—':v.toFixed(d);}
 // ═══════════════════════════════════ TABS ═══════════════════════════════════
 function switchTab(id){
   document.querySelectorAll('.tab').forEach((t,i)=>{
-    const ids=['overview','resolution','volume','team','ops','capacity','product','cg'];
+    const ids=['overview','resolution','volume','team','ops','capacity','product','cg','im'];
     t.classList.toggle('active',ids[i]===id);
   });
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
@@ -1672,6 +1734,7 @@ function switchTab(id){
   if(id==='capacity'){setTimeout(()=>{const c=capCache||computeCapacity();initCapacityCharts(c);drawDayHourMatrix(dhTeam);},50);}
   if(id==='product'){setTimeout(renderProductTab,50);}
   if(id==='cg'){setTimeout(renderCGTab,50);}
+  if(id==='im'){setTimeout(renderIMTab,50);}
 }
 
 // ═══════════════════════════════════ PRODUCT LINES ═══════════════════════════════════
@@ -3471,6 +3534,115 @@ function downloadCSV(){
   const a    = document.createElement('a');
   a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════ IM METRICS TAB ═══════════════════════════════════
+
+const IM_DATA=/*{{IM_DATA}}*/null;
+
+const IM_STAGE_COLORS={
+  'Handoff':               '#4caf7d',
+  'Launch Ready':          '#5b9cf6',
+  'Production Testing':    '#a78bfa',
+  'Sandbox Testing':       '#fbbf24',
+  'Requirements Confirmed':'#f97058',
+  'Technical Discovery':   '#38bdf8',
+  'Kickoff':               '#e879f9',
+  'Parking Lot':           '#94a3b8',
+  'Offboarded/Cancelled':  '#475569',
+};
+
+function stageBadge(stage){
+  const color = IM_STAGE_COLORS[stage] || '#888';
+  return `<span style="background:${color}22;color:${color};border:1px solid ${color}55;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600;white-space:nowrap;">${stage||'—'}</span>`;
+}
+
+function fmtHandling(hours){
+  if(hours==null) return '—';
+  if(hours>=24) return `${(hours/24).toFixed(1)}d`;
+  return `${hours}h`;
+}
+
+function renderIMTab(){
+  if(!IM_DATA){
+    document.getElementById('im-empty').style.display='block';
+    document.getElementById('im-table').style.display='none';
+    return;
+  }
+
+  // KPI cards
+  document.getElementById('im-kpi-activation').textContent = IM_DATA.activation_rate + '%';
+  document.getElementById('im-kpi-activation-sub').textContent =
+    `${IM_DATA.handoff_count} of ${IM_DATA.total} programs in Handoff`;
+  document.getElementById('im-kpi-handling').textContent =
+    IM_DATA.avg_handling_h != null ? fmtHandling(IM_DATA.avg_handling_h) : '—';
+  document.getElementById('im-kpi-handling-sub').textContent =
+    IM_DATA.avg_handling_h != null
+      ? `Avg across programs with handoff data`
+      : 'No handoff data yet';
+  const upd = document.getElementById('im-last-updated');
+  if(upd) upd.textContent = 'Updated: ' + (IM_DATA.last_updated || '');
+
+  // Stage donut
+  destroyChart('imStageDonut');
+  const stagePairs = Object.entries(IM_DATA.stage_counts).sort((a,b)=>b[1]-a[1]);
+  chartInstances['imStageDonut'] = new Chart(document.getElementById('imStageDonut'),{
+    type:'doughnut',
+    data:{
+      labels: stagePairs.map(e=>e[0]),
+      datasets:[{
+        data: stagePairs.map(e=>e[1]),
+        backgroundColor: stagePairs.map(e=>(IM_STAGE_COLORS[e[0]]||'#888')+'cc'),
+        borderColor:     stagePairs.map(e=> IM_STAGE_COLORS[e[0]]||'#888'),
+        borderWidth:1,
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{color:textColor,font:{size:10},boxWidth:10,padding:6}}}}
+  });
+
+  // Stage bar
+  destroyChart('imStageBar');
+  chartInstances['imStageBar'] = new Chart(document.getElementById('imStageBar'),{
+    type:'bar',
+    data:{
+      labels: stagePairs.map(e=>e[0]),
+      datasets:[{
+        data: stagePairs.map(e=>e[1]),
+        backgroundColor: stagePairs.map(e=>(IM_STAGE_COLORS[e[0]]||'#888')+'cc'),
+        borderColor:     stagePairs.map(e=> IM_STAGE_COLORS[e[0]]||'#888'),
+        borderWidth:1, borderRadius:4,
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},
+        tooltip:{...tooltipDefaults,callbacks:{label:ctx=>`${ctx.parsed.y} programs`}}},
+      scales:{
+        x:{ticks:{color:textColor,font:{size:10},maxRotation:30}},
+        y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true}
+      }
+    }
+  });
+
+  renderIMTable();
+}
+
+function renderIMTable(){
+  if(!IM_DATA) return;
+  const q = (document.getElementById('im-search')?.value||'').toLowerCase();
+  const rows = IM_DATA.programs.filter(p=>
+    !q || p.name.toLowerCase().includes(q) || (p.stage||'').toLowerCase().includes(q)
+  );
+  const tbody = document.getElementById('im-tbody');
+  if(!tbody) return;
+  tbody.innerHTML = rows.map(p=>`
+    <tr>
+      <td class="td-name">${p.name}</td>
+      <td>${stageBadge(p.stage)}</td>
+      <td class="mono" style="font-size:11px;">${p.created||'—'}</td>
+      <td class="mono" style="font-size:11px;">${p.handoff||'—'}</td>
+      <td class="mono">${fmtHandling(p.hours)}</td>
+    </tr>`).join('');
 }
 
 // ═══════════════════════════════════ CG TEAM TAB ═══════════════════════════════════
