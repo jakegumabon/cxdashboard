@@ -166,7 +166,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 22, 2026 · 22:54 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 22, 2026 · 23:03 HKT</div>
 </div>
 
 <div class="tabs">
@@ -815,7 +815,7 @@ tr:hover td{background:var(--surface2)}
 
   <!-- Program table -->
   <div class="table-card" style="margin-top:4px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
       <div class="table-card-title" style="margin:0;">Card Programs</div>
       <div style="display:flex;gap:6px;align-items:center;">
         <input id="im-search" type="text" placeholder="Search programs…"
@@ -824,6 +824,8 @@ tr:hover td{background:var(--surface2)}
         <span id="im-last-updated" style="font-size:10px;color:var(--text3);font-family:'IBM Plex Mono',monospace;"></span>
       </div>
     </div>
+    <!-- Stage filter toggles -->
+    <div id="im-stage-filters" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
     <table id="im-table">
       <thead><tr>
         <th onclick="sortTable('im-table',0)">Card Program</th>
@@ -3601,6 +3603,33 @@ function renderIMTab(){
   // Stage donut
   destroyChart('imStageDonut');
   const stagePairs = Object.entries(IM_DATA.stage_counts).sort((a,b)=>b[1]-a[1]);
+  const donutTotal = stagePairs.reduce((s,e)=>s+e[1],0);
+  const donutDataLabels = {
+    id:'donutDataLabels',
+    afterDatasetsDraw(chart){
+      const {ctx,data}=chart;
+      const ds=chart.getDatasetMeta(0);
+      ctx.save();
+      ds.data.forEach((arc,i)=>{
+        const val=data.datasets[0].data[i];
+        const pct=donutTotal>0?((val/donutTotal)*100).toFixed(1):'0';
+        if(val===0) return;
+        const mid=arc.startAngle+(arc.endAngle-arc.startAngle)/2;
+        const r=(arc.innerRadius+arc.outerRadius)/2;
+        const x=arc.x+Math.cos(mid)*r;
+        const y=arc.y+Math.sin(mid)*r;
+        ctx.textAlign='center';
+        ctx.textBaseline='middle';
+        ctx.fillStyle='#fff';
+        ctx.font='bold 10px "IBM Plex Sans",sans-serif';
+        ctx.fillText(`${val}`,x,y-5);
+        ctx.font='9px "IBM Plex Sans",sans-serif';
+        ctx.fillStyle='rgba(255,255,255,0.8)';
+        ctx.fillText(`${pct}%`,x,y+6);
+      });
+      ctx.restore();
+    }
+  };
   chartInstances['imStageDonut'] = new Chart(document.getElementById('imStageDonut'),{
     type:'doughnut',
     data:{
@@ -3613,11 +3642,30 @@ function renderIMTab(){
       }]
     },
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'right',labels:{color:textColor,font:{size:10},boxWidth:10,padding:6}}}}
+      plugins:{legend:{position:'right',labels:{color:textColor,font:{size:10},boxWidth:10,padding:6}}}},
+    plugins:[donutDataLabels]
   });
 
   // Stage bar
   destroyChart('imStageBar');
+  const barDataLabels = {
+    id:'imBarDataLabels',
+    afterDatasetsDraw(chart){
+      const {ctx,data}=chart;
+      const ds=chart.getDatasetMeta(0);
+      ctx.save();
+      ds.data.forEach((bar,i)=>{
+        const val=data.datasets[0].data[i];
+        if(!val) return;
+        ctx.fillStyle=textColor;
+        ctx.font='bold 10px "IBM Plex Sans",sans-serif';
+        ctx.textAlign='center';
+        ctx.textBaseline='bottom';
+        ctx.fillText(val, bar.x, bar.y-3);
+      });
+      ctx.restore();
+    }
+  };
   chartInstances['imStageBar'] = new Chart(document.getElementById('imStageBar'),{
     type:'bar',
     data:{
@@ -3636,18 +3684,52 @@ function renderIMTab(){
         x:{ticks:{color:textColor,font:{size:10},maxRotation:30}},
         y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true}
       }
-    }
+    },
+    plugins:[barDataLabels]
   });
 
+  renderIMTable();
+}
+
+let imStageFilter = 'All';
+
+function buildIMStageToggles(){
+  if(!IM_DATA) return;
+  const container = document.getElementById('im-stage-filters');
+  if(!container) return;
+  const stages = ['All', ...Object.keys(IM_DATA.stage_counts).sort((a,b)=>IM_DATA.stage_counts[b]-IM_DATA.stage_counts[a])];
+  container.innerHTML = stages.map(s=>{
+    const count = s==='All' ? IM_DATA.programs.length : (IM_DATA.stage_counts[s]||0);
+    const color = s==='All' ? '#888' : (IM_STAGE_COLORS[s]||'#888');
+    const isActive = imStageFilter===s;
+    return `<button onclick="setIMStageFilter('${s.replace(/'/g,"\\'")}')" style="
+      display:inline-flex;align-items:center;gap:5px;padding:4px 10px;
+      border-radius:20px;border:1px solid ${isActive?color:'var(--border2)'};
+      background:${isActive?color+'22':'transparent'};
+      color:${isActive?color:textColor};
+      font-size:11px;font-family:'IBM Plex Sans',sans-serif;cursor:pointer;
+      transition:all .15s;">
+      ${s!=='All'?`<span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block;"></span>`:''}
+      ${s} <span style="opacity:0.7">(${count})</span>
+    </button>`;
+  }).join('');
+}
+
+function setIMStageFilter(stage){
+  imStageFilter = stage;
+  buildIMStageToggles();
+  buildIMStageToggles();
   renderIMTable();
 }
 
 function renderIMTable(){
   if(!IM_DATA) return;
   const q = (document.getElementById('im-search')?.value||'').toLowerCase();
-  const rows = IM_DATA.programs.filter(p=>
-    !q || p.name.toLowerCase().includes(q) || (p.stage||'').toLowerCase().includes(q)
-  );
+  const rows = IM_DATA.programs.filter(p=>{
+    const matchStage = imStageFilter==='All' || p.stage===imStageFilter;
+    const matchSearch = !q || p.name.toLowerCase().includes(q) || (p.stage||'').toLowerCase().includes(q);
+    return matchStage && matchSearch;
+  });
   const tbody = document.getElementById('im-tbody');
   if(!tbody) return;
   tbody.innerHTML = rows.map(p=>`
