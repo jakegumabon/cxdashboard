@@ -3636,17 +3636,20 @@ function renderIMTab(){
   const barDataLabels = {
     id:'imBarDataLabels',
     afterDatasetsDraw(chart){
-      const {ctx,data}=chart;
+      const {ctx,data,chartArea}=chart;
       const ds=chart.getDatasetMeta(0);
       ctx.save();
       ds.data.forEach((bar,i)=>{
         const val=data.datasets[0].data[i];
         if(!val) return;
-        ctx.fillStyle=textColor;
+        // If bar top is close to chart top edge, place label inside bar; otherwise above
+        const labelY = bar.y < chartArea.top + 18 ? bar.y + 14 : bar.y - 5;
+        const isInside = bar.y < chartArea.top + 18;
+        ctx.fillStyle = isInside ? '#fff' : textColor;
         ctx.font='bold 10px "IBM Plex Sans",sans-serif';
         ctx.textAlign='center';
-        ctx.textBaseline='bottom';
-        ctx.fillText(val, bar.x, bar.y-3);
+        ctx.textBaseline='middle';
+        ctx.fillText(val, bar.x, labelY);
       });
       ctx.restore();
     }
@@ -3663,6 +3666,7 @@ function renderIMTab(){
       }]
     },
     options:{responsive:true,maintainAspectRatio:false,
+      layout:{padding:{top:20}},
       plugins:{legend:{display:false},
         tooltip:{...tooltipDefaults,callbacks:{label:ctx=>`${ctx.parsed.y} programs`}}},
       scales:{
@@ -3673,6 +3677,7 @@ function renderIMTab(){
     plugins:[barDataLabels]
   });
 
+  buildIMStageToggles();
   renderIMTable();
 }
 
@@ -3702,7 +3707,6 @@ function buildIMStageToggles(){
 
 function setIMStageFilter(stage){
   imStageFilter = stage;
-  buildIMStageToggles();
   buildIMStageToggles();
   renderIMTable();
 }
