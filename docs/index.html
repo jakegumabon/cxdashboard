@@ -166,7 +166,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 22, 2026 · 23:14 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 29, 2026 · 10:42 HKT</div>
 </div>
 
 <div class="tabs">
@@ -804,10 +804,10 @@ tr:hover td{background:var(--surface2)}
       </div>
     </div>
 
-    <!-- Stage donut -->
+    <!-- Stage by created month stacked bar -->
     <div class="chart-card" style="margin:0;">
-      <div class="chart-title">Pipeline Stage Mix</div>
-      <div class="chart-wrap" style="height:220px;"><canvas id="imStageDonut"></canvas></div>
+      <div class="chart-title">Programs by Created Month <span style="font-size:10px;color:var(--text3);font-weight:400;">— stacked by current stage</span></div>
+      <div class="chart-wrap" style="height:220px;"><canvas id="imMonthlyStack"></canvas></div>
     </div>
   </div>
 
@@ -3605,50 +3605,71 @@ function renderIMTab(){
   const upd = document.getElementById('im-last-updated');
   if(upd) upd.textContent = 'Updated: ' + (IM_DATA.last_updated || '');
 
-  // Stage donut
-  destroyChart('imStageDonut');
-  const stagePairs = Object.entries(IM_DATA.stage_counts).sort((a,b)=>b[1]-a[1]);
-  const donutTotal = stagePairs.reduce((s,e)=>s+e[1],0);
-  const donutDataLabels = {
-    id:'donutDataLabels',
+  // Monthly stacked bar (programs by created month, stacked by current stage)
+  destroyChart('imMonthlyStack');
+  const monthly = IM_DATA.monthly_breakdown || {};
+  const months  = Object.keys(monthly).sort();
+  // Collect all stages that appear, sorted by total count descending
+  const allStages = Object.keys(
+    months.reduce((acc,m)=>{ Object.keys(monthly[m]).forEach(s=>{acc[s]=(acc[s]||0)+monthly[m][s];}); return acc; },{})
+  ).sort((a,b)=>{
+    const ta=months.reduce((s,m)=>s+(monthly[m][a]||0),0);
+    const tb=months.reduce((s,m)=>s+(monthly[m][b]||0),0);
+    return tb-ta;
+  });
+  const monthLabels = months.map(m=>{
+    const [y,mo]=m.split('-');
+    return new Date(+y,+mo-1,1).toLocaleString('default',{month:'short',year:'2-digit'});
+  });
+  const stackedDatasets = allStages.map(stage=>({
+    label: stage,
+    data: months.map(m=>(monthly[m][stage]||0)),
+    backgroundColor: (IM_STAGE_COLORS[stage]||'#888')+'cc',
+    borderColor:     IM_STAGE_COLORS[stage]||'#888',
+    borderWidth:1, borderRadius:2,
+  }));
+  const stackTotalLabels = {
+    id:'stackTotalLabels',
     afterDatasetsDraw(chart){
       const {ctx,data}=chart;
-      const ds=chart.getDatasetMeta(0);
+      const nMonths=data.labels.length;
       ctx.save();
-      ds.data.forEach((arc,i)=>{
-        const val=data.datasets[0].data[i];
-        const pct=donutTotal>0?((val/donutTotal)*100).toFixed(1):'0';
-        if(val===0) return;
-        const mid=arc.startAngle+(arc.endAngle-arc.startAngle)/2;
-        const r=(arc.innerRadius+arc.outerRadius)/2;
-        const x=arc.x+Math.cos(mid)*r;
-        const y=arc.y+Math.sin(mid)*r;
-        ctx.textAlign='center';
-        ctx.textBaseline='middle';
-        ctx.fillStyle='#fff';
+      for(let i=0;i<nMonths;i++){
+        const total=data.datasets.reduce((s,ds)=>s+(ds.data[i]||0),0);
+        if(!total) continue;
+        // Find the topmost bar segment for this column
+        const metas=chart.getSortedVisibleDatasetMetas();
+        let topBar=null;
+        for(let j=metas.length-1;j>=0;j--){
+          const bar=metas[j].data[i];
+          if(bar && data.datasets[metas[j].index].data[i]>0){topBar=bar;break;}
+        }
+        if(!topBar) continue;
+        ctx.fillStyle=textColor;
         ctx.font='bold 10px "IBM Plex Sans",sans-serif';
-        ctx.fillText(`${val}`,x,y-5);
-        ctx.font='9px "IBM Plex Sans",sans-serif';
-        ctx.fillStyle='rgba(255,255,255,0.8)';
-        ctx.fillText(`${pct}%`,x,y+6);
-      });
+        ctx.textAlign='center';
+        ctx.textBaseline='bottom';
+        ctx.fillText(total, topBar.x, topBar.y-4);
+      }
       ctx.restore();
     }
   };
-  chartInstances['imStageDonut'] = new Chart(document.getElementById('imStageDonut'),{
-    type:'doughnut',
-    data:{
-      labels: stagePairs.map(e=>e[0]),
-      datasets:[{
-        data: stagePairs.map(e=>e[1]),
-        backgroundColor: stagePairs.map(e=>(IM_STAGE_COLORS[e[0]]||'#888')+'cc'),
-        borderColor:     stagePairs.map(e=> IM_STAGE_COLORS[e[0]]||'#888'),
-        borderWidth:1,
-      }]
+  chartInstances['imMonthlyStack'] = new Chart(document.getElementById('imMonthlyStack'),{
+    type:'bar',
+    data:{ labels:monthLabels, datasets:stackedDatasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      layout:{padding:{top:20}},
+      plugins:{
+        legend:{position:'bottom',labels:{color:textColor,font:{size:10},boxWidth:10,padding:8}},
+        tooltip:{...tooltipDefaults,callbacks:{label:ctx=>`${ctx.dataset.label}: ${ctx.parsed.y}`}}
+      },
+      scales:{
+        x:{stacked:true, ticks:{color:textColor,font:{size:11}}, grid:{display:false}},
+        y:{stacked:true, ticks:{color:textColor,font:{size:10},stepSize:1}, grid:{color:gridColor}, beginAtZero:true}
+      }
     },
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'right',labels:{color:textColor,font:{size:10},boxWidth:10,padding:6}}}},
-    plugins:[donutDataLabels]
+    plugins:[stackTotalLabels]
   });
 
   // Stage bar

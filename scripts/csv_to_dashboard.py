@@ -682,6 +682,7 @@ def fetch_im_data():
     programs  = []
     stage_counts = {}
     handling_hours = []
+    monthly_breakdown = {}  # {YYYY-MM: {stage: count}}
 
     for row in rows:
         name      = str(row.get("Card Program Name (Commercial/Retail) (official)", "")).strip()
@@ -713,6 +714,27 @@ def fetch_im_data():
 
         stage_counts[stage] = stage_counts.get(stage, 0) + 1
 
+        # Monthly breakdown: group by created month, stack by current stage
+        month_key = None
+        if created:
+            try:
+                # Handle formats like "2026-01-15", "2026-01-15 10:30:00", "Jan 15, 2026"
+                for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%b %d, %Y", "%d/%m/%Y"):
+                    try:
+                        month_key = datetime.strptime(created[:len(fmt)+4], fmt).strftime("%Y-%m")
+                        break
+                    except Exception:
+                        continue
+            except Exception:
+                pass
+        if month_key:
+            if month_key not in monthly_breakdown:
+                monthly_breakdown[month_key] = {}
+            monthly_breakdown[month_key][stage] = monthly_breakdown[month_key].get(stage, 0) + 1
+
+    # Sort months chronologically
+    monthly_breakdown = dict(sorted(monthly_breakdown.items()))
+
     total          = len(programs)
     handoff_count  = stage_counts.get(HANDOFF_STAGE, 0)
     activation_rate = round(handoff_count / total * 100, 1) if total else 0
@@ -723,17 +745,19 @@ def fetch_im_data():
     last_updated = datetime.now(hkt).strftime("%b %d, %Y · %H:%M HKT")
 
     print(f"  → Total: {total} | Handoff: {handoff_count} | Activation rate: {activation_rate}%")
+    print(f"  → Monthly breakdown: {len(monthly_breakdown)} months")
     if avg_handling_h:
         print(f"  → Avg handling time: {avg_handling_h}h ({len(handling_hours)} programs with data)")
 
     return {
-        "programs":        programs,
-        "total":           total,
-        "handoff_count":   handoff_count,
-        "activation_rate": activation_rate,
-        "avg_handling_h":  avg_handling_h,
-        "stage_counts":    stage_counts,
-        "last_updated":    last_updated,
+        "programs":          programs,
+        "total":             total,
+        "handoff_count":     handoff_count,
+        "activation_rate":   activation_rate,
+        "avg_handling_h":    avg_handling_h,
+        "stage_counts":      stage_counts,
+        "monthly_breakdown": monthly_breakdown,
+        "last_updated":      last_updated,
     }
 
 
