@@ -166,7 +166,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 29, 2026 · 10:57 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 29, 2026 · 11:11 HKT</div>
 </div>
 
 <div class="tabs">
@@ -3686,6 +3686,7 @@ function renderIMTab(){
         legend:{position:'bottom',labels:{color:textColor,font:{size:10},boxWidth:10,padding:8}},
         tooltip:{
           ...tooltipDefaults,
+          filter(item){ return item.parsed.y > 0; },
           callbacks:{
             title(items){
               const ctx=items[0];
@@ -3698,7 +3699,10 @@ function renderIMTab(){
               if(!progs.length) return '  No programs';
               return [`  ${progs.length} program${progs.length>1?'s':''}:`, ...progs.map(n=>`  • ${n}`)];
             },
-            labelColor(){ return {borderColor:'transparent',backgroundColor:'transparent'}; }
+            labelColor(ctx){
+              const c = IM_STAGE_COLORS[ctx.dataset.label]||'#888';
+              return {borderColor:c, backgroundColor:c};
+            }
           }
         }
       },

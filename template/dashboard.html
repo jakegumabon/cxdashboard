@@ -3671,6 +3671,7 @@ function renderIMTab(){
         legend:{position:'bottom',labels:{color:textColor,font:{size:10},boxWidth:10,padding:8}},
         tooltip:{
           ...tooltipDefaults,
+          filter(item){ return item.parsed.y > 0; },
           callbacks:{
             title(items){
               const ctx=items[0];
@@ -3683,7 +3684,10 @@ function renderIMTab(){
               if(!progs.length) return '  No programs';
               return [`  ${progs.length} program${progs.length>1?'s':''}:`, ...progs.map(n=>`  • ${n}`)];
             },
-            labelColor(){ return {borderColor:'transparent',backgroundColor:'transparent'}; }
+            labelColor(ctx){
+              const c = IM_STAGE_COLORS[ctx.dataset.label]||'#888';
+              return {borderColor:c, backgroundColor:c};
+            }
           }
         }
       },
