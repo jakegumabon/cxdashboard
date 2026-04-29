@@ -3634,29 +3634,21 @@ function renderIMTab(){
     hoverBorderColor:'#fff',
     hoverBackgroundColor: IM_STAGE_COLORS[stage]||'#888',
   }));
+  // Total labels via afterDraw + scale APIs — avoids getSortedVisibleDatasetMetas()
   const stackTotalLabels = {
     id:'stackTotalLabels',
-    afterDatasetsDraw(chart){
-      const {ctx,data}=chart;
-      const nMonths=data.labels.length;
+    afterDraw(chart){
+      const {ctx, data, scales:{x, y}} = chart;
       ctx.save();
-      for(let i=0;i<nMonths;i++){
-        const total=data.datasets.reduce((s,ds)=>s+(ds.data[i]||0),0);
-        if(!total) continue;
-        // Find the topmost bar segment for this column
-        const metas=chart.getSortedVisibleDatasetMetas();
-        let topBar=null;
-        for(let j=metas.length-1;j>=0;j--){
-          const bar=metas[j].data[i];
-          if(bar && data.datasets[metas[j].index].data[i]>0){topBar=bar;break;}
-        }
-        if(!topBar) continue;
-        ctx.fillStyle=textColor;
-        ctx.font='bold 10px "IBM Plex Sans",sans-serif';
-        ctx.textAlign='center';
-        ctx.textBaseline='bottom';
-        ctx.fillText(total, topBar.x, topBar.y-4);
-      }
+      data.labels.forEach((_,i)=>{
+        const total = data.datasets.reduce((s,ds)=>s+(ds.data[i]||0), 0);
+        if(!total) return;
+        ctx.fillStyle = textColor;
+        ctx.font = 'bold 10px "IBM Plex Sans",sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(total, x.getPixelForValue(i), y.getPixelForValue(total) - 4);
+      });
       ctx.restore();
     }
   };
@@ -3697,6 +3689,11 @@ function renderIMTab(){
       }
     },
     plugins:[stackTotalLabels]
+  });
+  // Force-clear tooltip when cursor leaves the canvas (prevents stuck tooltip)
+  document.getElementById('imMonthlyStack').addEventListener('mouseleave', ()=>{
+    const ch = chartInstances['imMonthlyStack'];
+    if(ch){ ch.tooltip.setActiveElements([], {x:0,y:0}); ch.update('none'); }
   });
 
   // Stage bar
