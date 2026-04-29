@@ -715,18 +715,14 @@ def fetch_im_data():
         stage_counts[stage] = stage_counts.get(stage, 0) + 1
 
         # Monthly breakdown: group by created month, stack by current stage
+        # Use regex to handle any date format — extract YYYY-MM regardless of separator or time
         month_key = None
         if created:
-            try:
-                # Handle formats like "2026-01-15", "2026-01-15 10:30:00", "Jan 15, 2026"
-                for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d", "%b %d, %Y", "%d/%m/%Y"):
-                    try:
-                        month_key = datetime.strptime(created[:len(fmt)+4], fmt).strftime("%Y-%m")
-                        break
-                    except Exception:
-                        continue
-            except Exception:
-                pass
+            import re as _re
+            # Match YYYY/MM or YYYY-MM anywhere in the string (covers ISO, slash, datetime, etc.)
+            m = _re.search(r'(\d{4})[-/](\d{1,2})', created)
+            if m:
+                month_key = f"{m.group(1)}-{int(m.group(2)):02d}"
         if month_key:
             if month_key not in monthly_breakdown:
                 monthly_breakdown[month_key] = {}
@@ -734,6 +730,11 @@ def fetch_im_data():
 
     # Sort months chronologically
     monthly_breakdown = dict(sorted(monthly_breakdown.items()))
+
+    # Debug: show a sample created value and breakdown summary
+    if programs:
+        print(f"  → Sample created date: '{programs[0]['created']}'")
+    print(f"  → Monthly breakdown: {dict((k, sum(v.values())) for k, v in monthly_breakdown.items())}")
 
     total          = len(programs)
     handoff_count  = stage_counts.get(HANDOFF_STAGE, 0)
