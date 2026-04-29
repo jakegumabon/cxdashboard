@@ -275,6 +275,29 @@ tr:hover td{background:var(--surface2)}
     <div class="chart-card"><div class="chart-title">Channels</div><div class="chart-wrap" style="height:160px"><canvas id="overviewDoughnutChart"></canvas></div></div>
   </div>
 
+  <!-- ── Unassigned Open Tickets Panel ── -->
+  <div class="table-card" style="margin-bottom:24px;">
+    <div onclick="toggleUnassigned()" style="cursor:pointer;padding:14px 18px;display:flex;align-items:center;justify-content:space-between;user-select:none;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;">Unassigned Open Tickets</span>
+        <span id="unassigned-badge" style="background:#f9705822;color:#f97058;border:1px solid #f9705855;border-radius:12px;padding:2px 10px;font-size:12px;font-weight:700;font-family:'IBM Plex Mono',monospace;">0</span>
+      </div>
+      <span id="unassigned-chevron" style="color:var(--text3);font-size:13px;transition:transform .2s;">▾</span>
+    </div>
+    <div id="unassigned-body" style="display:none;border-top:1px solid var(--border);">
+      <table id="unassigned-table" style="width:100%;border-collapse:collapse;">
+        <thead><tr>
+          <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap;">Ticket</th>
+          <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap;">Status</th>
+          <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap;">Category</th>
+          <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap;">Sub-category</th>
+          <th style="padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border);white-space:nowrap;">Date</th>
+        </tr></thead>
+        <tbody id="unassigned-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
   <div class="table-card">
     <div class="table-card-title" style="display:flex;align-items:center;justify-content:space-between">
       <span>Category Breakdown</span>
@@ -1664,6 +1687,7 @@ function refreshAll(){
   updateKPIs(M);
   updateTeamCompare();
   updateCharts(M);
+  renderUnassignedPanel();
   renderCatTable();
   renderTeamTab();
   buildChannelTable(M.channelPerf,M.total);
@@ -2293,6 +2317,53 @@ function setCatGroupFilter(group){
   });
   renderCatTable();
 }
+// ═══════════════════════════════════ UNASSIGNED PANEL ═══════════════════════════════════
+const STATUS_COLORS = {
+  'Open':    {bg:'#5b9cf622', color:'#5b9cf6', border:'#5b9cf655'},
+  'New':     {bg:'#88888822', color:'#aaa',    border:'#88888855'},
+  'Hold':    {bg:'#f5a62322', color:'#f5a623', border:'#f5a62355'},
+  'Pending': {bg:'#a78bfa22', color:'#a78bfa', border:'#a78bfa55'},
+};
+let unassignedOpen = false;
+
+function renderUnassignedPanel(){
+  const tix = filteredTickets
+    .filter(t => !t.assignee && !['Solved','Closed'].includes(t.status))
+    .sort((a,b) => (a.date||'').localeCompare(b.date||''));
+
+  const badge = document.getElementById('unassigned-badge');
+  if(badge) badge.textContent = tix.length;
+
+  const tbody = document.getElementById('unassigned-tbody');
+  if(!tbody) return;
+
+  tbody.innerHTML = tix.map(t => {
+    const sc = STATUS_COLORS[t.status] || {bg:'#88888822',color:'#aaa',border:'#88888855'};
+    const statusBadge = `<span style="background:${sc.bg};color:${sc.color};border:1px solid ${sc.border};border-radius:10px;padding:2px 8px;font-size:10px;font-weight:600;white-space:nowrap;">${t.status}</span>`;
+    const cat1 = t.cat1 || '—';
+    const cat2 = t.cat2 && t.cat2 !== t.cat1 ? t.cat2 : '—';
+    return `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:9px 14px;font-family:'IBM Plex Mono',monospace;font-size:12px;white-space:nowrap;">
+        <a href="https://reap.zendesk.com/agent/tickets/${t.id}" target="_blank"
+           style="color:#5b9cf6;text-decoration:none;font-weight:600;"
+           onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">#${t.id}</a>
+      </td>
+      <td style="padding:9px 14px;">${statusBadge}</td>
+      <td style="padding:9px 14px;font-size:12px;color:var(--text2);">${cat1}</td>
+      <td style="padding:9px 14px;font-size:12px;color:var(--text3);">${cat2}</td>
+      <td style="padding:9px 14px;font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace;white-space:nowrap;">${t.date||'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleUnassigned(){
+  unassignedOpen = !unassignedOpen;
+  const body = document.getElementById('unassigned-body');
+  const chevron = document.getElementById('unassigned-chevron');
+  if(body) body.style.display = unassignedOpen ? 'block' : 'none';
+  if(chevron) chevron.style.transform = unassignedOpen ? 'rotate(180deg)' : '';
+}
+
 function renderCatTable(){
   let tickets = filteredTickets;
   if(catGroupFilter !== 'ALL'){
