@@ -166,7 +166,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 29, 2026 · 11:20 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 29, 2026 · 11:21 HKT</div>
 </div>
 
 <div class="tabs">
@@ -4053,10 +4053,12 @@ function renderCGSparkline(){
   });
   const labels=Object.keys(groups).sort();
   const counts=labels.map(k=>groups[k]);
+  const cgVolLabels={id:'cgVolLabels',afterDatasetsDraw(chart){const {ctx,data}=chart;chart.getDatasetMeta(0).data.forEach((bar,i)=>{const val=data.datasets[0].data[i];if(!val)return;ctx.save();ctx.fillStyle='rgba(255,255,255,0.85)';ctx.font='bold 10px "IBM Plex Mono",monospace';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(val,bar.x,bar.y-4);ctx.restore();});}};
   chartInstances['cgSparklineChart']=new Chart(document.getElementById('cgSparklineChart'),{
     type:'bar',
+    plugins:[cgVolLabels],
     data:{labels,datasets:[{data:counts,backgroundColor:'#5b9cf699',borderColor:'#5b9cf6',borderWidth:1,borderRadius:3}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:textColor,font:{size:10},maxRotation:45}},y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true}}}
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18}},plugins:{legend:{display:false}},scales:{x:{ticks:{color:textColor,font:{size:10},maxRotation:45}},y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true}}}
   });
 }
 
@@ -4067,10 +4069,12 @@ function renderCGChannelChart(){
   cgTickets.forEach(t=>{if(t.channel)chMap[t.channel]=(chMap[t.channel]||0)+1;});
   const sorted=Object.entries(chMap).sort((a,b)=>b[1]-a[1]);
   const CHANNEL_COLORS={'Live Chat':'#5b9cf6','Slack':'#f97058','Email':'#4caf7d','Telegram':'#fbbf24','WhatsApp':'#a78bfa'};
+  const cgChLabels={id:'cgChLabels',afterDatasetsDraw(chart){const {ctx,data}=chart;chart.getDatasetMeta(0).data.forEach((bar,i)=>{const val=data.datasets[0].data[i];if(!val)return;ctx.save();ctx.fillStyle='rgba(255,255,255,0.85)';ctx.font='bold 10px "IBM Plex Mono",monospace';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(val,bar.x,bar.y-4);ctx.restore();});}};
   chartInstances['cgChannelChart']=new Chart(document.getElementById('cgChannelChart'),{
     type:'bar',
+    plugins:[cgChLabels],
     data:{labels:sorted.map(e=>e[0]),datasets:[{data:sorted.map(e=>e[1]),backgroundColor:sorted.map(e=>(CHANNEL_COLORS[e[0]]||'#888')+'cc'),borderColor:sorted.map(e=>CHANNEL_COLORS[e[0]]||'#888'),borderWidth:1,borderRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:textColor,font:{size:10}}},y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true}}}
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:18}},plugins:{legend:{display:false}},scales:{x:{ticks:{color:textColor,font:{size:10}}},y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true}}}
   });
 }
 
