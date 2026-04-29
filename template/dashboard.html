@@ -3590,6 +3590,9 @@ function renderIMTab(){
   const upd = document.getElementById('im-last-updated');
   if(upd) upd.textContent = 'Updated: ' + (IM_DATA.last_updated || '');
 
+  // Shared stage pairs (used by both monthly stack and stage bar)
+  const stagePairs = Object.entries(IM_DATA.stage_counts).sort((a,b)=>b[1]-a[1]);
+
   // Monthly stacked bar (programs by created month, stacked by current stage)
   destroyChart('imMonthlyStack');
   const monthly = IM_DATA.monthly_breakdown || {};
