@@ -166,7 +166,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 29, 2026 · 11:17 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed Apr 29, 2026 · 11:20 HKT</div>
 </div>
 
 <div class="tabs">
@@ -3893,9 +3893,29 @@ function renderCGDrilldownChart(){
   const meta=KPI_META[activeCGKpi];
   const{labels,values}=buildDrilldownData(activeCGKpi,activeCGGranularity,cgTickets);
   const isRate=['escrate','csat','srr'].includes(activeCGKpi);
+  const cgTrendLabels={
+    id:'cgTrendDataLabels',
+    afterDatasetsDraw(chart){
+      const ctx=chart.ctx;
+      chart.data.datasets.forEach((ds,i)=>{
+        chart.getDatasetMeta(i).data.forEach((point,idx)=>{
+          const val=ds.data[idx];
+          if(val==null) return;
+          ctx.save();
+          ctx.fillStyle='rgba(255,255,255,0.85)';
+          ctx.font='bold 10px "IBM Plex Mono",monospace';
+          ctx.textAlign='center';
+          ctx.textBaseline='bottom';
+          ctx.fillText(val+(meta.unit||''), point.x, point.y-6);
+          ctx.restore();
+        });
+      });
+    }
+  };
   chartInstances['cgDrilldownChart']=new Chart(document.getElementById('cgDrilldownChart'),{
-    type:'bar',
-    data:{labels,datasets:[{label:meta.label,data:values,backgroundColor:meta.color+'99',borderColor:meta.color,borderWidth:1,borderRadius:3}]},
+    type: isRate?'line':'bar',
+    plugins:[cgTrendLabels],
+    data:{labels,datasets:[{label:meta.label,data:values,backgroundColor:meta.color+'99',borderColor:meta.color,borderWidth:isRate?2:0,borderRadius:isRate?0:3,tension:0.35,fill:isRate,pointBackgroundColor:meta.color,pointRadius:isRate?3:0}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>isRate?ctx.parsed.y+meta.unit:(ctx.parsed.y+(meta.unit||''))}}},scales:{x:{ticks:{color:textColor,font:{size:10}}},y:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true}}}
   });
 
@@ -3911,7 +3931,7 @@ function renderCGReopenDistChart(cgTickets){
   resolved.forEach(t=>{const r=t.reopens||0;buckets[Math.min(r,6)]++;});
   const labels=['0×','1×','2×','3×','4×','5×','6×+'];
   const colors=['#4caf7d','#5b9cf6','#fbbf24','#f97058','#ef4444','#dc2626','#b91c1c'];
-  const dataLabelsPlugin={id:'cgReopenDataLabels',afterDatasetsDraw(chart){const ctx=chart.ctx;chart.data.datasets.forEach((ds,i)=>{chart.getDatasetMeta(i).data.forEach((bar,idx)=>{const val=ds.data[idx];if(!val)return;ctx.save();ctx.fillStyle='rgba(255,255,255,0.85)';ctx.font='bold 11px "IBM Plex Mono",monospace';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(val.toLocaleString(),bar.x,bar.y-4);ctx.restore();});});} };
+  const dataLabelsPlugin={id:'cgReopenDataLabels',afterDatasetsDraw(chart){const ctx=chart.ctx;chart.data.datasets.forEach((ds,i)=>{chart.getDatasetMeta(i).data.forEach((bar,idx)=>{const val=ds.data[idx];if(!val)return;ctx.save();ctx.fillStyle='rgba(255,255,255,0.85)';ctx.font='bold 10px "IBM Plex Mono",monospace';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(val,bar.x,bar.y-6);ctx.restore();});});}};
   destroyChart('cgDrilldownChart');
   chartInstances['cgDrilldownChart']=new Chart(document.getElementById('cgDrilldownChart'),{
     type:'bar',plugins:[dataLabelsPlugin],
@@ -3941,9 +3961,32 @@ function renderCGEscBreakdownCharts(cgTickets){
   const esced=cgTickets.filter(t=>t.within_cx==='No');
   const intCount=esced.filter(t=>t.esc_int).length;
   const extCount=esced.filter(t=>t.esc_ext).length;
+  const escDonutLabels={
+    id:'cgEscDonutLabels',
+    afterDatasetsDraw(chart){
+      const {ctx,data}=chart;
+      const total=data.datasets[0].data.reduce((s,v)=>s+v,0);
+      if(!total) return;
+      chart.getDatasetMeta(0).data.forEach((arc,i)=>{
+        const val=data.datasets[0].data[i];
+        if(!val) return;
+        const pct=((val/total)*100).toFixed(0);
+        const mid=arc.startAngle+(arc.endAngle-arc.startAngle)/2;
+        const r=(arc.innerRadius+arc.outerRadius)/2;
+        ctx.save();
+        ctx.fillStyle='#fff';
+        ctx.font='bold 10px "IBM Plex Mono",monospace';
+        ctx.textAlign='center';
+        ctx.textBaseline='middle';
+        ctx.fillText(`${val} (${pct}%)`, arc.x+Math.cos(mid)*r, arc.y+Math.sin(mid)*r);
+        ctx.restore();
+      });
+    }
+  };
   if(intCount+extCount>0){
     chartInstances['cgEscTypeChart']=new Chart(document.getElementById('cgEscTypeChart'),{
       type:'doughnut',
+      plugins:[escDonutLabels],
       data:{labels:['Internal','External'],datasets:[{data:[intCount,extCount],backgroundColor:['#5b9cf6cc','#f97058cc'],borderColor:['#5b9cf6','#f97058'],borderWidth:1}]},
       options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:textColor,font:{size:10},boxWidth:10}}}}
     });
@@ -3956,9 +3999,27 @@ function renderCGEscBreakdownCharts(cgTickets){
     dest.split(',').map(d=>d.trim()).filter(Boolean).forEach(d=>{destMap[d]=(destMap[d]||0)+1;});
   });
   const sorted=Object.entries(destMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const escBarLabels={
+    id:'cgEscBarLabels',
+    afterDatasetsDraw(chart){
+      const {ctx,data}=chart;
+      chart.getDatasetMeta(0).data.forEach((bar,i)=>{
+        const val=data.datasets[0].data[i];
+        if(!val) return;
+        ctx.save();
+        ctx.fillStyle='rgba(255,255,255,0.85)';
+        ctx.font='bold 10px "IBM Plex Mono",monospace';
+        ctx.textAlign='left';
+        ctx.textBaseline='middle';
+        ctx.fillText(val, bar.x+6, bar.y);
+        ctx.restore();
+      });
+    }
+  };
   if(sorted.length){
     chartInstances['cgEscDestChart']=new Chart(document.getElementById('cgEscDestChart'),{
       type:'bar',
+      plugins:[escBarLabels],
       data:{labels:sorted.map(e=>e[0]),datasets:[{data:sorted.map(e=>e[1]),backgroundColor:'#5b9cf699',borderColor:'#5b9cf6',borderWidth:1,borderRadius:3}]},
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:textColor,font:{size:10}},grid:{color:gridColor},beginAtZero:true},y:{ticks:{color:textColor,font:{size:10}}}}}
     });
