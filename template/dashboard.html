@@ -1403,6 +1403,47 @@ function setGranularity(g, btn){
   if(activeKpi) renderDrilldownChart();
 }
 
+function buildSRRByChannel(granularity){
+  const CHANNELS = ['Email','Live Chat','Slack','WhatsApp','Telegram'];
+  const CH_COLORS = {
+    'Email':     '#5b9cf6',
+    'Live Chat': '#f97058',
+    'Slack':     '#a78bfa',
+    'WhatsApp':  '#34d399',
+    'Telegram':  '#f5a623',
+  };
+
+  // Build time buckets from filteredTickets
+  const buckets = {};
+  filteredTickets.forEach(t => {
+    if(!t.date) return;
+    const key = granularity==='weekly'
+      ? getWeekStart(t.date)
+      : t.date.slice(0,7);
+    if(!buckets[key]) buckets[key] = {};
+    const ch = t.channel || 'Other';
+    if(!buckets[key][ch]) buckets[key][ch] = {surveyed:0, responded:0};
+    if(t.surveyed) buckets[key][ch].surveyed++;
+    if(t.good || t.bad) buckets[key][ch].responded++;
+  });
+
+  const labels = Object.keys(buckets).sort();
+  const datasets = CHANNELS.map(ch => ({
+    label: ch,
+    data: labels.map(lbl => {
+      const b = buckets[lbl]?.[ch];
+      if(!b || !b.surveyed) return 0;
+      return +(b.responded / b.surveyed * 100).toFixed(1);
+    }),
+    backgroundColor: CH_COLORS[ch] + 'cc',
+    borderColor:     CH_COLORS[ch],
+    borderWidth: 1,
+    borderRadius: 3,
+  }));
+
+  return { labels, datasets };
+}
+
 function renderDrilldownChart(){
   if(!activeKpi) return;
   destroyChart('drilldownChart');
@@ -1413,8 +1454,49 @@ function renderDrilldownChart(){
   destroyChart('reopenDistChart');
 
   const meta=KPI_META[activeKpi];
+
+  // ── SRR: grouped bar chart by channel ──────────────────────────────────────
+  if(activeKpi==='srr'){
+    const {labels, datasets} = buildSRRByChannel(activeGranularity);
+    chartInstances['drilldownChart']=new Chart(document.getElementById('drilldownChart'),{
+      type:'bar',
+      data:{labels, datasets},
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        layout:{padding:{top:10}},
+        plugins:{
+          legend:{
+            display:true,
+            position:'top',
+            labels:{color:textColor, font:{size:11}, boxWidth:12, padding:16}
+          },
+          tooltip:{
+            ...tooltipDefaults,
+            callbacks:{
+              label:(ctx)=>`${ctx.dataset.label}: ${ctx.parsed.y}%`
+            }
+          }
+        },
+        scales:{
+          x:{
+            ticks:{color:textColor, font:{size:10}},
+            grid:{display:false}
+          },
+          y:{
+            ticks:{color:textColor, font:{size:10}, callback:v=>`${v}%`},
+            grid:{color:gridColor},
+            beginAtZero:true,
+            max:100,
+          }
+        }
+      }
+    });
+    return;
+  }
+
+  // ── All other KPIs: existing single-series behaviour ───────────────────────
   const {labels,values}=buildDrilldownData(activeKpi,activeGranularity);
-  const isRate=['escrate','csat','srr','reopen_rate'].includes(activeKpi);
+  const isRate=['escrate','csat','reopen_rate'].includes(activeKpi);
 
   const trendDataLabels={
     id:'trendDataLabels',
