@@ -97,6 +97,9 @@ tr:hover td{background:var(--surface2)}
 .granularity-btn{padding:4px 12px;font-size:11px;font-weight:600;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .15s}
 .granularity-btn:hover{color:var(--text2);border-color:var(--text3)}
 .granularity-btn.active{background:var(--coral);border-color:var(--coral);color:#fff}
+.srr-ch-btn{padding:3px 10px;font-size:11px;font-weight:600;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .15s}
+.srr-ch-btn:hover{color:var(--text2);border-color:var(--text3)}
+.srr-ch-btn.active{background:#f5a623;border-color:#f5a623;color:#fff}
 #kpi-drilldown-close{background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:2px 6px;line-height:1}
 #kpi-drilldown-close:hover{color:var(--text2)}
 #drilldown-wrap{height:180px;position:relative}
@@ -223,6 +226,16 @@ tr:hover td{background:var(--surface2)}
         </div>
         <button id="kpi-drilldown-close" onclick="closeDrilldown()">✕</button>
       </div>
+    </div>
+    <!-- Channel filter — only visible when SRR KPI is active -->
+    <div id="srr-channel-row" style="display:none;margin-bottom:12px;display:none;align-items:center;gap:6px;flex-wrap:wrap;">
+      <span style="font-size:11px;color:var(--text3);margin-right:4px;">Channel:</span>
+      <button class="srr-ch-btn active" onclick="setSRRChannel('ALL',this)">Overall</button>
+      <button class="srr-ch-btn" onclick="setSRRChannel('Email',this)">Email</button>
+      <button class="srr-ch-btn" onclick="setSRRChannel('Live Chat',this)">Live Chat</button>
+      <button class="srr-ch-btn" onclick="setSRRChannel('Slack',this)">Slack</button>
+      <button class="srr-ch-btn" onclick="setSRRChannel('WhatsApp',this)">WhatsApp</button>
+      <button class="srr-ch-btn" onclick="setSRRChannel('Telegram',this)">Telegram</button>
     </div>
     <div id="drilldown-wrap"><canvas id="drilldownChart"></canvas></div>
     <!-- Reopen distribution — only visible when reopen KPI is active -->
@@ -1265,7 +1278,7 @@ function updateTeamCompare(){
 }
 
 // ═══════════════════════════════════ KPI DRILL-DOWN ═══════════════════════════════════
-let activeKpi=null, activeGranularity='weekly', activeEscDestFilter='all';
+let activeKpi=null, activeGranularity='weekly', activeEscDestFilter='all', activeSRRChannel='ALL';
 
 const KPI_META={
   reopen:{label:'Reopen Rate', color:'#f97058', unit:'%', type:'reopen_rate'},
@@ -1372,15 +1385,29 @@ function openDrilldown(kpiKey, el){
   if(distRow&&kpiKey!=='reopen') distRow.style.display='none';
   const reopenRow=document.getElementById('reopen-flagged-row');
   if(reopenRow&&kpiKey!=='reopen') reopenRow.style.display='none';
+  // Channel filter row only for SRR
+  const srrRow=document.getElementById('srr-channel-row');
+  if(srrRow){
+    srrRow.style.display=kpiKey==='srr'?'flex':'none';
+    if(kpiKey==='srr'){
+      // Reset to Overall on open
+      activeSRRChannel='ALL';
+      srrRow.querySelectorAll('.srr-ch-btn').forEach(b=>b.classList.remove('active'));
+      srrRow.querySelector('.srr-ch-btn').classList.add('active');
+    }
+  }
   renderDrilldownChart();
   if(kpiKey==='escrate') renderEscBreakdownCharts();
 }
 
 function closeDrilldown(){
   activeKpi=null;
+  activeSRRChannel='ALL';
   document.querySelectorAll('.kpi').forEach(k=>k.classList.remove('active'));
   document.getElementById('kpi-drilldown').classList.remove('visible');
   document.querySelector('.drilldown-controls').style.display='flex';
+  const srrRow=document.getElementById('srr-channel-row');
+  if(srrRow) srrRow.style.display='none';
   destroyChart('drilldownChart');
   destroyChart('reopenDistChart');
   destroyChart('escTypeChart');
@@ -1401,6 +1428,13 @@ function setGranularity(g, btn){
   document.querySelectorAll('.granularity-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   if(activeKpi) renderDrilldownChart();
+}
+
+function setSRRChannel(ch, el){
+  activeSRRChannel=ch;
+  document.querySelectorAll('.srr-ch-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderDrilldownChart();
 }
 
 function buildSRRByChannel(granularity){
@@ -1455,38 +1489,87 @@ function renderDrilldownChart(){
 
   const meta=KPI_META[activeKpi];
 
-  // ── SRR: grouped bar chart by channel ──────────────────────────────────────
+  // ── SRR: single-line trend, filtered by activeSRRChannel ──────────────────
   if(activeKpi==='srr'){
-    const {labels, datasets} = buildSRRByChannel(activeGranularity);
+    const CH_COLORS={
+      'ALL':       '#f5a623',
+      'Email':     '#5b9cf6',
+      'Live Chat': '#f97058',
+      'Slack':     '#a78bfa',
+      'WhatsApp':  '#34d399',
+      'Telegram':  '#f5a623',
+    };
+    // Filter tickets by selected channel
+    const srcTickets = activeSRRChannel==='ALL'
+      ? filteredTickets
+      : filteredTickets.filter(t=>t.channel===activeSRRChannel);
+
+    // Build buckets
+    const buckets={};
+    srcTickets.forEach(t=>{
+      if(!t.date) return;
+      const key = activeGranularity==='weekly'
+        ? getWeekStart(t.date)
+        : t.date.slice(0,7);
+      if(!buckets[key]) buckets[key]={surveyed:0,responded:0};
+      if(t.surveyed) buckets[key].surveyed++;
+      if(t.good||t.bad) buckets[key].responded++;
+    });
+    const labels=Object.keys(buckets).sort();
+    const values=labels.map(k=>buckets[k].surveyed
+      ? +(buckets[k].responded/buckets[k].surveyed*100).toFixed(1)
+      : 0);
+
+    const color = CH_COLORS[activeSRRChannel]||'#f5a623';
+    const label = activeSRRChannel==='ALL' ? 'Overall' : activeSRRChannel;
+
+    const srrDataLabels={
+      id:'srrDataLabels',
+      afterDatasetsDraw(chart){
+        const {ctx,data,scales:{x,y}}=chart;
+        data.datasets[0].data.forEach((val,i)=>{
+          if(val==null) return;
+          const px=x.getPixelForValue(i);
+          const py=y.getPixelForValue(val);
+          ctx.save();
+          ctx.fillStyle='rgba(255,255,255,0.85)';
+          ctx.font='bold 10px "IBM Plex Mono",monospace';
+          ctx.textAlign='center';
+          ctx.textBaseline='bottom';
+          ctx.fillText(val+'%', px, py-6);
+          ctx.restore();
+        });
+      }
+    };
+
     chartInstances['drilldownChart']=new Chart(document.getElementById('drilldownChart'),{
-      type:'bar',
-      data:{labels, datasets},
+      type:'line',
+      plugins:[srrDataLabels],
+      data:{labels,datasets:[{
+        label,
+        data:values,
+        backgroundColor:color+'33',
+        borderColor:color,
+        borderWidth:2,
+        tension:0.35,
+        fill:true,
+        pointBackgroundColor:color,
+        pointRadius:4,
+        spanGaps:true,
+      }]},
       options:{
-        responsive:true, maintainAspectRatio:false,
-        layout:{padding:{top:10}},
+        responsive:true,maintainAspectRatio:false,
+        layout:{padding:{top:24}},
         plugins:{
-          legend:{
-            display:true,
-            position:'top',
-            labels:{color:textColor, font:{size:11}, boxWidth:12, padding:16}
-          },
-          tooltip:{
-            ...tooltipDefaults,
-            callbacks:{
-              label:(ctx)=>`${ctx.dataset.label}: ${ctx.parsed.y}%`
-            }
-          }
+          legend:{display:false},
+          tooltip:{...tooltipDefaults,callbacks:{label:(ctx)=>`${label}: ${ctx.parsed.y}%`}}
         },
         scales:{
-          x:{
-            ticks:{color:textColor, font:{size:10}},
-            grid:{display:false}
-          },
+          x:{ticks:{color:textColor,font:{size:10}},grid:{display:false}},
           y:{
-            ticks:{color:textColor, font:{size:10}, callback:v=>`${v}%`},
+            ticks:{color:textColor,font:{size:10},callback:v=>`${v}%`},
             grid:{color:gridColor},
             beginAtZero:true,
-            max:100,
           }
         }
       }
