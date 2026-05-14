@@ -100,7 +100,7 @@ ASSIGNEE_GROUP = {
     "Timothy Hernandez": "CS", "Ediline Postrano": "CS", "Ian Soliman": "CS",
     "Joe Flores": "CS", "Lorenz Agustin": "CS", "Mike Cunanan": "CS",
     "LA Carlos": "CS", "Eunice Suñga": "CS", "Patric Pangan": "CS",
-    "Herbert Acpal": "CS", "Racky Manlapaz": "CS",
+    "Herbert Acpal": "CS", "Racky Manlapaz": "CS", "Amica Castro": "CS",
     # TS
     "Chang": "TS", "Jose Shardin": "TS", "Jaiber Kler": "TS",
     "Jan Rivera": "TS", "Bogdan Hristovski": "TS", "Gilbert Arces": "TS",
