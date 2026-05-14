@@ -169,7 +169,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed May 13, 2026 · 20:53 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed May 14, 2026 · 09:01 HKT</div>
 </div>
 
 <div class="tabs">
@@ -207,7 +207,7 @@ tr:hover td{background:var(--surface2)}
     <div class="kpi kpi-coral" id="kpi-card-escrate" data-kpi="escrate" onclick="openDrilldown('escrate',this)"><div class="kpi-label">Escalation Rate</div><div class="kpi-value mono" id="kpi-escrate">28.8%</div><div class="kpi-sub" id="kpi-esc-sub">196 of 681 escalated</div><div class="kpi-target" id="kpi-target-escrate">Target: ≤10%</div></div>
     <div class="kpi kpi-amber" id="kpi-card-csat" data-kpi="csat" onclick="openDrilldown('csat',this)"><div class="kpi-label">CSAT Score</div><div class="kpi-value mono" id="kpi-csat">100%</div><div class="kpi-sub" id="kpi-csat-sub">n=7 rated</div><div class="kpi-flag" id="kpi-csat-flag">⚠ Unreliable — n&lt;30</div><div class="kpi-target" id="kpi-target-csat">Target: ≥80%</div></div>
     <div class="kpi kpi-blue" id="kpi-card-median" data-kpi="median" onclick="openDrilldown('median',this)"><div class="kpi-label">Avg Resolution</div><div class="kpi-value mono" id="kpi-median">68.5h</div><div class="kpi-sub">Resolved tickets only</div><div class="kpi-target" id="kpi-target-median">Target: ≤48h</div></div>
-    <div class="kpi" id="kpi-card-rw" data-kpi="rw" onclick="openDrilldown('rw',this)"><div class="kpi-label">Avg Customer Wait</div><div class="kpi-value mono" id="kpi-rw">23.4h</div><div class="kpi-sub">Customer waiting on CX · <span style="opacity:0.7">solved tickets</span></div><div class="kpi-target" id="kpi-target-rw">Target: ≤24h</div></div>
+    <div class="kpi" id="kpi-card-rw" data-kpi="rw" onclick="openDrilldown('rw',this)"><div class="kpi-label">Avg Customer Wait</div><div class="kpi-value mono" id="kpi-rw">23.4h</div><div class="kpi-sub">Customer waiting on CX (incl. hold) · <span style="opacity:0.7">solved tickets</span></div><div class="kpi-target" id="kpi-target-rw">Target: ≤24h</div></div>
     <div class="kpi" data-kpi="aw" onclick="openDrilldown('aw',this)"><div class="kpi-label">Avg Agent Wait</div><div class="kpi-value mono" id="kpi-aw">42.5h</div><div class="kpi-sub">Agent waiting on customer · <span style="opacity:0.7">solved tickets</span></div></div>
     <div class="kpi" data-kpi="srr" onclick="openDrilldown('srr',this)"><div class="kpi-label">Survey Response Rate</div><div class="kpi-value mono" id="kpi-srr">2.1%</div><div class="kpi-sub" id="kpi-srr-sub">7 of 328 surveyed responded</div></div>
   </div>
@@ -736,7 +736,7 @@ tr:hover td{background:var(--surface2)}
     <div class="kpi kpi-coral" id="cg-kpi-card-escrate" data-kpi="escrate" onclick="openCGDrilldown('escrate',this)"><div class="kpi-label">Escalation Rate</div><div class="kpi-value mono" id="cg-kpi-escrate">—</div><div class="kpi-sub" id="cg-kpi-esc-sub">—</div><div class="kpi-target">Target: ≤10%</div></div>
     <div class="kpi kpi-amber" id="cg-kpi-card-csat" data-kpi="csat" onclick="openCGDrilldown('csat',this)"><div class="kpi-label">CSAT Score</div><div class="kpi-value mono" id="cg-kpi-csat">—</div><div class="kpi-sub" id="cg-kpi-csat-sub">—</div><div class="kpi-flag" id="cg-kpi-csat-flag" style="display:none">⚠ Unreliable — n&lt;30</div><div class="kpi-target">Target: ≥80%</div></div>
     <div class="kpi kpi-blue" id="cg-kpi-card-median" data-kpi="median" onclick="openCGDrilldown('median',this)"><div class="kpi-label">Avg Resolution</div><div class="kpi-value mono" id="cg-kpi-median">—</div><div class="kpi-sub">Resolved tickets only</div><div class="kpi-target">Target: ≤48h</div></div>
-    <div class="kpi" id="cg-kpi-card-rw" data-kpi="rw" onclick="openCGDrilldown('rw',this)"><div class="kpi-label">Avg Customer Wait</div><div class="kpi-value mono" id="cg-kpi-rw">—</div><div class="kpi-sub">Customer waiting on CX · <span style="opacity:0.7">solved tickets</span></div><div class="kpi-target">Target: ≤24h</div></div>
+    <div class="kpi" id="cg-kpi-card-rw" data-kpi="rw" onclick="openCGDrilldown('rw',this)"><div class="kpi-label">Avg Customer Wait</div><div class="kpi-value mono" id="cg-kpi-rw">—</div><div class="kpi-sub">Customer waiting on CX (incl. hold) · <span style="opacity:0.7">solved tickets</span></div><div class="kpi-target">Target: ≤24h</div></div>
     <div class="kpi" data-kpi="aw" onclick="openCGDrilldown('aw',this)"><div class="kpi-label">Avg Agent Wait</div><div class="kpi-value mono" id="cg-kpi-aw">—</div><div class="kpi-sub">Agent waiting on customer · <span style="opacity:0.7">solved tickets</span></div></div>
     <div class="kpi" data-kpi="srr" onclick="openCGDrilldown('srr',this)"><div class="kpi-label">Survey Response Rate</div><div class="kpi-value mono" id="cg-kpi-srr">—</div><div class="kpi-sub" id="cg-kpi-srr-sub">—</div></div>
   </div>
