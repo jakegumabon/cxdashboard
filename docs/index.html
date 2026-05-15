@@ -169,7 +169,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed May 15, 2026 · 14:41 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed May 15, 2026 · 15:02 HKT</div>
 </div>
 
 <div class="tabs">
@@ -1523,15 +1523,22 @@ function renderDrilldownChart(){
     const buckets={};
     srcTickets.forEach(t=>{
       if(!t.date) return;
-      const key = activeGranularity==='weekly'
-        ? getWeekStart(t.date)
-        : t.date.slice(0,7);
+      const key = activeGranularity==='daily'
+        ? t.date
+        : activeGranularity==='weekly'
+          ? getWeekStart(t.date)
+          : t.date.slice(0,7);
       if(!buckets[key]) buckets[key]={surveyed:0,responded:0};
       if(t.surveyed) buckets[key].surveyed++;
       if(t.good||t.bad) buckets[key].responded++;
     });
-    const labels=Object.keys(buckets).sort();
-    const values=labels.map(k=>buckets[k].surveyed
+    const rawKeys=Object.keys(buckets).sort();
+    const labels=rawKeys.map(k=>
+      activeGranularity==='daily' ? k.slice(5) :
+      activeGranularity==='weekly' ? (()=>{const d=new Date(k+'T00:00:00');return`W/M ${d.getMonth()+1}/${d.getDate()}`;})() :
+      k
+    );
+    const values=rawKeys.map(k=>buckets[k].surveyed
       ? +(buckets[k].responded/buckets[k].surveyed*100).toFixed(1)
       : 0);
 
