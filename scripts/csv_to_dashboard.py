@@ -103,7 +103,7 @@ ASSIGNEE_GROUP = {
     "Joe Flores": "CS",
     "Lorenz Agustin": "CS", "Lorenz A": "CS",
     "Mike Cunanan": "CS", "Mike C": "CS",
-    "LA Carlos": "CS", "LA C": "CS",
+    "LA Carlos": "CS", "LA C": "CS", "LA": "CS",
     "Eunice Suñga": "CS", "Eunice S": "CS",
     "Patric Pangan": "CS", "Patric P": "CS",
     "Herbert Acpal": "CS", "Herbert A": "CS",
