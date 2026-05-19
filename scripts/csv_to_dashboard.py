@@ -280,6 +280,11 @@ def parse_sr(csv_path):
             ticket_id = row.get("Ticket ID", "").strip()
             if not ticket_id:
                 continue
+            # Exclude "Dispute Win" notification emails (auto-generated, not real support tickets)
+            subject = row.get("Ticket subject", "").strip()
+            channel = row.get("Ticket Channel v2", "").strip()
+            if subject.startswith("Dispute Win") and channel == "Email":
+                continue
             cat1 = row.get("Support Category", "").strip()
             cat2 = find_cat2(row, SR_SUB_COLUMNS, primary_category=cat1, cat_to_subcol=SR_CAT_TO_SUBCOL)
             cat1 = CAT1_NORMALIZE.get(cat1, cat1)
@@ -382,6 +387,11 @@ def parse_tr(csv_path):
         for row in reader:
             ticket_id = row.get("Ticket ID", "").strip()
             if not ticket_id:
+                continue
+            # Exclude "Dispute Win" notification emails (auto-generated, not real support tickets)
+            subject = row.get("Ticket subject", "").strip()
+            channel = row.get("Ticket Channel v2", "").strip()
+            if subject.startswith("Dispute Win") and channel == "Email":
                 continue
             cat1_raw = row.get("Technical Category", "").strip()
             cat2 = find_cat2(row, TR_SUB_COLUMNS, primary_category=cat1_raw, cat_to_subcol=TR_CAT_TO_SUBCOL)
