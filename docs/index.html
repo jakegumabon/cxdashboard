@@ -169,7 +169,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed May 20, 2026 · 10:38 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed May 20, 2026 · 10:52 HKT</div>
 </div>
 
 <div class="tabs">
@@ -1222,11 +1222,11 @@ function updateTeamCompare(){
     const tix=allTix.filter(t=>getGroup(t.assignee)===tm.id);
     const n=tix.length;
     const shareP=(n/totalAll*100).toFixed(0);
-    // Resolution
-    const resArr=tix.filter(t=>t.res!=null).map(t=>t.res);
+    // Resolution (solved/closed only)
+    const solvedTeamTix=tix.filter(t=>t.status==='Solved'||t.status==='Closed');
+    const resArr=solvedTeamTix.filter(t=>t.res!=null).map(t=>t.res);
     const avgRes=resArr.length?(resArr.reduce((a,b)=>a+b,0)/resArr.length).toFixed(1):'—';
     // Waits (solved/closed only, non-zero)
-    const solvedTeamTix=tix.filter(t=>t.status==='Solved'||t.status==='Closed');
     const rwArr=solvedTeamTix.filter(t=>t.rw!=null).map(t=>t.rw);
     const avgRw=rwArr.length?(rwArr.reduce((a,b)=>a+b,0)/rwArr.length).toFixed(1):'—';
     const awArr=solvedTeamTix.filter(t=>t.aw!=null).map(t=>t.aw);
@@ -1365,7 +1365,7 @@ function buildDrilldownData(kpiKey, granularity, tickets){
       return+(rated.filter(t=>t.good).length/rated.length*100).toFixed(1);
     }
     if(type==='mean'){
-      const res=grp.filter(t=>t.res!=null).map(t=>t.res);
+      const res=grp.filter(t=>(t.status==='Solved'||t.status==='Closed')&&t.res!=null).map(t=>t.res);
       return res.length?+mean(res).toFixed(1):null;
     }
     if(type==='rw'){
@@ -2020,9 +2020,10 @@ function updateGroupKPIs(){
     const G=g.toUpperCase();
     const tix=filteredTickets.filter(t=>getGroup(t.assignee)===G);
     const esc=tix.filter(t=>t.within_cx==='No').length;
-    const res=tix.filter(t=>t.res!=null).map(t=>t.res);
-    const rws=tix.filter(t=>t.rw!=null).map(t=>t.rw);
-    const aws=tix.filter(t=>t.aw!=null).map(t=>t.aw);
+    const solvedGrpTix=tix.filter(t=>t.status==='Solved'||t.status==='Closed');
+    const res=solvedGrpTix.filter(t=>t.res!=null).map(t=>t.res);
+    const rws=solvedGrpTix.filter(t=>t.rw!=null).map(t=>t.rw);
+    const aws=solvedGrpTix.filter(t=>t.aw!=null).map(t=>t.aw);
     document.getElementById(`grp-${g}-tickets`).textContent=tix.length||'—';
     document.getElementById(`grp-${g}-median`).textContent=res.length?mean(res).toFixed(1)+'h':'—';
     document.getElementById(`grp-${g}-esc`).textContent=tix.length?(esc/tix.length*100).toFixed(1)+'%':'—';
@@ -4435,7 +4436,7 @@ function renderCGCatTable(){
     if(!cats[c]) cats[c]={count:0,esc:0,res:[],rw:[],aw:[]};
     cats[c].count++;
     if(t.within_cx==='No') cats[c].esc++;
-    if(t.res!=null) cats[c].res.push(t.res);
+    if((t.status==='Solved'||t.status==='Closed')&&t.res!=null) cats[c].res.push(t.res);
     if(t.rw!=null&&t.rw>0) cats[c].rw.push(t.rw);
     if(t.aw!=null&&t.aw>0) cats[c].aw.push(t.aw);
   });
