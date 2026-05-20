@@ -169,7 +169,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed May 20, 2026 · 09:11 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed May 20, 2026 · 10:38 HKT</div>
 </div>
 
 <div class="tabs">
@@ -271,6 +271,17 @@ tr:hover td{background:var(--surface2)}
           </div>
           <div style="position:relative;height:145px;"><canvas id="escDestChart"></canvas></div>
         </div>
+      </div>
+    </div>
+    <!-- Lorikeet panel — only visible when avg resolution KPI is active -->
+    <div id="lorikeet-row" style="display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;">Lorikeet 🤖 — Instant Resolutions (0h) <span id="lorikeet-total-badge" style="font-weight:400;color:var(--text3);text-transform:none;letter-spacing:0;"></span></div>
+      </div>
+      <div style="position:relative;height:160px;"><canvas id="lorikeetChart"></canvas></div>
+      <div id="lorikeet-ticket-list" style="display:none;margin-top:14px;border-top:1px solid var(--border2);padding-top:12px;">
+        <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:8px;" id="lorikeet-list-title"></div>
+        <div id="lorikeet-list-items" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
       </div>
     </div>
   </div>
@@ -999,7 +1010,7 @@ function computeMetrics(tickets){
   const csat_rr=surveyed?+(csat_n/surveyed*100).toFixed(1):0;
 
   // Resolution
-  const res_arr=tickets.filter(t=>(t.status==='Solved'||t.status==='Closed')&&t.res!=null&&t.res>0).map(t=>t.res);
+  const res_arr=tickets.filter(t=>(t.status==='Solved'||t.status==='Closed')&&t.res!=null).map(t=>t.res);
   const med_res=median(res_arr);
   const mean_res=mean(res_arr);
   const p90_res=p90(res_arr);
@@ -1045,7 +1056,7 @@ function computeMetrics(tickets){
     chPerf[t.channel].tickets++;
     if(t.within_cx==='No')chPerf[t.channel].esc++;
     const isSolved=(t.status==='Solved'||t.status==='Closed');
-    if(isSolved&&t.res!=null&&t.res>0)chPerf[t.channel].res.push(t.res);
+    if(isSolved&&t.res!=null)chPerf[t.channel].res.push(t.res);
     if(isSolved&&t.rw!=null)chPerf[t.channel].rw.push(t.rw);
     if(isSolved&&t.aw!=null)chPerf[t.channel].aw.push(t.aw);
   });
@@ -1077,7 +1088,7 @@ function computeMetrics(tickets){
     catMap[k].tickets++;
     if(t.within_cx==='No')catMap[k].esc++;
     const isSolved=(t.status==='Solved'||t.status==='Closed');
-    if(isSolved&&t.res!=null&&t.res>0)catMap[k].res.push(t.res);
+    if(isSolved&&t.res!=null)catMap[k].res.push(t.res);
     if(isSolved&&t.rw!=null)catMap[k].rw.push(t.rw);
     if(isSolved&&t.aw!=null)catMap[k].aw.push(t.aw);
   });
@@ -1095,7 +1106,7 @@ function computeMetrics(tickets){
     agMap[k].tickets++;
     if(t.within_cx==='No')agMap[k].esc++;
     const isSolved=(t.status==='Solved'||t.status==='Closed');
-    if(isSolved&&t.res!=null&&t.res>0)agMap[k].res.push(t.res);
+    if(isSolved&&t.res!=null)agMap[k].res.push(t.res);
     if(isSolved&&t.rw!=null)agMap[k].rw.push(t.rw);
     if(isSolved&&t.aw!=null)agMap[k].aw.push(t.aw);
     if(t.good)agMap[k].good++;
@@ -1212,7 +1223,7 @@ function updateTeamCompare(){
     const n=tix.length;
     const shareP=(n/totalAll*100).toFixed(0);
     // Resolution
-    const resArr=tix.filter(t=>t.res!=null&&t.res>0).map(t=>t.res);
+    const resArr=tix.filter(t=>t.res!=null).map(t=>t.res);
     const avgRes=resArr.length?(resArr.reduce((a,b)=>a+b,0)/resArr.length).toFixed(1):'—';
     // Waits (solved/closed only, non-zero)
     const solvedTeamTix=tix.filter(t=>t.status==='Solved'||t.status==='Closed');
@@ -1354,7 +1365,7 @@ function buildDrilldownData(kpiKey, granularity, tickets){
       return+(rated.filter(t=>t.good).length/rated.length*100).toFixed(1);
     }
     if(type==='mean'){
-      const res=grp.filter(t=>t.res!=null&&t.res>0).map(t=>t.res);
+      const res=grp.filter(t=>t.res!=null).map(t=>t.res);
       return res.length?+mean(res).toFixed(1):null;
     }
     if(type==='rw'){
@@ -1395,6 +1406,12 @@ function openDrilldown(kpiKey, el){
   // Show escalation breakdown panel only for escrate
   const escRow=document.getElementById('esc-breakdown-row');
   if(escRow) escRow.style.display=kpiKey==='escrate'?'block':'none';
+  // Show Lorikeet panel only for avg resolution
+  const lorikeetRow=document.getElementById('lorikeet-row');
+  if(lorikeetRow){
+    lorikeetRow.style.display=kpiKey==='median'?'block':'none';
+    if(kpiKey==='median') renderLorikeetChart();
+  }
   // Reopen dist + flagged rows only for reopen KPI
   const distRow=document.getElementById('reopen-dist-row');
   if(distRow&&kpiKey!=='reopen') distRow.style.display='none';
@@ -1427,15 +1444,97 @@ function closeDrilldown(){
   destroyChart('reopenDistChart');
   destroyChart('escTypeChart');
   destroyChart('escDestChart');
+  destroyChart('lorikeetChart');
   const escRow=document.getElementById('esc-breakdown-row');
   if(escRow) escRow.style.display='none';
   const distRow=document.getElementById('reopen-dist-row');
   if(distRow) distRow.style.display='none';
   const reopenRow=document.getElementById('reopen-flagged-row');
   if(reopenRow) reopenRow.style.display='none';
+  const lorikeetRow=document.getElementById('lorikeet-row');
+  if(lorikeetRow) lorikeetRow.style.display='none';
+  const lorikeetList=document.getElementById('lorikeet-ticket-list');
+  if(lorikeetList) lorikeetList.style.display='none';
   // Reset dest filter state
   activeEscDestFilter='all';
   document.querySelectorAll('#esc-dest-all,#esc-dest-internal,#esc-dest-external').forEach((b,i)=>{b.classList.toggle('active',i===0);});
+}
+
+function renderLorikeetChart(){
+  destroyChart('lorikeetChart');
+  // Lorikeet 0h tickets = assigned to Lorikeet and res === 0
+  const lkTickets = filteredTickets.filter(t=>
+    (t.assignee||'').toLowerCase().includes('lorikeet') &&
+    (t.status==='Solved'||t.status==='Closed') &&
+    t.res===0
+  );
+  // Badge
+  const badge=document.getElementById('lorikeet-total-badge');
+  if(badge) badge.textContent=`— ${lkTickets.length} ticket${lkTickets.length!==1?'s':''} in period`;
+
+  // Build buckets by granularity
+  const buckets={};
+  const ticketsByBucket={};
+  lkTickets.forEach(t=>{
+    if(!t.date) return;
+    let key;
+    if(activeGranularity==='daily') key=t.date;
+    else if(activeGranularity==='weekly') key=getMondayWeekKey(t.date);
+    else key=t.date.slice(0,7);
+    buckets[key]=(buckets[key]||0)+1;
+    if(!ticketsByBucket[key]) ticketsByBucket[key]=[];
+    ticketsByBucket[key].push(t);
+  });
+  const rawKeys=Object.keys(buckets).sort();
+  const labels=rawKeys.map(k=>{
+    if(activeGranularity==='daily') return k.slice(5);
+    if(activeGranularity==='weekly'){const d=new Date(k+'T00:00:00');return`W/M ${d.getMonth()+1}/${d.getDate()}`;}
+    return k;
+  });
+  const counts=rawKeys.map(k=>buckets[k]);
+  const color='#a78bfa';
+
+  const ctx=document.getElementById('lorikeetChart').getContext('2d');
+  chartInstances['lorikeetChart']=new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[{
+      label:'Lorikeet 0h tickets',
+      data:counts,
+      backgroundColor:color+'99',
+      borderColor:color,
+      borderWidth:1,
+      borderRadius:3,
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{...tooltipDefaults,callbacks:{label:ctx=>`${ctx.parsed.y} ticket${ctx.parsed.y!==1?'s':''}`}}
+      },
+      scales:{
+        x:{ticks:{color:textColor,font:{size:10}},grid:{display:false}},
+        y:{ticks:{color:textColor,font:{size:10},stepSize:1},grid:{color:gridColor},beginAtZero:true}
+      },
+      onClick(evt,els){
+        if(!els.length) return;
+        const idx=els[0].index;
+        const key=rawKeys[idx];
+        const tix=ticketsByBucket[key]||[];
+        const listEl=document.getElementById('lorikeet-ticket-list');
+        const titleEl=document.getElementById('lorikeet-list-title');
+        const itemsEl=document.getElementById('lorikeet-list-items');
+        if(!listEl||!titleEl||!itemsEl) return;
+        titleEl.textContent=`Tickets — ${labels[idx]} (${tix.length})`;
+        itemsEl.innerHTML=tix.sort((a,b)=>a.id-b.id).map(t=>
+          `<a href="https://reapglobal.zendesk.com/agent/tickets/${t.id}" target="_blank" rel="noopener"
+            style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:#a78bfa;
+            background:#a78bfa18;padding:3px 8px;border-radius:4px;text-decoration:none;border:1px solid #a78bfa44;"
+            onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">#${t.id}</a>`
+        ).join('');
+        listEl.style.display='block';
+      }
+    }
+  });
 }
 
 function setGranularity(g, btn){
@@ -1443,6 +1542,12 @@ function setGranularity(g, btn){
   document.querySelectorAll('.granularity-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   if(activeKpi) renderDrilldownChart();
+  if(activeKpi==='median'){
+    renderLorikeetChart();
+    // hide ticket list on granularity change
+    const ll=document.getElementById('lorikeet-ticket-list');
+    if(ll) ll.style.display='none';
+  }
 }
 
 function setSRRChannel(ch, el){
@@ -1915,7 +2020,7 @@ function updateGroupKPIs(){
     const G=g.toUpperCase();
     const tix=filteredTickets.filter(t=>getGroup(t.assignee)===G);
     const esc=tix.filter(t=>t.within_cx==='No').length;
-    const res=tix.filter(t=>t.res!=null&&t.res>0).map(t=>t.res);
+    const res=tix.filter(t=>t.res!=null).map(t=>t.res);
     const rws=tix.filter(t=>t.rw!=null).map(t=>t.rw);
     const aws=tix.filter(t=>t.aw!=null).map(t=>t.aw);
     document.getElementById(`grp-${g}-tickets`).textContent=tix.length||'—';
@@ -2228,7 +2333,7 @@ function buildCatSubBreakdown(catName){
     if(!groups[g]) groups[g]={count:0,esc:0,res:[]};
     groups[g].count++;
     if(t.within_cx==='No') groups[g].esc++;
-    if((t.status==='Solved'||t.status==='Closed')&&t.res!=null&&t.res>0) groups[g].res.push(t.res);
+    if((t.status==='Solved'||t.status==='Closed')&&t.res!=null) groups[g].res.push(t.res);
   });
   const sorted=Object.entries(groups).sort((a,b)=>b[1].count-a[1].count);
   const total=sorted.reduce((s,e)=>s+e[1].count,0);
@@ -2656,7 +2761,7 @@ function updateCharts(M){
 
   // OKR Resolution Share donut
   destroyChart('resShareDonut');
-  const resArr = filteredTickets.filter(t=>(t.status==='Solved'||t.status==='Closed')&&t.res!=null&&t.res>0).map(t=>t.res);
+  const resArr = filteredTickets.filter(t=>(t.status==='Solved'||t.status==='Closed')&&t.res!=null).map(t=>t.res);
   const u24 = resArr.filter(r=>r<24).length;
   const u48 = resArr.filter(r=>r>=24&&r<48).length;
   const p48 = resArr.filter(r=>r>=48).length;
@@ -2721,7 +2826,7 @@ function updateCharts(M){
   filteredTickets.forEach(t=>{
     const g=getGroup(t.assignee);
     if(!g||!grpBuckets[g])return;
-    if((t.status==='Solved'||t.status==='Closed')&&t.res!=null&&t.res>0){grpBuckets[g][bucket(t.res)]=(grpBuckets[g][bucket(t.res)]||0)+1;grpResolved[g]++;}
+    if((t.status==='Solved'||t.status==='Closed')&&t.res!=null){grpBuckets[g][bucket(t.res)]=(grpBuckets[g][bucket(t.res)]||0)+1;grpResolved[g]++;}
   });
   updateGroupKPIs();
   const csPctD=bLabels.map(l=>grpResolved.CS?grpBuckets.CS[l]/grpResolved.CS*100:0);
@@ -4330,7 +4435,7 @@ function renderCGCatTable(){
     if(!cats[c]) cats[c]={count:0,esc:0,res:[],rw:[],aw:[]};
     cats[c].count++;
     if(t.within_cx==='No') cats[c].esc++;
-    if(t.res!=null&&t.res>0) cats[c].res.push(t.res);
+    if(t.res!=null) cats[c].res.push(t.res);
     if(t.rw!=null&&t.rw>0) cats[c].rw.push(t.rw);
     if(t.aw!=null&&t.aw>0) cats[c].aw.push(t.aw);
   });
