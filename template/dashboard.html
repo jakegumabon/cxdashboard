@@ -100,6 +100,9 @@ tr:hover td{background:var(--surface2)}
 .srr-ch-btn{padding:3px 10px;font-size:11px;font-weight:600;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .15s}
 .srr-ch-btn:hover{color:var(--text2);border-color:var(--text3)}
 .srr-ch-btn.active{background:#f5a623;border-color:#f5a623;color:#fff}
+.team-filter-btn{padding:3px 10px;font-size:11px;font-weight:600;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--text3);cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .15s}
+.team-filter-btn:hover{color:var(--text2);border-color:var(--text3)}
+.team-filter-btn.active{background:#4f9cf9;border-color:#4f9cf9;color:#fff}
 #kpi-drilldown-close{background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:2px 6px;line-height:1}
 #kpi-drilldown-close:hover{color:var(--text2)}
 #drilldown-wrap{height:180px;position:relative}
@@ -226,6 +229,15 @@ tr:hover td{background:var(--surface2)}
         </div>
         <button id="kpi-drilldown-close" onclick="closeDrilldown()">✕</button>
       </div>
+    </div>
+    <!-- Team filter — always visible when drilldown is open -->
+    <div id="team-filter-row" style="display:none;margin-bottom:8px;align-items:center;gap:6px;flex-wrap:wrap;">
+      <span style="font-size:11px;color:var(--text3);margin-right:4px;">Team:</span>
+      <button class="team-filter-btn active" onclick="setTeamFilter('ALL',this)">All</button>
+      <button class="team-filter-btn" onclick="setTeamFilter('CS',this)">CS</button>
+      <button class="team-filter-btn" onclick="setTeamFilter('TS',this)">TS</button>
+      <button class="team-filter-btn" onclick="setTeamFilter('IM',this)">IM</button>
+      <button class="team-filter-btn" onclick="setTeamFilter('CG',this)">CG</button>
     </div>
     <!-- Channel filter — only visible when SRR KPI is active -->
     <div id="srr-channel-row" style="display:none;margin-bottom:12px;display:none;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -1289,7 +1301,20 @@ function updateTeamCompare(){
 }
 
 // ═══════════════════════════════════ KPI DRILL-DOWN ═══════════════════════════════════
-let activeKpi=null, activeGranularity='weekly', activeEscDestFilter='all', activeSRRChannel='ALL';
+let activeKpi=null, activeGranularity='weekly', activeEscDestFilter='all', activeSRRChannel='ALL', activeTeamFilter='ALL';
+
+function getTeamFilteredTickets(){
+  if(activeTeamFilter==='ALL') return filteredTickets;
+  return filteredTickets.filter(t=>getGroup(t.assignee)===activeTeamFilter);
+}
+
+function setTeamFilter(team, btn){
+  activeTeamFilter=team;
+  document.querySelectorAll('.team-filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(activeKpi) renderDrilldownChart();
+  if(activeKpi==='escrate') renderEscBreakdownCharts();
+}
 
 const KPI_META={
   reopen:{label:'Reopen Rate', color:'#f97058', unit:'%', type:'reopen_rate'},
@@ -1402,6 +1427,14 @@ function openDrilldown(kpiKey, el){
   if(distRow&&kpiKey!=='reopen') distRow.style.display='none';
   const reopenRow=document.getElementById('reopen-flagged-row');
   if(reopenRow&&kpiKey!=='reopen') reopenRow.style.display='none';
+  // Team filter row — always visible in drilldown, reset to All on open
+  const teamRow=document.getElementById('team-filter-row');
+  if(teamRow){
+    teamRow.style.display='flex';
+    activeTeamFilter='ALL';
+    teamRow.querySelectorAll('.team-filter-btn').forEach(b=>b.classList.remove('active'));
+    teamRow.querySelector('.team-filter-btn').classList.add('active');
+  }
   // Channel filter row only for SRR
   const srrRow=document.getElementById('srr-channel-row');
   if(srrRow){
@@ -1420,9 +1453,12 @@ function openDrilldown(kpiKey, el){
 function closeDrilldown(){
   activeKpi=null;
   activeSRRChannel='ALL';
+  activeTeamFilter='ALL';
   document.querySelectorAll('.kpi').forEach(k=>k.classList.remove('active'));
   document.getElementById('kpi-drilldown').classList.remove('visible');
   document.querySelector('.drilldown-controls').style.display='flex';
+  const teamRow=document.getElementById('team-filter-row');
+  if(teamRow) teamRow.style.display='none';
   const srrRow=document.getElementById('srr-channel-row');
   if(srrRow) srrRow.style.display='none';
   destroyChart('drilldownChart');
@@ -1604,10 +1640,11 @@ function renderDrilldownChart(){
       'WhatsApp':  '#34d399',
       'Telegram':  '#f5a623',
     };
-    // Filter tickets by selected channel
+    // Filter tickets by selected channel and team
+    const teamTickets = getTeamFilteredTickets();
     const srcTickets = activeSRRChannel==='ALL'
-      ? filteredTickets
-      : filteredTickets.filter(t=>t.channel===activeSRRChannel);
+      ? teamTickets
+      : teamTickets.filter(t=>t.channel===activeSRRChannel);
 
     // Build buckets
     const buckets={};
@@ -1690,7 +1727,7 @@ function renderDrilldownChart(){
   }
 
   // ── All other KPIs: existing single-series behaviour ───────────────────────
-  const {labels,values}=buildDrilldownData(activeKpi,activeGranularity);
+  const {labels,values}=buildDrilldownData(activeKpi,activeGranularity,getTeamFilteredTickets());
   const isRate=['escrate','csat','reopen_rate'].includes(activeKpi);
 
   const trendDataLabels={
