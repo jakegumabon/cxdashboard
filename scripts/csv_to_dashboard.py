@@ -438,7 +438,7 @@ def parse_ops(new_csv_path, reopen_csv_path):
         for row in reader:
             date = row.get("Ticket created - Date", "").strip()
             hour = safe_int(row.get("Ticket created - Hour"))
-            count = safe_int(row.get("Tickets not merged and not dispute"))
+            count = safe_int(row.get("Tickets not merged, not dispute, not DBS") or row.get("Tickets not merged and not dispute"))
             if not date:
                 continue
             new_by_date[date] += count
