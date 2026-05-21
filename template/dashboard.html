@@ -3360,9 +3360,30 @@ function computeCapacity(){
     agentNew[a] = (agentNew[a]||0) + 1;
   });
 
+  // ── Full name → abbreviated name aliases (Zendesk switched to abbrev format) ──
+  const capNameAliases = {
+    'Racky Manlapaz':   'Racky M',
+    'Herbert Acpal':    'Herbert A',
+    'Patric Pangan':    'Patric P',
+    'Eunice Suñga':     'Eunice S',
+    'Lorenz Agustin':   'Lorenz A',
+    'LA Carlos':        'LA C',
+    'Mike Cunanan':     'Mike C',
+    'Amica Castro':     'Amica C',
+    'Timothy Hernandez':'Timothy H',
+    'John Jacinto':     'John J',
+    'Adrian Maranan':   'Adrian M',
+    'Allen Reyes':      'Allen R',
+    'Jan Rivera':       'Jan R',
+    'Hans Wang':        'Hans W',
+    'Raymark Cayanan':  'Raymark C',
+    'Gilbert Arces':    'Gilbert A',
+    'Bogdan Hristovski':'Bogdan H',
+  };
+
   // ── Build agent throughput data ──
   const agentData = CAP.agents.map(a => {
-    const newT = agentNew[a.name] || 0;
+    const newT = agentNew[a.name] || agentNew[capNameAliases[a.name]] || 0;
     const adjVol = Math.round(newT * opsRatio * 10) / 10;
     const sw = schedWork[a.schedule] || schedWork.C;
     const tpd = sw.days > 0 ? Math.round(adjVol / sw.days * 100) / 100 : 0;
