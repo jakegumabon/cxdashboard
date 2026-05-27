@@ -233,11 +233,11 @@ tr:hover td{background:var(--surface2)}
     <!-- Team filter — always visible when drilldown is open -->
     <div id="team-filter-row" style="display:none;margin-bottom:8px;align-items:center;gap:6px;flex-wrap:wrap;">
       <span style="font-size:11px;color:var(--text3);margin-right:4px;">Team:</span>
-      <button class="team-filter-btn active" onclick="setTeamFilter('ALL',this)">All</button>
-      <button class="team-filter-btn" onclick="setTeamFilter('CS',this)">CS</button>
-      <button class="team-filter-btn" onclick="setTeamFilter('TS',this)">TS</button>
-      <button class="team-filter-btn" onclick="setTeamFilter('IM',this)">IM</button>
-      <button class="team-filter-btn" onclick="setTeamFilter('CG',this)">CG</button>
+      <button class="team-filter-btn active" onclick="setDrilldownTeam('ALL',this)">All</button>
+      <button class="team-filter-btn" onclick="setDrilldownTeam('CS',this)">CS</button>
+      <button class="team-filter-btn" onclick="setDrilldownTeam('TS',this)">TS</button>
+      <button class="team-filter-btn" onclick="setDrilldownTeam('IM',this)">IM</button>
+      <button class="team-filter-btn" onclick="setDrilldownTeam('CG',this)">CG</button>
     </div>
     <!-- Channel filter — only visible when SRR KPI is active -->
     <div id="srr-channel-row" style="display:none;margin-bottom:12px;display:none;align-items:center;gap:6px;flex-wrap:wrap;">
@@ -1308,7 +1308,7 @@ function getTeamFilteredTickets(){
   return filteredTickets.filter(t=>getGroup(t.assignee)===activeTeamFilter);
 }
 
-function setTeamFilter(team, btn){
+function setDrilldownTeam(team, btn){
   activeTeamFilter=team;
   document.querySelectorAll('.team-filter-btn').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
