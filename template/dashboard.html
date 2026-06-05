@@ -2244,20 +2244,67 @@ function renderPLCatChart(){
     for(const t of tix) counts[t.cat1||'Unknown']=(counts[t.cat1||'Unknown']||0)+1;
     const top=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,6);
     if(!top.length) return;
-    chartInstances[chartId]=new Chart(document.getElementById(chartId),{
+    const canvasEl=document.getElementById(chartId);
+    canvasEl.style.cursor='pointer';
+    chartInstances[chartId]=new Chart(canvasEl,{
       type:'bar',
       data:{
         labels:top.map(e=>e[0]),
         datasets:[{data:top.map(e=>e[1]),backgroundColor:p.color+'bb',borderRadius:3,borderWidth:0}]
       },
       options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:false},tooltip:{...tooltipDefaults,callbacks:{label:(ctx)=>`${ctx.raw} tickets`}}},
+        onClick:(evt,elements)=>{
+          if(!elements.length) return;
+          const idx=elements[0].index;
+          const catName=top[idx][0];
+          openPLCatDrilldown(p.key,p.label,catName,p.color);
+        },
+        plugins:{legend:{display:false},tooltip:{...tooltipDefaults,callbacks:{label:(ctx)=>`${ctx.raw} tickets — click to view`}}},
         scales:{
           x:{ticks:{color:textColor,font:{size:9}},grid:{color:gridColor},beginAtZero:true},
           y:{ticks:{color:textColor,font:{size:9}},grid:{display:false}}
         }}
     });
   });
+}
+
+function openPLCatDrilldown(productKey, productLabel, catName, color){
+  const modalId='pl-cat-drilldown-modal';
+  let modal=document.getElementById(modalId);
+  if(modal) modal.remove();
+  const tix=getPLTickets(productKey).filter(t=>(t.cat1||'Unknown')===catName);
+  if(!tix.length) return;
+  tix.sort((a,b)=>a.id-b.id);
+  let html='<div style="padding:12px 14px 4px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #2a2a2a">';
+  html+='<div>';
+  html+='<div style="font-size:12px;font-weight:600;color:'+color+'">'+productLabel+'</div>';
+  html+='<div style="font-size:11px;color:var(--text2);margin-top:2px">'+catName+' — '+tix.length+' ticket'+(tix.length!==1?'s':'')+'</div>';
+  html+='</div>';
+  html+='<button onclick="document.getElementById(\''+modalId+'\').remove()" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0 4px;line-height:1">×</button>';
+  html+='</div>';
+  html+='<div style="padding:10px 14px 12px">';
+  html+='<div style="font-size:10px;color:var(--text3);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.4px">Click ticket to open in Zendesk</div>';
+  html+='<div style="display:flex;flex-wrap:wrap;gap:4px">';
+  tix.forEach(t=>{
+    const statusC=t.status==='Solved'?'#4caf7d':t.status==='New'?'#f5a623':t.status==='Open'?'#4f9cf9':t.status==='Pending'?'#f97058':'#888';
+    const esc=t.within_cx==='No';
+    const border=esc?'border:1px solid #f9705844;':'border:1px solid #2a2a2a;';
+    html+='<a href="https://reapglobal.zendesk.com/agent/tickets/'+t.id+'" target="_blank" rel="noopener" ';
+    html+='style="display:inline-flex;align-items:center;gap:4px;padding:3px 7px;background:#1a1a1a;'+border+'border-radius:4px;text-decoration:none;font-size:11px;font-family:IBM Plex Mono,monospace;color:var(--text2)" ';
+    html+='title="#'+t.id+' · '+t.status+(t.assignee?' · '+t.assignee:'')+(t.res?' · '+t.res.toFixed(1)+'h res':'')+(esc?' · ESCALATED':'')+'">';
+    html+='<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:'+statusC+'"></span>';
+    html+=t.id;
+    if(esc) html+='<span style="color:#f97058;font-size:9px">↗</span>';
+    html+='</a>';
+  });
+  html+='</div>';
+  html+='<div style="margin-top:8px;font-size:10px;color:#555">Legend: <span style="color:#4caf7d">●</span> Solved <span style="color:#f5a623">●</span> New <span style="color:#4f9cf9">●</span> Open <span style="color:#f97058">●</span> Pending <span style="color:#f97058;font-size:9px">↗</span> Escalated</div>';
+  html+='</div>';
+  modal=document.createElement('div');
+  modal.id=modalId;
+  modal.style.cssText='position:fixed;bottom:24px;right:24px;width:440px;max-height:60vh;overflow-y:auto;background:#161616;border:1px solid #2a2a2a;border-top:3px solid '+color+';border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.6);z-index:9999';
+  modal.innerHTML=html;
+  document.body.appendChild(modal);
 }
 
 // ═══════════════════════════════════ TABLES ═══════════════════════════════════
