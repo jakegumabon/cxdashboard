@@ -172,7 +172,7 @@ tr:hover td{background:var(--surface2)}
     <h1>CX Performance Dashboard</h1>
     <div class="period mono" id="header-period">2026-03-01 → 2026-03-21 · 906 tickets</div>
   </div>
-  <div style="font-size:11px;color:var(--text3)">Last refreshed Jun 09, 2026 · 08:35 HKT</div>
+  <div style="font-size:11px;color:var(--text3)">Last refreshed Jun 09, 2026 · 15:24 HKT</div>
 </div>
 
 <div class="tabs">
@@ -185,6 +185,7 @@ tr:hover td{background:var(--surface2)}
     <div class="tab" onclick="switchTab('product')">Product Lines</div>
     <div class="tab" onclick="switchTab('cg')">CG Team</div>
     <div class="tab" onclick="switchTab('im')">IM Metrics</div>
+    <div class="tab" onclick="switchTab('lorikeet')">Lorikeet</div>
 </div>
 
 <div id="date-filter-bar">
@@ -906,6 +907,57 @@ tr:hover td{background:var(--surface2)}
     <div id="im-empty" style="display:none;padding:24px;text-align:center;color:var(--text3);font-size:13px;">
       No data — Google Sheets connection not configured.
     </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════ LORIKEET PERFORMANCE TAB ═══════════════════════════════════ -->
+<div id="tab-lorikeet" class="tab-panel">
+
+  <!-- Tab-local date filter -->
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:20px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;">
+    <label style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;">Date Range</label>
+    <input type="date" id="lk-date-from" class="date-input">
+    <span class="date-sep">→</span>
+    <input type="date" id="lk-date-to" class="date-input">
+    <button class="filter-apply" onclick="applyLKFilter()">Apply</button>
+    <button class="filter-reset" onclick="resetLKFilter()">Reset</button>
+    <span id="lk-filter-status" style="font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace;"></span>
+  </div>
+
+  <!-- 4 KPI cards -->
+  <div class="kpi-grid" style="margin-bottom:20px;">
+    <div class="kpi" style="cursor:default;">
+      <div class="kpi-label">Total Tickets</div>
+      <div class="kpi-value mono" id="lk-kpi-total">—</div>
+      <div class="kpi-sub" id="lk-kpi-total-sub">in selected period</div>
+    </div>
+    <div class="kpi kpi-blue" style="cursor:default;">
+      <div class="kpi-label">Match Rate</div>
+      <div class="kpi-value mono" id="lk-kpi-match">—</div>
+      <div class="kpi-sub">matched / total tickets</div>
+    </div>
+    <div class="kpi kpi-amber" style="cursor:default;">
+      <div class="kpi-label">Automation Rate</div>
+      <div class="kpi-value mono" id="lk-kpi-auto">—</div>
+      <div class="kpi-sub">automated outcomes / total</div>
+    </div>
+    <div class="kpi kpi-green" style="cursor:default;">
+      <div class="kpi-label">Independently Handled</div>
+      <div class="kpi-value mono" id="lk-kpi-indep">—</div>
+      <div class="kpi-sub">resolved without agent / total</div>
+    </div>
+  </div>
+
+  <!-- Trend chart -->
+  <div class="chart-card">
+    <div class="chart-title">Performance Trend <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;">— rates (%) with daily ticket volume</span></div>
+    <div class="chart-wrap" style="height:260px;"><canvas id="lkTrendChart"></canvas></div>
+  </div>
+
+  <!-- Empty state -->
+  <div id="lk-empty" style="display:none;padding:40px;text-align:center;color:var(--text3);font-size:13px;">
+    No Lorikeet data available — Google Sheets connection not configured or no data found.
   </div>
 
 </div>
@@ -2087,12 +2139,12 @@ function fmt(v,d=1){return v==null?'—':v.toFixed(d);}
 // ═══════════════════════════════════ TABS ═══════════════════════════════════
 function switchTab(id){
   document.querySelectorAll('.tab').forEach((t,i)=>{
-    const ids=['overview','resolution','volume','team','ops','capacity','product','cg','im'];
+    const ids=['overview','resolution','volume','team','ops','capacity','product','cg','im','lorikeet'];
     t.classList.toggle('active',ids[i]===id);
   });
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
-  document.getElementById('date-filter-bar').style.display = id==='im' ? 'none' : '';
+  document.getElementById('date-filter-bar').style.display = (id==='im'||id==='lorikeet') ? 'none' : '';
   if(id==='volume'){setTimeout(drawHeatmap,50);}
   if(id==='ops'){setTimeout(()=>{drawOpsHeatmap(opsHeatmapMode||'all');},50);}
   if(id==='team'){setTimeout(()=>{},50);}
@@ -2100,6 +2152,7 @@ function switchTab(id){
   if(id==='product'){setTimeout(renderProductTab,50);}
   if(id==='cg'){setTimeout(renderCGTab,50);}
   if(id==='im'){setTimeout(renderIMTab,50);}
+  if(id==='lorikeet'){setTimeout(renderLorikeetTab,50);}
 }
 
 // ═══════════════════════════════════ PRODUCT LINES ═══════════════════════════════════
@@ -4068,7 +4121,8 @@ function downloadCSV(){
 
 // ═══════════════════════════════════ IM METRICS TAB ═══════════════════════════════════
 
-const IM_DATA={"programs": [{"name": "BeTrust (Retail/USD)", "stage": "Technical Discovery", "created": "2026-04-09 18:13", "handoff": "", "hours": null}, {"name": "Sweet Intelligence (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2026-03-04 9:59", "handoff": "", "hours": null}, {"name": "Rewalt Card (Retail/USD)", "stage": "Sandbox Testing", "created": "2026-02-24 15:55", "handoff": "", "hours": null}, {"name": "Funding Pips (Retail/USD)", "stage": "Technical Discovery", "created": "2026-02-24 9:08", "handoff": "", "hours": null}, {"name": "Gate (Commercial USD)", "stage": "Handoff", "created": "2026-01-07 14:52", "handoff": "2026-03-30", "hours": 1961.1}, {"name": "Paybol + Goo7 (Retail/USD)", "stage": "Technical Discovery", "created": "2025-11-20 9:39", "handoff": "", "hours": null}, {"name": "JeroidPay (Retail/USD)", "stage": "Requirements Confirmed", "created": "2025-10-29 12:34", "handoff": "", "hours": null}, {"name": "Lemoncard (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-10-28 10:09", "handoff": "", "hours": null}, {"name": "SenturoPay (Commercial/HKD)", "stage": "Offboarded/Cancelled", "created": "2025-10-22 16:28", "handoff": "", "hours": null}, {"name": "Lemoncard (Commercial/USD)", "stage": "Offboarded/Cancelled", "created": "2025-10-22 14:40", "handoff": "", "hours": null}, {"name": "SenturoPay (Commercial/USD)", "stage": "Offboarded/Cancelled", "created": "2025-10-22 12:40", "handoff": "", "hours": null}, {"name": "Yunmo/Quark (Retail/USD)", "stage": "Sandbox Testing", "created": "2025-10-16 9:20", "handoff": "", "hours": null}, {"name": "BeeCoin/Shenzhou Tong (Retail/USD)", "stage": "Kickoff", "created": "2025-10-16 8:58", "handoff": "", "hours": null}, {"name": "MasterPay Global (Retail/USD)", "stage": "Requirements Confirmed", "created": "2025-10-13 16:26", "handoff": "", "hours": null}, {"name": "DPT International (Retail/USD)", "stage": "Requirements Confirmed", "created": "2025-09-25 11:38", "handoff": "", "hours": null}, {"name": "Vantage Market", "stage": "Offboarded/Cancelled", "created": "2025-09-05 0:27", "handoff": "", "hours": null}, {"name": "Paybol (Commercial/USD)", "stage": "Offboarded/Cancelled", "created": "2025-09-03 19:39", "handoff": "", "hours": null}, {"name": "Paybol (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-09-03 19:37", "handoff": "", "hours": null}, {"name": "Oke Partner (Legacy/USD)", "stage": "Handoff", "created": "2025-09-02 10:35", "handoff": "", "hours": null}, {"name": "Clique Finance Ltd (Legacy/HKD)", "stage": "Handoff", "created": "2025-09-02 10:14", "handoff": "", "hours": null}, {"name": "Tevau Technology Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Bybit (BIN sponsor/Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Ether.fi Pulse (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Ether.fi SEZC (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "RED DOT TECHNOLOGY LIMITED (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "LEXIM (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Stella (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "BTSE UAB (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Troia Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Asiabill Company Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Troia Corp (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "BTSE Financial Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "ADCOMBO (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Senturo Pay (Legacy/USD)", "stage": "Offboarded/Cancelled", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Raiz Technology Limited (Legacy/USD)", "stage": "Offboarded/Cancelled", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Lavas Labs Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Troia Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Lavas Labs Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Asiabill Company Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Savo (Legacy/HKD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "CYPHER CARD LIMITED (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "KIML (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "SaintPay S.R.L (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Savo (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "LEXIM (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "RED DOT TECHNOLOGY LIMITED (Legacy/HKD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Vault (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "IONAPAY LIMITED (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Vault (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "CYPHER CARD LIMITED (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "CryptoMate (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Raiz Technology Limited (Legacy/USD)", "stage": "Offboarded/Cancelled", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Whalefin Technologies Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Raiz Technology Limited (Legacy/USD)", "stage": "Offboarded/Cancelled", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Camclaim (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "EUSD (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Distributed technologies limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Pointra (Retail/USD)", "stage": "Parking Lot", "created": "2025-08-22 18:56", "handoff": "", "hours": null}, {"name": "Sargasso (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-08-20 12:04", "handoff": "", "hours": null}, {"name": "Buburuza (Commercial/USD)", "stage": "Offboarded/Cancelled", "created": "2025-08-19 14:43", "handoff": "", "hours": null}, {"name": "Gate (Retail USD)", "stage": "Handoff", "created": "2025-08-13 13:36", "handoff": "2026-03-30", "hours": 5490.4}, {"name": "Pointra (Commercial/USD)", "stage": "Parking Lot", "created": "2025-08-11 16:55", "handoff": "", "hours": null}, {"name": "Quikipay (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-08-11 16:50", "handoff": "", "hours": null}, {"name": "Bloxley (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-08-08 17:12", "handoff": "", "hours": null}, {"name": "Elibrium (Commercial/USD)", "stage": "Sandbox Testing", "created": "2025-08-08 17:03", "handoff": "", "hours": null}, {"name": "AlloyX (Commercial USD)", "stage": "Handoff", "created": "2025-07-31 11:28", "handoff": "2026-01-26", "hours": 4292.5}, {"name": "Metalpha (Commercial/USD)", "stage": "Production Testing", "created": "2025-07-30 9:12", "handoff": "", "hours": null}, {"name": "Jinfu", "stage": "Offboarded/Cancelled", "created": "2025-07-29 16:08", "handoff": "", "hours": null}, {"name": "ODIX (Retail/USD)", "stage": "Handoff", "created": "2025-07-28 9:50", "handoff": "2026-04-10", "hours": 6142.2}, {"name": "Blanc Block (Commercial/USD)", "stage": "Handoff", "created": "2025-07-15 1:17", "handoff": "2025-10-16", "hours": 2238.7}, {"name": "Metalpha (Retail/USD)", "stage": "Production Testing", "created": "2025-07-14 17:53", "handoff": "", "hours": null}, {"name": "OneGate – Commercial USD", "stage": "Launch Ready", "created": "2025-07-03 12:39", "handoff": "", "hours": null}, {"name": "Braza (Commercial/USD)", "stage": "Offboarded/Cancelled", "created": "2025-07-03 3:30", "handoff": "", "hours": null}, {"name": "28Pay (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-06-26 16:55", "handoff": "", "hours": null}, {"name": "Swokipay (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-06-26 13:44", "handoff": "", "hours": null}, {"name": "Buburuza (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-06-25 17:01", "handoff": "", "hours": null}, {"name": "UCard (Commercial/USD)", "stage": "Parking Lot", "created": "2025-06-25 10:00", "handoff": "", "hours": null}, {"name": "Onda Finance (Retail/USD)", "stage": "Production Testing", "created": "2025-06-24 13:15", "handoff": "", "hours": null}, {"name": "hi.com", "stage": "Offboarded/Cancelled", "created": "2025-06-19 12:41", "handoff": "", "hours": null}, {"name": "Upay Wallet Black (Retail/USD)", "stage": "Parking Lot", "created": "2025-06-18 17:45", "handoff": "", "hours": null}, {"name": "ShokranPay (Commercial/USD)", "stage": "Parking Lot", "created": "2025-06-16 13:07", "handoff": "", "hours": null}, {"name": "WINITY.LIFE (Retail/USD)", "stage": "Handoff", "created": "2025-06-09 11:50", "handoff": "2026-01-26", "hours": 5540.2}, {"name": "Stepha (Retail/USD)", "stage": "Handoff", "created": "2025-06-03 15:16", "handoff": "2025-09-08", "hours": 2320.7}, {"name": "Stepha (Commercial/USD)", "stage": "Handoff", "created": "2025-06-03 10:46", "handoff": "2025-09-08", "hours": 2325.2}, {"name": "Prive Concierge (Commercial/USD)", "stage": "Parking Lot", "created": "2025-05-28 16:05", "handoff": "", "hours": null}, {"name": "Prive Concierge (Retail/USD)", "stage": "Handoff", "created": "2025-05-28 13:45", "handoff": "2026-03-16", "hours": 7002.2}, {"name": "Key Consensus (Commercial/USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-28 13:10", "handoff": "", "hours": null}, {"name": "Kingdom Card (Retail/USD)", "stage": "Parking Lot", "created": "2025-05-27 16:17", "handoff": "", "hours": null}, {"name": "XBO (Commercial/USD)", "stage": "Parking Lot", "created": "2025-05-26 18:02", "handoff": "", "hours": null}, {"name": "APEX (Retail USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-26 10:53", "handoff": "", "hours": null}, {"name": "XBO (Retail/USD)", "stage": "Parking Lot", "created": "2025-05-26 10:25", "handoff": "", "hours": null}, {"name": "AlloyX (Retail USD)", "stage": "Handoff", "created": "2025-05-26 9:22", "handoff": "2026-01-26", "hours": 5878.6}, {"name": "Keytom w/ In-House Dev (Retail/USD)", "stage": "Handoff", "created": "2025-05-23 13:44", "handoff": "2026-05-04", "hours": 8298.2}, {"name": "Onda Finance (Commercial/USD)", "stage": "Production Testing", "created": "2025-05-23 0:58", "handoff": "", "hours": null}, {"name": "LeadTone – Retail USD", "stage": "Production Testing", "created": "2025-05-22 17:11", "handoff": "", "hours": null}, {"name": "Stables.money (Retail USD)", "stage": "Handoff", "created": "2025-05-22 9:54", "handoff": "", "hours": null}, {"name": "Stables.money (Commercial USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-15 16:52", "handoff": "", "hours": null}, {"name": "iPaylinks (Commercial/USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-15 16:25", "handoff": "", "hours": null}, {"name": "First Digital Trust (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-14 10:31", "handoff": "", "hours": null}, {"name": "Limited (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-13 18:50", "handoff": "", "hours": null}, {"name": "WeFi (Retail/USD)", "stage": "Handoff", "created": "2025-05-13 18:48", "handoff": "2025-08-28", "hours": 2557.2}, {"name": "CrossFi (Retail/USD)", "stage": "Handoff", "created": "2025-05-13 18:44", "handoff": "", "hours": null}, {"name": "Kryptonim (Retail/USD)", "stage": "Handoff", "created": "2025-05-13 10:52", "handoff": "", "hours": null}, {"name": "Fopay Global Card Program (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-09 19:31", "handoff": "", "hours": null}, {"name": "Grineo (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-09 19:13", "handoff": "", "hours": null}, {"name": "Bitunix (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-08 16:35", "handoff": "", "hours": null}, {"name": "Key Consensus (Retail/USD)", "stage": "Handoff", "created": "2025-04-23 16:33", "handoff": "2025-10-07", "hours": 3999.4}, {"name": "UCard (Retail/USD)", "stage": "Sandbox Testing", "created": "2025-04-22 19:48", "handoff": "", "hours": null}, {"name": "Cardone (Retail)", "stage": "Offboarded/Cancelled", "created": "2025-04-22 19:45", "handoff": "", "hours": null}, {"name": "Braza (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-04-22 18:16", "handoff": "", "hours": null}, {"name": "Bitzaro (Retail/USD)", "stage": "Handoff", "created": "2025-04-14 14:42", "handoff": "", "hours": null}, {"name": "Bitzaro (Commercial/USD)", "stage": "Parking Lot", "created": "2025-04-14 10:43", "handoff": "", "hours": null}, {"name": "Infini (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-04-11 18:39", "handoff": "", "hours": null}, {"name": "Bitmart (Commercial USD)", "stage": "Handoff", "created": "2025-04-11 18:32", "handoff": "2025-10-27", "hours": 4765.5}, {"name": "Bitmart (Retail USD)", "stage": "Handoff", "created": "2025-04-11 18:29", "handoff": "2025-10-27", "hours": 4765.5}, {"name": "xSwipe Omni (Retail/USD)", "stage": "Handoff", "created": "2025-04-03 17:11", "handoff": "", "hours": null}, {"name": "Keytom w/ Crassula (Retail/USD)", "stage": "Handoff", "created": "2025-04-01 14:48", "handoff": "", "hours": null}, {"name": "Jeton (Retail/USD)", "stage": "Handoff", "created": "2025-04-01 11:48", "handoff": "", "hours": null}, {"name": "Binance VIP (Retail/USD)", "stage": "Handoff", "created": "2025-03-25 15:13", "handoff": "2025-07-28", "hours": 2992.8}, {"name": "WebitPay (Retail USD)", "stage": "Handoff", "created": "2025-03-21 15:14", "handoff": "2025-10-20", "hours": 5104.8}, {"name": "Elephants HK (Retail/USD)", "stage": "Handoff", "created": "2025-03-18 10:40", "handoff": "2025-09-15", "hours": 4341.3}, {"name": "Elephants HK (Commercial/USD)", "stage": "Handoff", "created": "2025-03-18 10:38", "handoff": "2025-09-15", "hours": 4341.4}], "total": 122, "handoff_count": 61, "activation_rate": 50.0, "avg_handling_h": 4439.9, "stage_counts": {"Technical Discovery": 3, "Offboarded/Cancelled": 34, "Sandbox Testing": 4, "Handoff": 61, "Requirements Confirmed": 3, "Kickoff": 1, "Parking Lot": 10, "Production Testing": 5, "Launch Ready": 1}, "monthly_breakdown": {"2025-03": {"Handoff": 4}, "2025-04": {"Handoff": 7, "Sandbox Testing": 1, "Offboarded/Cancelled": 3, "Parking Lot": 1}, "2025-05": {"Parking Lot": 4, "Handoff": 7, "Offboarded/Cancelled": 9, "Production Testing": 2}, "2025-06": {"Offboarded/Cancelled": 4, "Parking Lot": 3, "Production Testing": 1, "Handoff": 3}, "2025-07": {"Handoff": 3, "Production Testing": 2, "Offboarded/Cancelled": 2, "Launch Ready": 1}, "2025-08": {"Handoff": 34, "Offboarded/Cancelled": 8, "Parking Lot": 2, "Sandbox Testing": 1}, "2025-09": {"Requirements Confirmed": 1, "Offboarded/Cancelled": 3, "Handoff": 2}, "2025-10": {"Requirements Confirmed": 2, "Offboarded/Cancelled": 4, "Sandbox Testing": 1, "Kickoff": 1}, "2025-11": {"Technical Discovery": 1}, "2026-01": {"Handoff": 1}, "2026-02": {"Sandbox Testing": 1, "Technical Discovery": 1}, "2026-03": {"Offboarded/Cancelled": 1}, "2026-04": {"Technical Discovery": 1}}, "last_updated": "Jun 09, 2026 · 08:35 HKT"};
+const IM_DATA={"programs": [{"name": "BeTrust (Retail/USD)", "stage": "Technical Discovery", "created": "2026-04-09 18:13", "handoff": "", "hours": null}, {"name": "Sweet Intelligence (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2026-03-04 9:59", "handoff": "", "hours": null}, {"name": "Rewalt Card (Retail/USD)", "stage": "Sandbox Testing", "created": "2026-02-24 15:55", "handoff": "", "hours": null}, {"name": "Funding Pips (Retail/USD)", "stage": "Technical Discovery", "created": "2026-02-24 9:08", "handoff": "", "hours": null}, {"name": "Gate (Commercial USD)", "stage": "Handoff", "created": "2026-01-07 14:52", "handoff": "2026-03-30", "hours": 1961.1}, {"name": "Paybol + Goo7 (Retail/USD)", "stage": "Technical Discovery", "created": "2025-11-20 9:39", "handoff": "", "hours": null}, {"name": "JeroidPay (Retail/USD)", "stage": "Requirements Confirmed", "created": "2025-10-29 12:34", "handoff": "", "hours": null}, {"name": "Lemoncard (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-10-28 10:09", "handoff": "", "hours": null}, {"name": "SenturoPay (Commercial/HKD)", "stage": "Offboarded/Cancelled", "created": "2025-10-22 16:28", "handoff": "", "hours": null}, {"name": "Lemoncard (Commercial/USD)", "stage": "Offboarded/Cancelled", "created": "2025-10-22 14:40", "handoff": "", "hours": null}, {"name": "SenturoPay (Commercial/USD)", "stage": "Offboarded/Cancelled", "created": "2025-10-22 12:40", "handoff": "", "hours": null}, {"name": "Yunmo/Quark (Retail/USD)", "stage": "Sandbox Testing", "created": "2025-10-16 9:20", "handoff": "", "hours": null}, {"name": "BeeCoin/Shenzhou Tong (Retail/USD)", "stage": "Kickoff", "created": "2025-10-16 8:58", "handoff": "", "hours": null}, {"name": "MasterPay Global (Retail/USD)", "stage": "Requirements Confirmed", "created": "2025-10-13 16:26", "handoff": "", "hours": null}, {"name": "DPT International (Retail/USD)", "stage": "Requirements Confirmed", "created": "2025-09-25 11:38", "handoff": "", "hours": null}, {"name": "Vantage Market", "stage": "Offboarded/Cancelled", "created": "2025-09-05 0:27", "handoff": "", "hours": null}, {"name": "Paybol (Commercial/USD)", "stage": "Offboarded/Cancelled", "created": "2025-09-03 19:39", "handoff": "", "hours": null}, {"name": "Paybol (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-09-03 19:37", "handoff": "", "hours": null}, {"name": "Oke Partner (Legacy/USD)", "stage": "Handoff", "created": "2025-09-02 10:35", "handoff": "", "hours": null}, {"name": "Clique Finance Ltd (Legacy/HKD)", "stage": "Handoff", "created": "2025-09-02 10:14", "handoff": "", "hours": null}, {"name": "Tevau Technology Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Bybit (BIN sponsor/Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Ether.fi Pulse (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Ether.fi SEZC (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "RED DOT TECHNOLOGY LIMITED (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "LEXIM (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Stella (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "BTSE UAB (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Troia Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Asiabill Company Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Troia Corp (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "BTSE Financial Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "ADCOMBO (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Senturo Pay (Legacy/USD)", "stage": "Offboarded/Cancelled", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Raiz Technology Limited (Legacy/USD)", "stage": "Offboarded/Cancelled", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Lavas Labs Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Troia Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Lavas Labs Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Asiabill Company Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Savo (Legacy/HKD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "CYPHER CARD LIMITED (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "KIML (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "SaintPay S.R.L (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Savo (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "LEXIM (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "RED DOT TECHNOLOGY LIMITED (Legacy/HKD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Vault (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "IONAPAY LIMITED (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Vault (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "CYPHER CARD LIMITED (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "CryptoMate (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Raiz Technology Limited (Legacy/USD)", "stage": "Offboarded/Cancelled", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Whalefin Technologies Limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Raiz Technology Limited (Legacy/USD)", "stage": "Offboarded/Cancelled", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Camclaim (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "EUSD (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Distributed technologies limited (Legacy/USD)", "stage": "Handoff", "created": "2025-08-28 14:46", "handoff": "", "hours": null}, {"name": "Pointra (Retail/USD)", "stage": "Parking Lot", "created": "2025-08-22 18:56", "handoff": "", "hours": null}, {"name": "Sargasso (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-08-20 12:04", "handoff": "", "hours": null}, {"name": "Buburuza (Commercial/USD)", "stage": "Offboarded/Cancelled", "created": "2025-08-19 14:43", "handoff": "", "hours": null}, {"name": "Gate (Retail USD)", "stage": "Handoff", "created": "2025-08-13 13:36", "handoff": "2026-03-30", "hours": 5490.4}, {"name": "Pointra (Commercial/USD)", "stage": "Parking Lot", "created": "2025-08-11 16:55", "handoff": "", "hours": null}, {"name": "Quikipay (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-08-11 16:50", "handoff": "", "hours": null}, {"name": "Bloxley (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-08-08 17:12", "handoff": "", "hours": null}, {"name": "Elibrium (Commercial/USD)", "stage": "Sandbox Testing", "created": "2025-08-08 17:03", "handoff": "", "hours": null}, {"name": "AlloyX (Commercial USD)", "stage": "Handoff", "created": "2025-07-31 11:28", "handoff": "2026-01-26", "hours": 4292.5}, {"name": "Metalpha (Commercial/USD)", "stage": "Production Testing", "created": "2025-07-30 9:12", "handoff": "", "hours": null}, {"name": "Jinfu", "stage": "Offboarded/Cancelled", "created": "2025-07-29 16:08", "handoff": "", "hours": null}, {"name": "ODIX (Retail/USD)", "stage": "Handoff", "created": "2025-07-28 9:50", "handoff": "2026-04-10", "hours": 6142.2}, {"name": "Blanc Block (Commercial/USD)", "stage": "Handoff", "created": "2025-07-15 1:17", "handoff": "2025-10-16", "hours": 2238.7}, {"name": "Metalpha (Retail/USD)", "stage": "Production Testing", "created": "2025-07-14 17:53", "handoff": "", "hours": null}, {"name": "OneGate – Commercial USD", "stage": "Launch Ready", "created": "2025-07-03 12:39", "handoff": "", "hours": null}, {"name": "Braza (Commercial/USD)", "stage": "Offboarded/Cancelled", "created": "2025-07-03 3:30", "handoff": "", "hours": null}, {"name": "28Pay (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-06-26 16:55", "handoff": "", "hours": null}, {"name": "Swokipay (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-06-26 13:44", "handoff": "", "hours": null}, {"name": "Buburuza (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-06-25 17:01", "handoff": "", "hours": null}, {"name": "UCard (Commercial/USD)", "stage": "Parking Lot", "created": "2025-06-25 10:00", "handoff": "", "hours": null}, {"name": "Onda Finance (Retail/USD)", "stage": "Production Testing", "created": "2025-06-24 13:15", "handoff": "", "hours": null}, {"name": "hi.com", "stage": "Offboarded/Cancelled", "created": "2025-06-19 12:41", "handoff": "", "hours": null}, {"name": "Upay Wallet Black (Retail/USD)", "stage": "Parking Lot", "created": "2025-06-18 17:45", "handoff": "", "hours": null}, {"name": "ShokranPay (Commercial/USD)", "stage": "Parking Lot", "created": "2025-06-16 13:07", "handoff": "", "hours": null}, {"name": "WINITY.LIFE (Retail/USD)", "stage": "Handoff", "created": "2025-06-09 11:50", "handoff": "2026-01-26", "hours": 5540.2}, {"name": "Stepha (Retail/USD)", "stage": "Handoff", "created": "2025-06-03 15:16", "handoff": "2025-09-08", "hours": 2320.7}, {"name": "Stepha (Commercial/USD)", "stage": "Handoff", "created": "2025-06-03 10:46", "handoff": "2025-09-08", "hours": 2325.2}, {"name": "Prive Concierge (Commercial/USD)", "stage": "Parking Lot", "created": "2025-05-28 16:05", "handoff": "", "hours": null}, {"name": "Prive Concierge (Retail/USD)", "stage": "Handoff", "created": "2025-05-28 13:45", "handoff": "2026-03-16", "hours": 7002.2}, {"name": "Key Consensus (Commercial/USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-28 13:10", "handoff": "", "hours": null}, {"name": "Kingdom Card (Retail/USD)", "stage": "Parking Lot", "created": "2025-05-27 16:17", "handoff": "", "hours": null}, {"name": "XBO (Commercial/USD)", "stage": "Parking Lot", "created": "2025-05-26 18:02", "handoff": "", "hours": null}, {"name": "APEX (Retail USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-26 10:53", "handoff": "", "hours": null}, {"name": "XBO (Retail/USD)", "stage": "Parking Lot", "created": "2025-05-26 10:25", "handoff": "", "hours": null}, {"name": "AlloyX (Retail USD)", "stage": "Handoff", "created": "2025-05-26 9:22", "handoff": "2026-01-26", "hours": 5878.6}, {"name": "Keytom w/ In-House Dev (Retail/USD)", "stage": "Handoff", "created": "2025-05-23 13:44", "handoff": "2026-05-04", "hours": 8298.2}, {"name": "Onda Finance (Commercial/USD)", "stage": "Production Testing", "created": "2025-05-23 0:58", "handoff": "", "hours": null}, {"name": "LeadTone – Retail USD", "stage": "Production Testing", "created": "2025-05-22 17:11", "handoff": "", "hours": null}, {"name": "Stables.money (Retail USD)", "stage": "Handoff", "created": "2025-05-22 9:54", "handoff": "", "hours": null}, {"name": "Stables.money (Commercial USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-15 16:52", "handoff": "", "hours": null}, {"name": "iPaylinks (Commercial/USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-15 16:25", "handoff": "", "hours": null}, {"name": "First Digital Trust (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-14 10:31", "handoff": "", "hours": null}, {"name": "Limited (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-13 18:50", "handoff": "", "hours": null}, {"name": "WeFi (Retail/USD)", "stage": "Handoff", "created": "2025-05-13 18:48", "handoff": "2025-08-28", "hours": 2557.2}, {"name": "CrossFi (Retail/USD)", "stage": "Handoff", "created": "2025-05-13 18:44", "handoff": "", "hours": null}, {"name": "Kryptonim (Retail/USD)", "stage": "Handoff", "created": "2025-05-13 10:52", "handoff": "", "hours": null}, {"name": "Fopay Global Card Program (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-09 19:31", "handoff": "", "hours": null}, {"name": "Grineo (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-09 19:13", "handoff": "", "hours": null}, {"name": "Bitunix (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-05-08 16:35", "handoff": "", "hours": null}, {"name": "Key Consensus (Retail/USD)", "stage": "Handoff", "created": "2025-04-23 16:33", "handoff": "2025-10-07", "hours": 3999.4}, {"name": "UCard (Retail/USD)", "stage": "Sandbox Testing", "created": "2025-04-22 19:48", "handoff": "", "hours": null}, {"name": "Cardone (Retail)", "stage": "Offboarded/Cancelled", "created": "2025-04-22 19:45", "handoff": "", "hours": null}, {"name": "Braza (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-04-22 18:16", "handoff": "", "hours": null}, {"name": "Bitzaro (Retail/USD)", "stage": "Handoff", "created": "2025-04-14 14:42", "handoff": "", "hours": null}, {"name": "Bitzaro (Commercial/USD)", "stage": "Parking Lot", "created": "2025-04-14 10:43", "handoff": "", "hours": null}, {"name": "Infini (Retail/USD)", "stage": "Offboarded/Cancelled", "created": "2025-04-11 18:39", "handoff": "", "hours": null}, {"name": "Bitmart (Commercial USD)", "stage": "Handoff", "created": "2025-04-11 18:32", "handoff": "2025-10-27", "hours": 4765.5}, {"name": "Bitmart (Retail USD)", "stage": "Handoff", "created": "2025-04-11 18:29", "handoff": "2025-10-27", "hours": 4765.5}, {"name": "xSwipe Omni (Retail/USD)", "stage": "Handoff", "created": "2025-04-03 17:11", "handoff": "", "hours": null}, {"name": "Keytom w/ Crassula (Retail/USD)", "stage": "Handoff", "created": "2025-04-01 14:48", "handoff": "", "hours": null}, {"name": "Jeton (Retail/USD)", "stage": "Handoff", "created": "2025-04-01 11:48", "handoff": "", "hours": null}, {"name": "Binance VIP (Retail/USD)", "stage": "Handoff", "created": "2025-03-25 15:13", "handoff": "2025-07-28", "hours": 2992.8}, {"name": "WebitPay (Retail USD)", "stage": "Handoff", "created": "2025-03-21 15:14", "handoff": "2025-10-20", "hours": 5104.8}, {"name": "Elephants HK (Retail/USD)", "stage": "Handoff", "created": "2025-03-18 10:40", "handoff": "2025-09-15", "hours": 4341.3}, {"name": "Elephants HK (Commercial/USD)", "stage": "Handoff", "created": "2025-03-18 10:38", "handoff": "2025-09-15", "hours": 4341.4}], "total": 122, "handoff_count": 61, "activation_rate": 50.0, "avg_handling_h": 4439.9, "stage_counts": {"Technical Discovery": 3, "Offboarded/Cancelled": 34, "Sandbox Testing": 4, "Handoff": 61, "Requirements Confirmed": 3, "Kickoff": 1, "Parking Lot": 10, "Production Testing": 5, "Launch Ready": 1}, "monthly_breakdown": {"2025-03": {"Handoff": 4}, "2025-04": {"Handoff": 7, "Sandbox Testing": 1, "Offboarded/Cancelled": 3, "Parking Lot": 1}, "2025-05": {"Parking Lot": 4, "Handoff": 7, "Offboarded/Cancelled": 9, "Production Testing": 2}, "2025-06": {"Offboarded/Cancelled": 4, "Parking Lot": 3, "Production Testing": 1, "Handoff": 3}, "2025-07": {"Handoff": 3, "Production Testing": 2, "Offboarded/Cancelled": 2, "Launch Ready": 1}, "2025-08": {"Handoff": 34, "Offboarded/Cancelled": 8, "Parking Lot": 2, "Sandbox Testing": 1}, "2025-09": {"Requirements Confirmed": 1, "Offboarded/Cancelled": 3, "Handoff": 2}, "2025-10": {"Requirements Confirmed": 2, "Offboarded/Cancelled": 4, "Sandbox Testing": 1, "Kickoff": 1}, "2025-11": {"Technical Discovery": 1}, "2026-01": {"Handoff": 1}, "2026-02": {"Sandbox Testing": 1, "Technical Discovery": 1}, "2026-03": {"Offboarded/Cancelled": 1}, "2026-04": {"Technical Discovery": 1}}, "last_updated": "Jun 09, 2026 · 15:24 HKT"};
+const LORIKEET_DAILY=/*{{LORIKEET_DAILY}}*/[];
 
 const IM_STAGE_COLORS={
   'Handoff':               '#4caf7d',
@@ -4615,6 +4669,119 @@ function renderCGTab(){
   renderCGChannelChart();
   renderCGCatTable();
   if(activeCGKpi) renderCGDrilldownChart();
+}
+
+// ═══════════════════════════════════ LORIKEET PERFORMANCE TAB ═══════════════════════════════════
+
+let lkFilteredDaily = [];
+let lkInitialized = false;
+
+function renderLorikeetTab(){
+  const emptyEl = document.getElementById('lk-empty');
+  if(!LORIKEET_DAILY || !LORIKEET_DAILY.length){
+    if(emptyEl) emptyEl.style.display='block';
+    return;
+  }
+  if(emptyEl) emptyEl.style.display='none';
+
+  // Initialize date inputs on first open
+  if(!lkInitialized){
+    lkInitialized = true;
+    const dates = LORIKEET_DAILY.map(d=>d.date).sort();
+    const minD = dates[0], maxD = dates[dates.length-1];
+    const fromEl = document.getElementById('lk-date-from');
+    const toEl   = document.getElementById('lk-date-to');
+    if(fromEl){ fromEl.min=minD; fromEl.value=minD; }
+    if(toEl)  { toEl.min=minD;   toEl.value=maxD;   }
+    lkFilteredDaily = LORIKEET_DAILY.slice();
+    const statusEl = document.getElementById('lk-filter-status');
+    if(statusEl) statusEl.textContent = `${lkFilteredDaily.length} day${lkFilteredDaily.length!==1?'s':''}`;
+  }
+
+  updateLKKPIs();
+  renderLKTrendChart();
+}
+
+function applyLKFilter(){
+  const from = (document.getElementById('lk-date-from')||{}).value||'';
+  const to   = (document.getElementById('lk-date-to')||{}).value||'';
+  lkFilteredDaily = LORIKEET_DAILY.filter(d=>(!from||d.date>=from)&&(!to||d.date<=to));
+  const statusEl = document.getElementById('lk-filter-status');
+  if(statusEl) statusEl.textContent = `${lkFilteredDaily.length} day${lkFilteredDaily.length!==1?'s':''}`;
+  updateLKKPIs();
+  renderLKTrendChart();
+}
+
+function resetLKFilter(){
+  lkInitialized = false;
+  renderLorikeetTab();
+}
+
+function updateLKKPIs(){
+  const total   = lkFilteredDaily.reduce((s,d)=>s+d.total,  0);
+  const matched = lkFilteredDaily.reduce((s,d)=>s+d.matched,0);
+  const auto    = lkFilteredDaily.reduce((s,d)=>s+d.auto,   0);
+  const indep   = lkFilteredDaily.reduce((s,d)=>s+d.indep,  0);
+  const pct = (n,t)=>t>0?+(n/t*100).toFixed(1)+'%':'—';
+  const el = id=>document.getElementById(id);
+  if(el('lk-kpi-total'))  el('lk-kpi-total').textContent  = total.toLocaleString();
+  if(el('lk-kpi-match'))  el('lk-kpi-match').textContent  = pct(matched,total);
+  if(el('lk-kpi-auto'))   el('lk-kpi-auto').textContent   = pct(auto,total);
+  if(el('lk-kpi-indep'))  el('lk-kpi-indep').textContent  = pct(indep,total);
+  const sub = el('lk-kpi-total-sub');
+  if(sub) sub.textContent = `across ${lkFilteredDaily.length} day${lkFilteredDaily.length!==1?'s':''}`;
+}
+
+function renderLKTrendChart(){
+  destroyChart('lkTrendChart');
+  if(!lkFilteredDaily.length) return;
+  const labels = lkFilteredDaily.map(d=>d.date.slice(5)); // MM-DD
+  const totals  = lkFilteredDaily.map(d=>d.total);
+  const mkLine = (label,data,color)=>({
+    type:'line', label, data,
+    borderColor:color, backgroundColor:'transparent',
+    pointRadius:2, borderWidth:2, tension:0.3, yAxisID:'yRate',
+  });
+  const ctx = document.getElementById('lkTrendChart').getContext('2d');
+  chartInstances['lkTrendChart'] = new Chart(ctx,{
+    data:{
+      labels,
+      datasets:[
+        {type:'bar',label:'Total Tickets',data:totals,
+          backgroundColor:'#ffffff14',borderColor:'#ffffff22',borderWidth:1,borderRadius:3,
+          yAxisID:'yTickets'},
+        mkLine('Match Rate',     lkFilteredDaily.map(d=>d.total>0?+(d.matched/d.total*100).toFixed(1):null),'#4f9cf9'),
+        mkLine('Automation Rate',lkFilteredDaily.map(d=>d.total>0?+(d.auto/d.total*100).toFixed(1):null),   '#f5a623'),
+        mkLine('Independent Handle',lkFilteredDaily.map(d=>d.total>0?+(d.indep/d.total*100).toFixed(1):null),'#4caf7d'),
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:true,labels:{color:textColor,font:{size:11},boxWidth:12,padding:14}},
+        tooltip:{...tooltipDefaults, callbacks:{label:ctx=>{
+          const ds=ctx.dataset;
+          if(ds.yAxisID==='yTickets') return `${ds.label}: ${ctx.parsed.y} tickets`;
+          return `${ds.label}: ${ctx.parsed.y!=null?ctx.parsed.y+'%':'—'}`;
+        }}},
+      },
+      scales:{
+        x:{ticks:{color:textColor,font:{size:10},maxRotation:45},grid:{display:false}},
+        yRate:{
+          position:'left',min:0,max:100,
+          ticks:{color:textColor,font:{size:10},callback:v=>v+'%'},
+          grid:{color:gridColor},
+          title:{display:true,text:'Rate (%)',color:textColor,font:{size:10}},
+        },
+        yTickets:{
+          position:'right',beginAtZero:true,
+          ticks:{color:'#ffffff33',font:{size:10}},
+          grid:{display:false},
+          title:{display:true,text:'Tickets',color:'#ffffff33',font:{size:10}},
+        },
+      }
+    }
+  });
 }
 </script>
 </body>
