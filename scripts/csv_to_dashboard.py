@@ -670,7 +670,8 @@ LORIKEET_SHEET_ID  = "1rWxsU8-g0P3kVQ2uYZBjh7tqUR8ooXnezJYyJ1qp5F8"
 LORIKEET_SHEET_GID = 0        # "Raw Data" tab
 
 # Candidate date column names (first match wins)
-LORIKEET_DATE_COLS = ["date", "Date", "created_at", "ticket_date", "Ticket Date",
+LORIKEET_DATE_COLS = ["ticketCreatedAt", "ticketCreatedAtWeek", "ticketCreatedAtMonth",
+                      "date", "Date", "created_at", "ticket_date", "Ticket Date",
                       "Created Date", "week", "Week", "day", "Day"]
 
 LORIKEET_TOTAL_COL   = "allTickets"
