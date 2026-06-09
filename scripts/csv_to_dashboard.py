@@ -513,7 +513,7 @@ def parse_ops(new_csv_path, reopen_csv_path):
 
 # ── Inject into template ───────────────────────────────────────────────────
 
-def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_group, im_data=None):
+def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_group, im_data=None, lorikeet_daily=None):
     """Replace placeholders in template HTML with actual JSON data."""
     with open(template_path, "r", encoding="utf-8") as f:
         html = f.read()
@@ -640,6 +640,17 @@ def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_
     else:
         html = html.replace("/*{{IM_DATA}}*/null", "null")
 
+    # Inject Lorikeet daily aggregates
+    if lorikeet_daily:
+        html = re.sub(
+            r'const LORIKEET_DAILY\s*=\s*/\*\{\{LORIKEET_DAILY\}\}\*/\s*\[\s*\]\s*;',
+            f'const LORIKEET_DAILY={json.dumps(lorikeet_daily, ensure_ascii=False)};',
+            html
+        )
+        print(f"  Lorikeet data: {len(lorikeet_daily)} daily records injected")
+    else:
+        print("  Lorikeet data: empty (tab will show 'no data' state)")
+
     # Inject pipeline run timestamp (HKT = UTC+8)
     from datetime import timezone, timedelta
     hkt = timezone(timedelta(hours=8))
@@ -651,6 +662,110 @@ def inject_into_template(template_path, output_path, raw_tickets, ops, assignee_
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html)
     print(f"✓ Dashboard written to {output_path} ({len(html) // 1024} KB)")
+
+
+# ── Google Sheets — Lorikeet Performance ────────────────────────────────────
+
+LORIKEET_SHEET_ID  = "1rWxsU8-g0P3kVQ2uYZBjh7tqUR8ooXnezJYyJ1qp5F8"
+LORIKEET_SHEET_GID = 0        # "Raw Data" tab
+
+# Candidate date column names (first match wins)
+LORIKEET_DATE_COLS = ["date", "Date", "created_at", "ticket_date", "Ticket Date",
+                      "Created Date", "week", "Week", "day", "Day"]
+
+LORIKEET_TOTAL_COL   = "allTickets"
+LORIKEET_MATCHED_COL = "matched"
+
+# Columns that count as "automated" outcomes (no bad rating)
+LORIKEET_AUTO_COLS = [
+    "matched_response_anyOutcomeReply_reassigned_noBadRating",
+    "matched_response_anyOutcomeReply_escalated_noBadRating",
+    "matched_response_anyOutcomeReply_resolvedWithAgent_noBadRating",
+    "matched_response_anyOutcomeReply_resolved_noBadRating",
+    "matched_fallthrough_anyOutcomeReply_resolved_noBadRating",
+]
+
+# Columns that count as "independently handled" (resolved without agent)
+LORIKEET_INDEP_COLS = [
+    "matched_response_anyOutcomeReply_resolved_noBadRating",
+    "matched_fallthrough_anyOutcomeReply_resolved_noBadRating",
+]
+
+
+def fetch_lorikeet_data():
+    """
+    Download Lorikeet Raw Data sheet and return pre-aggregated daily records.
+
+    Each record: {date, total, matched, auto, indep}
+    Only ~30-60 rows (one per day) are injected into the HTML.
+    """
+    key_json = os.environ.get("GOOGLE_SHEETS_KEY", "")
+    if not key_json:
+        print("  ⚠ GOOGLE_SHEETS_KEY not set — Lorikeet Performance tab will be empty")
+        return []
+
+    try:
+        import json as _json
+        import gspread
+        from google.oauth2.service_account import Credentials
+
+        scopes = [
+            "https://spreadsheets.google.com/feeds",
+            "https://www.googleapis.com/auth/drive",
+        ]
+        creds  = Credentials.from_service_account_info(_json.loads(key_json), scopes=scopes)
+        client = gspread.authorize(creds)
+
+        spreadsheet = client.open_by_key(LORIKEET_SHEET_ID)
+        sheet = next(
+            (ws for ws in spreadsheet.worksheets() if ws.id == LORIKEET_SHEET_GID),
+            spreadsheet.worksheets()[0]
+        )
+        rows = sheet.get_all_records()
+        print(f"  → {len(rows)} Lorikeet rows fetched from Google Sheets")
+    except Exception as e:
+        print(f"  ⚠ Lorikeet Google Sheets fetch failed: {e}")
+        return []
+
+    if not rows:
+        return []
+
+    # Discover date column
+    headers = list(rows[0].keys()) if rows else []
+    date_col = next((c for c in LORIKEET_DATE_COLS if c in headers), None)
+    if not date_col:
+        print(f"  ⚠ No date column found in Lorikeet sheet. Available columns: {headers[:15]}")
+        return []
+    print(f"  → Using date column: '{date_col}'")
+
+    # Aggregate by date (sum all metrics per day)
+    by_date = defaultdict(lambda: {"total": 0, "matched": 0, "auto": 0, "indep": 0})
+    for row in rows:
+        date_raw = str(row.get(date_col, "")).strip()
+        if not date_raw:
+            continue
+        # Normalise to YYYY-MM-DD (handles ISO datetime and date-only strings)
+        date_str = date_raw[:10]
+
+        by_date[date_str]["total"]   += safe_int(row.get(LORIKEET_TOTAL_COL,   0))
+        by_date[date_str]["matched"] += safe_int(row.get(LORIKEET_MATCHED_COL, 0))
+        by_date[date_str]["auto"]    += sum(safe_int(row.get(c, 0)) for c in LORIKEET_AUTO_COLS)
+        by_date[date_str]["indep"]   += sum(safe_int(row.get(c, 0)) for c in LORIKEET_INDEP_COLS)
+
+    result = [
+        {"date": d, "total": v["total"], "matched": v["matched"],
+         "auto": v["auto"], "indep": v["indep"]}
+        for d, v in sorted(by_date.items())
+    ]
+
+    if result:
+        print(f"  → {len(result)} daily buckets: {result[0]['date']} → {result[-1]['date']}")
+        total_tickets = sum(r["total"] for r in result)
+        print(f"  → Total tickets: {total_tickets}")
+    else:
+        print("  → No data aggregated (check date column values)")
+
+    return result
 
 
 # ── Google Sheets — IM Metrics ───────────────────────────────────────────────
@@ -865,9 +980,13 @@ def main():
     print("\nFetching IM Metrics from Google Sheets...")
     im_data = fetch_im_data()
 
+    # Fetch Lorikeet Performance data from Google Sheets
+    print("\nFetching Lorikeet Performance data from Google Sheets...")
+    lorikeet_daily = fetch_lorikeet_data()
+
     # Inject into template
     print(f"\nInjecting into template: {args.template}")
-    inject_into_template(args.template, args.output, all_tickets, ops, ASSIGNEE_GROUP, im_data)
+    inject_into_template(args.template, args.output, all_tickets, ops, ASSIGNEE_GROUP, im_data, lorikeet_daily)
 
     # Summary
     mode_str = "TR mode" if paths.get("tr_mode") else "PI mode (legacy)"
