@@ -717,13 +717,10 @@ def fetch_lorikeet_data():
         key_dict = _json.loads(key_json)
         print(f"  → Service account: {key_dict.get('client_email', 'unknown')}")
         creds  = Credentials.from_service_account_info(key_dict, scopes=scopes)
-
-        # Use gspread 6-style Client directly (authorize() is deprecated in v6)
-        gc = gspread.Client(auth=creds)
-        gc.session = gspread.BackoffHTTPClient(auth=creds)
+        client = gspread.authorize(creds)
 
         print(f"  → Opening Lorikeet sheet: {LORIKEET_SHEET_ID}")
-        spreadsheet = gc.open_by_key(LORIKEET_SHEET_ID)
+        spreadsheet = client.open_by_key(LORIKEET_SHEET_ID)
         worksheets = spreadsheet.worksheets()
         print(f"  → Worksheets: {[(ws.id, ws.title) for ws in worksheets]}")
         sheet = next(
