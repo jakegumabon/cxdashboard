@@ -711,20 +711,32 @@ def fetch_lorikeet_data():
 
         scopes = [
             "https://spreadsheets.google.com/feeds",
+            "https://www.googleapis.com/auth/spreadsheets",
             "https://www.googleapis.com/auth/drive",
         ]
-        creds  = Credentials.from_service_account_info(_json.loads(key_json), scopes=scopes)
-        client = gspread.authorize(creds)
+        key_dict = _json.loads(key_json)
+        print(f"  → Service account: {key_dict.get('client_email', 'unknown')}")
+        creds  = Credentials.from_service_account_info(key_dict, scopes=scopes)
 
-        spreadsheet = client.open_by_key(LORIKEET_SHEET_ID)
+        # Use gspread 6-style Client directly (authorize() is deprecated in v6)
+        gc = gspread.Client(auth=creds)
+        gc.session = gspread.BackoffHTTPClient(auth=creds)
+
+        print(f"  → Opening Lorikeet sheet: {LORIKEET_SHEET_ID}")
+        spreadsheet = gc.open_by_key(LORIKEET_SHEET_ID)
+        worksheets = spreadsheet.worksheets()
+        print(f"  → Worksheets: {[(ws.id, ws.title) for ws in worksheets]}")
         sheet = next(
-            (ws for ws in spreadsheet.worksheets() if ws.id == LORIKEET_SHEET_GID),
-            spreadsheet.worksheets()[0]
+            (ws for ws in worksheets if ws.id == LORIKEET_SHEET_GID),
+            worksheets[0]
         )
+        print(f"  → Using sheet: '{sheet.title}' (gid={sheet.id})")
         rows = sheet.get_all_records()
         print(f"  → {len(rows)} Lorikeet rows fetched from Google Sheets")
     except Exception as e:
-        print(f"  ⚠ Lorikeet Google Sheets fetch failed: {e}")
+        import traceback
+        print(f"  ⚠ Lorikeet Google Sheets fetch failed: {type(e).__name__}: {e}")
+        traceback.print_exc()
         return []
 
     if not rows:
