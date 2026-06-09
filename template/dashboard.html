@@ -933,17 +933,17 @@ tr:hover td{background:var(--surface2)}
     <div class="kpi kpi-blue" style="cursor:default;">
       <div class="kpi-label">Match Rate</div>
       <div class="kpi-value mono" id="lk-kpi-match">—</div>
-      <div class="kpi-sub">matched / total tickets</div>
+      <div class="kpi-sub" id="lk-kpi-match-sub">— tickets matched</div>
     </div>
     <div class="kpi kpi-amber" style="cursor:default;">
       <div class="kpi-label">Automation Rate</div>
       <div class="kpi-value mono" id="lk-kpi-auto">—</div>
-      <div class="kpi-sub">automated outcomes / total</div>
+      <div class="kpi-sub" id="lk-kpi-auto-sub">— automated outcomes</div>
     </div>
     <div class="kpi kpi-green" style="cursor:default;">
       <div class="kpi-label">Independently Handled</div>
       <div class="kpi-value mono" id="lk-kpi-indep">—</div>
-      <div class="kpi-sub">resolved without agent / total</div>
+      <div class="kpi-sub" id="lk-kpi-indep-sub">— resolved without agent</div>
     </div>
   </div>
 
@@ -4709,12 +4709,14 @@ function updateLKKPIs(){
   const indep   = lkFilteredDaily.reduce((s,d)=>s+d.indep,  0);
   const pct = (n,t)=>t>0?+(n/t*100).toFixed(1)+'%':'—';
   const el = id=>document.getElementById(id);
-  if(el('lk-kpi-total'))  el('lk-kpi-total').textContent  = total.toLocaleString();
-  if(el('lk-kpi-match'))  el('lk-kpi-match').textContent  = pct(matched,total);
-  if(el('lk-kpi-auto'))   el('lk-kpi-auto').textContent   = pct(auto,total);
-  if(el('lk-kpi-indep'))  el('lk-kpi-indep').textContent  = pct(indep,total);
-  const sub = el('lk-kpi-total-sub');
-  if(sub) sub.textContent = `across ${lkFilteredDaily.length} day${lkFilteredDaily.length!==1?'s':''}`;
+  if(el('lk-kpi-total'))     el('lk-kpi-total').textContent     = total.toLocaleString();
+  if(el('lk-kpi-match'))     el('lk-kpi-match').textContent     = pct(matched,total);
+  if(el('lk-kpi-auto'))      el('lk-kpi-auto').textContent      = pct(auto,total);
+  if(el('lk-kpi-indep'))     el('lk-kpi-indep').textContent     = pct(indep,total);
+  if(el('lk-kpi-total-sub')) el('lk-kpi-total-sub').textContent = `across ${lkFilteredDaily.length} day${lkFilteredDaily.length!==1?'s':''}`;
+  if(el('lk-kpi-match-sub')) el('lk-kpi-match-sub').textContent = `${matched.toLocaleString()} tickets matched`;
+  if(el('lk-kpi-auto-sub'))  el('lk-kpi-auto-sub').textContent  = `${auto.toLocaleString()} automated outcomes`;
+  if(el('lk-kpi-indep-sub')) el('lk-kpi-indep-sub').textContent = `${indep.toLocaleString()} resolved without agent`;
 }
 
 function renderLKTrendChart(){
@@ -4745,8 +4747,11 @@ function renderLKTrendChart(){
       plugins:{
         legend:{display:true,labels:{color:textColor,font:{size:11},boxWidth:12,padding:14}},
         tooltip:{...tooltipDefaults, callbacks:{label:ctx=>{
-          const ds=ctx.dataset;
-          if(ds.yAxisID==='yTickets') return `${ds.label}: ${ctx.parsed.y} tickets`;
+          const ds=ctx.dataset; const i=ctx.dataIndex; const d=lkFilteredDaily[i];
+          if(ds.yAxisID==='yTickets') return `Total Tickets: ${ctx.parsed.y}`;
+          if(ds.label==='Match Rate')        return `Match Rate: ${ctx.parsed.y!=null?ctx.parsed.y+'%':'—'} (${d.matched} tickets)`;
+          if(ds.label==='Automation Rate')   return `Automation Rate: ${ctx.parsed.y!=null?ctx.parsed.y+'%':'—'} (${d.auto} tickets)`;
+          if(ds.label==='Independent Handle')return `Independent Handle: ${ctx.parsed.y!=null?ctx.parsed.y+'%':'—'} (${d.indep} tickets)`;
           return `${ds.label}: ${ctx.parsed.y!=null?ctx.parsed.y+'%':'—'}`;
         }}},
       },
