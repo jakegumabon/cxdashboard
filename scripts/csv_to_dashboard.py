@@ -100,7 +100,7 @@ ASSIGNEE_GROUP = {
     "Timothy Hernandez": "CS", "Timothy H": "CS",
     "Ediline Postrano": "CS",
     "Ian Soliman": "CS",
-    "Joe Flores": "CS",
+    "Joe Flores": "CS", "Joe F": "CS",
     "Lorenz Agustin": "CS", "Lorenz A": "CS",
     "Mike Cunanan": "CS", "Mike C": "CS",
     "LA Carlos": "CS", "LA C": "CS", "LA": "CS",
@@ -110,7 +110,8 @@ ASSIGNEE_GROUP = {
     "Racky Manlapaz": "CS", "Racky M": "CS",
     "Amica Castro": "CS", "Amica C": "CS",
     # TS
-    "Chang": "TS", "Jose Shardin": "TS", "Jaiber Kler": "TS",
+    "Chang": "TS", "Jose Shardin": "TS", "jose ruiz shardin": "TS",
+    "Jaiber Kler": "TS", "Jaiber K": "TS",
     "Jan Rivera": "TS", "Jan R": "TS",
     "Bogdan Hristovski": "TS", "Bogdan H": "TS",
     "Gilbert Arces": "TS", "Gilbert A": "TS",
@@ -120,13 +121,16 @@ ASSIGNEE_GROUP = {
     "Allen Reyes": "TS", "Allen R": "TS",
     "Adrian Maranan": "TS", "Adrian M": "TS",
     # CG (not CX — excluded from team comparison)
-    "Chloe Wong": "CG", "Angela Shih": "CG", "Catherine Sun": "CG",
-    "Joris Thibault-Gabily": "CG", "Lebin Looi": "CG", "Maxwell Li": "CG",
-    "Michael Chang": "CG", "Sam Lee": "CG", "Robin Koh": "CG",
+    "Chloe Wong": "CG", "Angela Shih": "CG", "Angela S": "CG", "Catherine Sun": "CG",
+    "Joris Thibault-Gabily": "CG", "Joris TG": "CG",
+    "Lebin Looi": "CG", "Le Bin Looi": "CG",
+    "Maxwell Li": "CG", "Michael Chang": "CG",
+    "Sam Lee": "CG", "Sam LEE": "CG",
+    "Robin Koh": "CG", "Justin Keung": "CG",
     # Admin
-    "Clyde": "Admin", "Franco": "Admin", "Rollie Villaflor": "Admin",
+    "Clyde": "Admin", "Franco": "Admin", "Rollie Villaflor": "Admin", "CS Apps": "Admin",
     # Card Ops
-    "Ming Ming Ooi": "Card Ops", "Weilam Thum": "Card Ops",
+    "Ming Ming Ooi": "Card Ops", "Ming Ooi": "Card Ops", "Weilam Thum": "Card Ops",
 }
 
 
