@@ -734,7 +734,16 @@ def fetch_lorikeet_data():
         )
         print(f"  → Using sheet: '{sheet.title}' (gid={sheet.id})")
         rows = sheet.get_all_records()
-        print(f"  → {len(rows)} Lorikeet rows fetched from Google Sheets")
+        print(f"  → {len(rows)} Lorikeet rows via get_all_records()")
+
+        # Fallback: if get_all_records returns empty, try get_all_values and build dicts manually
+        if not rows:
+            all_vals = sheet.get_all_values()
+            print(f"  → Fallback get_all_values(): {len(all_vals)} raw rows (incl. header)")
+            if len(all_vals) > 1:
+                headers = all_vals[0]
+                rows = [dict(zip(headers, r)) for r in all_vals[1:] if any(c.strip() for c in r)]
+                print(f"  → {len(rows)} rows after manual header parse")
     except Exception as e:
         import traceback
         print(f"  ⚠ Lorikeet Google Sheets fetch failed: {type(e).__name__}: {e}")
