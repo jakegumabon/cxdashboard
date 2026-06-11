@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <style>
 :root{--bg:#0d0d0d;--surface:#151515;--surface2:#1e1e1e;--surface3:#252525;--border:#2a2a2a;--border2:#333;--coral:#f97058;--coral-dim:#7a3828;--coral-faint:#2a1510;--blue:#4f9cf9;--blue-dim:#1e3d6e;--blue-faint:#0d1e36;--text:#f0f0f0;--text2:#aaa;--text3:#666;--green:#4caf7d;--amber:#f5a623}
 *{margin:0;padding:0;box-sizing:border-box}
@@ -970,7 +971,7 @@ tr:hover td{background:var(--surface2)}
         <button onclick="setLKGranularity('monthly')" id="lk-gran-monthly" class="lk-gran-btn">Monthly</button>
       </div>
     </div>
-    <div class="chart-wrap" style="height:260px;"><canvas id="lkTrendChart"></canvas></div>
+    <div class="chart-wrap" style="height:280px;"><canvas id="lkTrendChart"></canvas></div>
   </div>
 
   <!-- Empty state -->
@@ -2130,6 +2131,12 @@ function updateGroupKPIs(){
 const coral='#f97058',blue='#4f9cf9',green='#4caf7d',amber='#f5a623';
 const gridColor='rgba(255,255,255,0.05)',textColor='#888';
 const tooltipDefaults={backgroundColor:'#1e1e1e',borderColor:'#333',borderWidth:1,titleColor:'#eee',bodyColor:'#aaa',padding:10};
+
+// Register datalabels plugin but keep it OFF globally — only Lorikeet trend chart opts in
+if(window.ChartDataLabels){
+  Chart.register(ChartDataLabels);
+  Chart.defaults.plugins.datalabels = { display: false };
+}
 
 function escBadge(r){
   if(r>=20) return `<span class="badge badge-red">${r.toFixed(1)}%</span>`;
@@ -4812,10 +4819,23 @@ function renderLKTrendChart(){
   const agg = aggregateLK(lkGranularity);
   const labels = agg.map(d=>d.label);
   const totals  = agg.map(d=>d.total);
+  // Show labels on every point for monthly/weekly; auto-thin for daily
+  const labelDisplay = lkGranularity==='monthly' ? true
+                     : lkGranularity==='weekly'  ? true
+                     : 'auto';
   const mkLine = (label,data,color)=>({
     type:'line', label, data,
     borderColor:color, backgroundColor:'transparent',
-    pointRadius:agg.length>60?0:2, borderWidth:2, tension:0.3, yAxisID:'yRate',
+    pointRadius:agg.length>60?0:3, borderWidth:2, tension:0.3, yAxisID:'yRate',
+    datalabels:{
+      display: labelDisplay,
+      color,
+      font:{ size:9, weight:'600', family:"'IBM Plex Mono',monospace" },
+      formatter: v => v!=null ? v+'%' : '',
+      anchor:'end', align:'top', offset:2,
+      padding:{ top:0, bottom:0, left:1, right:1 },
+      clip: false,
+    }
   });
   const ctx = document.getElementById('lkTrendChart').getContext('2d');
   chartInstances['lkTrendChart'] = new Chart(ctx,{
@@ -4824,7 +4844,7 @@ function renderLKTrendChart(){
       datasets:[
         {type:'bar',label:'Total Tickets',data:totals,
           backgroundColor:'#ffffff14',borderColor:'#ffffff22',borderWidth:1,borderRadius:3,
-          yAxisID:'yTickets'},
+          yAxisID:'yTickets', datalabels:{ display:false }},
         mkLine('Match Rate',     agg.map(d=>d.total>0?+(d.matched/d.total*100).toFixed(1):null),'#4f9cf9'),
         mkLine('Automation Rate',agg.map(d=>d.total>0?+(d.auto/d.total*100).toFixed(1):null),   '#f5a623'),
         mkLine('Independent Handle',agg.map(d=>d.total>0?+(d.indep/d.total*100).toFixed(1):null),'#4caf7d'),
