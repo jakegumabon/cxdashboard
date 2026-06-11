@@ -119,6 +119,8 @@ tr:hover td{background:var(--surface2)}
 .lk-gran-btn{background:none;border:1px solid var(--border2);color:var(--text3);padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;transition:all .15s}
 .lk-gran-btn:hover{color:var(--text2);border-color:var(--text3)}
 .lk-gran-active{background:var(--coral)!important;border-color:var(--coral)!important;color:#fff!important}
+.lk-info-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;font-size:11px;color:var(--text3);cursor:help;vertical-align:middle;margin-left:3px;opacity:.7;transition:opacity .15s;position:relative;top:-1px}
+.lk-info-icon:hover{opacity:1}
 #filter-status{font-size:11px;color:var(--text3);font-family:'IBM Plex Mono',monospace}
 #filter-status.filtered{color:var(--coral)}
 /* Non-CX tooltip */
@@ -929,26 +931,34 @@ tr:hover td{background:var(--surface2)}
   <!-- 4 KPI cards -->
   <div class="kpi-grid" style="margin-bottom:20px;">
     <div class="kpi" style="cursor:default;">
-      <div class="kpi-label">Total Tickets</div>
+      <div class="kpi-label">Total Tickets <span class="lk-info-icon" data-lk-tip="All tickets Lorikeet has seen.">ⓘ</span></div>
       <div class="kpi-value mono" id="lk-kpi-total">—</div>
       <div class="kpi-sub" id="lk-kpi-total-sub">in selected period</div>
     </div>
     <div class="kpi kpi-blue" style="cursor:default;">
-      <div class="kpi-label">Match Rate</div>
+      <div class="kpi-label">Match Rate <span class="lk-info-icon" data-lk-tip="Tickets that matched to a response workflow, whether guided (topic match) or unguided (reference material).">ⓘ</span></div>
       <div class="kpi-value mono" id="lk-kpi-match">—</div>
       <div class="kpi-sub" id="lk-kpi-match-sub">— tickets matched</div>
     </div>
     <div class="kpi kpi-amber" style="cursor:default;">
-      <div class="kpi-label">Automation Rate</div>
+      <div class="kpi-label">Automation Rate <span class="lk-info-icon" data-lk-tip="Tickets where Lorikeet completed a guided or unguided response workflow and gave a final reply to the customer. This includes tickets that were reassigned in line with the workflow configuration and tickets where an agent also replied, but does not include tickets rated as bad.">ⓘ</span></div>
       <div class="kpi-value mono" id="lk-kpi-auto">—</div>
       <div class="kpi-sub" id="lk-kpi-auto-sub">— automated outcomes</div>
     </div>
     <div class="kpi kpi-green" style="cursor:default;">
-      <div class="kpi-label">Independently Handled</div>
+      <div class="kpi-label">Independently Handled <span class="lk-info-icon" data-lk-tip="Tickets that Lorikeet resolved without a human agent following up with the customer.">ⓘ</span></div>
       <div class="kpi-value mono" id="lk-kpi-indep">—</div>
       <div class="kpi-sub" id="lk-kpi-indep-sub">— resolved without agent</div>
     </div>
   </div>
+  <!-- Shared tooltip element for LK KPI info icons -->
+  <div id="lk-info-tooltip" style="
+    display:none;position:fixed;z-index:9999;
+    max-width:280px;padding:10px 13px;
+    background:#1a1a2e;border:1px solid #ffffff22;border-radius:8px;
+    font-size:12px;line-height:1.5;color:#e0e0e0;
+    box-shadow:0 4px 20px #0008;pointer-events:none;
+  "></div>
 
   <!-- Trend chart -->
   <div class="chart-card">
@@ -4671,6 +4681,29 @@ function renderCGTab(){
 let lkFilteredDaily = [];
 let lkInitialized = false;
 let lkGranularity = 'daily';
+
+// ── LK KPI info icon tooltips ──
+(function(){
+  const tip = document.getElementById('lk-info-tooltip');
+  document.addEventListener('mouseover', e=>{
+    const icon = e.target.closest('.lk-info-icon');
+    if(!icon||!tip) return;
+    tip.textContent = icon.dataset.lkTip || '';
+    tip.style.display = 'block';
+  });
+  document.addEventListener('mousemove', e=>{
+    if(!tip||tip.style.display==='none') return;
+    const pad=12, tw=tip.offsetWidth, th=tip.offsetHeight;
+    let x=e.clientX+pad, y=e.clientY+pad;
+    if(x+tw > window.innerWidth-pad)  x = e.clientX - tw - pad;
+    if(y+th > window.innerHeight-pad) y = e.clientY - th - pad;
+    tip.style.left = x+'px';
+    tip.style.top  = y+'px';
+  });
+  document.addEventListener('mouseout', e=>{
+    if(!e.target.closest('.lk-info-icon')&&tip) tip.style.display='none';
+  });
+})();
 
 function setLKGranularity(gran){
   lkGranularity = gran;
